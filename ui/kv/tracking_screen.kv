@@ -1,0 +1,97 @@
+#:import dp kivy.metrics.dp
+#:import MatplotFigure kivy_matplotlib_widget.uix.graph_widget
+
+<TrackingScreen>: 
+    
+    AnchorLayout:
+        anchor_x: "center"
+        anchor_y: "center"
+
+        MDBoxLayout:
+            id: tracking_content
+            orientation: "vertical"
+            spacing: dp(20)
+            padding: dp(20)
+            size_hint: 1, None
+            height: self.minimum_height
+
+            # ==== Contenu de la FC brute ====
+            MDBoxLayout:
+                id: hr_content
+                orientation: "horizontal"
+                spacing: dp(10)
+                size_hint: None, None
+                width: self.minimum_width
+                height: dp(100)
+                pos_hint:{"center_x": 0.5}
+
+                MDIcon:
+                    id: heart_icon
+                    icon: "heart"
+                    theme_text_color: "Custom"
+                    text_color: "red"
+                    font_size: "40sp"
+                        
+                MDLabel:
+                    id: heart_rate_label
+                    text: root.heart_rate_label
+                    font_style: "H5"
+                    theme_text_color: "Primary"
+                    size_hint_x: None
+                    text_size: None, None
+            
+            # ==== Contenu du graphique de l'évolution de la FC ====
+            MDBoxLayout:
+                id: graph_hr_content
+                orientation: "horizontal"
+                spacing: dp(10)
+                #pos_hint: {"center_x": 0.5}
+                size_hint: 1, None
+                height: dp(300)
+                #opacity: 1
+                #disabled: True
+                
+                # --- Graphique ---
+                MatplotFigure:
+                    id: hr_graph_widget
+                    size_hint: 0.9, 1
+                
+                # --- Contenant Slider + Chekbox ---
+                MDBoxLayout:
+                    orientation: "vertical"
+                    spacing: dp(5)
+                    size_hint: 0.1, 1
+            
+                    MDSlider:
+                        id: target_hr_slider
+                        min: 0
+                        max: 100
+                        value: root.target_hr_value
+                        size_hint: 1, 0.9
+                        height : dp(300)
+                        pos_hint: {"center_x": 0.5, "center_y": 0.5}
+                        hint_bg_color: "blue"
+                        hint_text_color: "white"
+                        hint_radius : [6, 0, 6, 0]
+                        thumb_color_active: "blue"
+                        orientation : "vertical"
+                        disabled : True
+                
+                    MDCheckbox:
+                        id: auto_checkbox
+                        size_hint: 1, 0.1
+                        disabled : False
+                        on_press: root.on_toggle(self)
+                        
+            
+
+        
+    
+
+
+
+
+
+
+
+

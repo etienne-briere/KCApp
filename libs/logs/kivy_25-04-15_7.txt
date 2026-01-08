@@ -1,0 +1,32 @@
+[INFO   ] Logger: Record log in /home/etien/.kivy/logs/kivy_25-04-15_7.txt
+[INFO   ] Kivy: v2.3.1
+[INFO   ] Kivy: Installed at "/home/etien/venv/lib/python3.10/site-packages/kivy/__init__.py"
+[INFO   ] Python: v3.10.16 (main, Dec  4 2024, 08:53:38) [GCC 13.2.0]
+[INFO   ] Python: Interpreter at "/home/etien/venv/bin/python"
+[INFO   ] Logger: Purge log fired. Processing...
+[INFO   ] Logger: Purge finished!
+[INFO   ] Factory: 195 symbols loaded
+[INFO   ] Image: Providers: img_tex, img_dds, img_sdl2 (img_pil, img_ffpyplayer ignored)
+[INFO   ] Text: Provider: sdl2
+[WARNING] stderr: Traceback (most recent call last):
+[WARNING] stderr:   File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+[WARNING] stderr:     return _run_code(code, main_globals, None,
+[WARNING] stderr:   File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+[WARNING] stderr:     exec(code, run_globals)
+[WARNING] stderr:   File "/home/etien/stream_FC/.buildozer/android/platform/python-for-android/pythonforandroid/toolchain.py", line 1246, in <module>
+[WARNING] stderr:     main()
+[WARNING] stderr:   File "/home/etien/stream_FC/.buildozer/android/platform/python-for-android/pythonforandroid/entrypoints.py", line 18, in main
+[WARNING] stderr:     ToolchainCL()
+[WARNING] stderr:   File "/home/etien/stream_FC/.buildozer/android/platform/python-for-android/pythonforandroid/toolchain.py", line 677, in __init__
+[WARNING] stderr:     getattr(self, command)(args)
+[WARNING] stderr:   File "/home/etien/stream_FC/.buildozer/android/platform/python-for-android/pythonforandroid/toolchain.py", line 104, in wrapper_func
+[WARNING] stderr:     build_dist_from_args(ctx, dist, args)
+[WARNING] stderr:   File "/home/etien/stream_FC/.buildozer/android/platform/python-for-android/pythonforandroid/toolchain.py", line 132, in build_dist_from_args
+[WARNING] stderr:     get_recipe_order_and_bootstrap(
+[WARNING] stderr:   File "/home/etien/stream_FC/.buildozer/android/platform/python-for-android/pythonforandroid/graph.py", line 269, in get_recipe_order_and_bootstrap
+[WARNING] stderr:     obvious_conflict_checker(ctx, names, blacklist=blacklist)
+[WARNING] stderr:   File "/home/etien/stream_FC/.buildozer/android/platform/python-for-android/pythonforandroid/graph.py", line 176, in obvious_conflict_checker
+[WARNING] stderr:     recipe = Recipe.get_recipe(name, ctx)
+[WARNING] stderr:   File "/home/etien/stream_FC/.buildozer/android/platform/python-for-android/pythonforandroid/recipe.py", line 739, in get_recipe
+[WARNING] stderr:     recipe = mod.recipe
+[WARNING] stderr: AttributeError: module 'pythonforandroid.recipes.garden.graph' has no attribute 'recipe'

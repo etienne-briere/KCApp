@@ -1,0 +1,87 @@
+#:import MDTopAppBar kivymd.uix.toolbar
+
+#:import HomeScreen ui.screens.home_screen.HomeScreen
+#:import ScanScreen ui.screens.scan_screen.ScanScreen
+#:import TrackingScreen ui.screens.tracking_screen.TrackingScreen
+#:import ProfilScreen ui.screens.profil_screen.ProfilScreen
+#:import PilotageScreen ui.screens.pilotage_screen.PilotageScreen
+#:import GameScreen ui.screens.game_screen.GameScreen
+
+BoxLayout:
+    orientation: "vertical"
+
+    # ---------- TOP BAR ----------
+    MDTopAppBar:
+        id: top_bar
+        title: "Accueil"
+        md_bg_color:(0.12, 0.12, 0.12, 1)
+        left_action_items: [["account-circle", lambda x: print(x)]]
+        right_action_items: [["cog", lambda x: print(x)]]
+		
+    # ---------- SCREEN MANAGER ----------
+    ScreenManager:
+        id: screen_manager
+
+        HomeScreen: 
+            name: "home"
+        
+        ScanScreen:
+            name: "scan"
+        
+        TrackingScreen:
+            name: "tracking"
+        
+        ProfilScreen:
+            name: "profil"
+        
+        PilotageScreen:
+            name: "pilotage"
+        
+        GameScreen:
+            name: "game"
+    
+    # ---------- BOTTOM NAVIGATION (FIXE) ----------
+    MDBottomNavigation:
+		size_hint_y: None
+		height: dp(81)
+		
+        MDBottomNavigationItem:
+            name: "home_tab"
+            text: "Home"
+            icon: "home"
+            on_tab_press:
+                screen_manager.current = "home"
+                top_bar.title = "Home"
+
+        MDBottomNavigationItem:
+            name: "scan_tab"
+            text: "Sensor"
+            icon: "bluetooth"
+            on_tab_press:
+                screen_manager.current = "scan"
+                top_bar.title = "Sensor Connection"
+
+        MDBottomNavigationItem:
+            name: "tracking_tab"
+            text: "HR Tracking"
+            icon: "chart-line"
+            on_tab_press:
+                screen_manager.current = "tracking"
+                top_bar.title = "Heart Rate Tracking"
+
+        MDBottomNavigationItem:
+            name: "pilotage_tab"
+            text: "Game"
+            icon: "microsoft-xbox-controller-menu"
+            on_tab_press:
+                screen_manager.current = "pilotage"
+                top_bar.title = "Game control"
+        
+        MDBottomNavigationItem:
+            name: "game_tab"
+            text: "Game Screen"
+            icon: "fit-to-screen-outline"
+            on_tab_press:
+                screen_manager.current = "game"
+                top_bar.title = "Game Screen"
+

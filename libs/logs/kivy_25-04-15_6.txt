@@ -1,0 +1,11 @@
+[INFO   ] Logger: Record log in /home/etien/.kivy/logs/kivy_25-04-15_6.txt
+[INFO   ] Kivy: v2.3.1
+[INFO   ] Kivy: Installed at "/home/etien/venv/lib/python3.10/site-packages/kivy/__init__.py"
+[INFO   ] Python: v3.10.16 (main, Dec  4 2024, 08:53:38) [GCC 13.2.0]
+[INFO   ] Python: Interpreter at "/home/etien/venv/bin/python"
+[INFO   ] Logger: Purge log fired. Processing...
+[INFO   ] Logger: Purge finished!
+[DEBUG  ] Starting new HTTPS connection (1): github.com:443
+[DEBUG  ] https://github.com:443 "GET /kivy-garden/garden.graph/archive/master.zip HTTP/1.1" 302 0
+[DEBUG  ] Starting new HTTPS connection (1): codeload.github.com:443
+[DEBUG  ] https://codeload.github.com:443 "GET /kivy-garden/garden.graph/zip/refs/heads/master HTTP/1.1" 200 None

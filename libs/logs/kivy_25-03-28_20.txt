@@ -1,0 +1,10 @@
+[INFO   ] Logger: Record log in /home/etien/.kivy/logs/kivy_25-03-28_20.txt
+[INFO   ] Kivy: v2.3.0
+[INFO   ] Kivy: Installed at "/home/etien/bleak/.buildozer/android/platform/build-arm64-v8a/build/other_builds/kivy/arm64-v8a__ndk_target_21/kivy/kivy/__init__.py"
+[INFO   ] Python: v3.11.5 (main, Mar 28 2025, 13:58:29) [GCC 13.3.0]
+[INFO   ] Python: Interpreter at "/home/etien/bleak/.buildozer/android/platform/build-arm64-v8a/build/other_builds/hostpython3/desktop/hostpython3/native-build/python3"
+[INFO   ] Logger: Purge log fired. Processing...
+[INFO   ] Logger: Purge finished!
+[WARNING] stderr: warning: no files found matching '*.txt' under directory 'kivy/tools'
+[WARNING] stderr: warning: no files found matching '*.bat' under directory 'kivy/tools'
+[WARNING] stderr: warning: no files found matching '*.pyd' under directory 'kivy'
