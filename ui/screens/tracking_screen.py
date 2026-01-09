@@ -9,12 +9,11 @@ from kivy.clock import Clock
 
 # Custom modules
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 
-from config import WEBSOCKET_HOST, WEBSOCKET_PORT
+# Standard library
 import asyncio
-
 from utils.logger import get_logger
+
 logger = get_logger(__name__)
 
 class TrackingScreen(MDScreen):
@@ -30,22 +29,17 @@ class TrackingScreen(MDScreen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        # Données
-        self.data_hr = []  # Liste des (temps, %FCmax)
-        self.data_hr_target = []  # Liste des %FC cible
+        # Session
+        self.hr_session = None
+        
+        # Initialisation du temps
         self.time = 0
-        self.last_bpm = None
-        self.max_hr = 180  # Valeur par défaut, sera calculée
         
         # Configuration Matplotlib
         self.fig = None
-        self.ax = None
         self.line_hr = None
         self.line_hr_target = None
         self.placeholder_text = None
-        
-        # Animation du cœur
-        self.beat_event = None
 
         # WebSocket Server
         self.ws_server = None
@@ -65,22 +59,27 @@ class TrackingScreen(MDScreen):
         self.ble_manager = app.ble_manager
         self.ws_server = app.ws_server
         self.udp_discovery = app.udp_discovery
+        self.hr_session = app.hr_session
         
-        # Callbacks BLE
-        self.ble_manager.on_heart_rate = self.on_heart_rate_received
+        # Callback pour recevoir la FC en temps réel
+        self.hr_session.on_data_added = self.on_new_hr_data
 
         # Callbacks WebSocket
-        self.ws_server.on_message_received = self.on_ws_message_received
         self.ws_server.on_client_connected = self.on_ws_client_connected
         self.ws_server.on_client_disconnected = self.on_ws_client_disconnected
-                
+        
+        # Charger toutes les data pré-existantes dans le graphique
+        self.load_existing_data()
+
         # Démarrer la mise à jour du graphique (1 Hz)
         self.update_event = Clock.schedule_interval(self.update_graph, 1)
-        
-        logger.info("Écran de tracking activé")
-    
+            
     def on_leave(self):
         """Appelé à la sortie de l'écran"""
+        
+        # Désactiver le callback de session
+        self.hr_session.on_data_added = None
+        
         # Arrêter le serveur ws si actif
         if self.ws_server and self.ws_server.is_running:
             asyncio.ensure_future(self.ws_server.stop())
@@ -88,8 +87,52 @@ class TrackingScreen(MDScreen):
         # Arrêter les mises à jour
         if self.update_event:
             self.update_event.cancel()
+    
+    # ========== GESTION DES DONNÉES EXISTANTES ==========
+
+    def load_existing_data(self):
+        """Charge toutes les données de la session dans le graphique"""
+        times, hr_percents = self.hr_session.get_data_for_graph_percent()
         
-        logger.info("Écran de tracking désactivé")
+        if times and hr_percents:
+            logger.info(f"📊 Chargement de {len(times)} points existants")
+            
+            # Mettre à jour le graphique
+            self.line_hr.set_data(times, hr_percents)
+            
+            # Redessiner
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
+        else:
+            logger.info("📊 Aucune donnée existante à charger")
+    
+    def on_new_hr_data(self, elapsed_time, bpm, hr_percent):
+        """
+        Callback appelé quand une nouvelle donnée est ajoutée à la session
+        (Appelé automatiquement depuis scan_screen)
+        
+        Args:
+            elapsed_time: Temps écoulé en secondes
+            bpm: Fréquence cardiaque
+            hr_percent: Pourcentage de FCmax
+        """
+        logger.debug(f"📊 Nouvelle donnée: {bpm} BPM à t={elapsed_time}s")
+        
+        # Mettre à jour l'affichage
+        self.update_heart_rate(bpm)
+
+        # Envoyer les données FC via WebSocket
+        asyncio.ensure_future(self.ws_server.send_data_to_clients(bpm))
+    
+    def update_heart_rate(self, bpm):
+        """
+        Met à jour l'affichage de la fréquence cardiaque
+        
+        Args:
+            bpm: Fréquence cardiaque en BPM
+        """
+        # Mettre à jour le label
+        self.ids.heart_rate_label.text = f"{bpm}"
     
     # ========== GRAPHIQUE MATPLOTLIB ==========
 
@@ -149,9 +192,7 @@ class TrackingScreen(MDScreen):
 
         # Ajouter la figure au widget
         self.ids.hr_graph_widget.figure = self.fig
-        
-        logger.debug("Graphique Matplotlib initialisé")
-    
+            
     def update_graph(self, dt):
         """Met à jour le graphique toutes les secondes"""
         
@@ -165,34 +206,31 @@ class TrackingScreen(MDScreen):
             self.fig.canvas.flush_events()
             return
         
-        # Si on n'a pas reçu de données récentes, on ne fait rien
-        if self.last_bpm is None or self.last_bpm == "--":
-            return
-        
-        # MAJ du graphique
+        # MAJ UI
         self.ax1.set_ylabel("HRmax (%)", color="red", 
                             fontsize=12, fontweight="bold"
                             )
-        self.placeholder_text.set_visible(False)
-      
-        # Calculer le % de FCmax
-        hr_percent = self.calculate_hr_percent(self.last_bpm)
         
-        # Ajouter les données de FC
-        self.data_hr.append((self.time, hr_percent))
-        self.time += 1
+        # Supprimer le placeholder
+        if self.placeholder_text:
+            self.placeholder_text.set_visible(False)
+        
+        # Si on n'a pas reçu de données récentes, on ne fait rien
+        if not self.hr_session.is_recording:
+            return
+        
+        # Récupérer TOUTES les données de la session
+        times, hr_percents = self.hr_session.get_data_for_graph_percent()
 
-        # Garder seulement les 600 dernières secondes (10 minutes)
-        if len(self.data_hr) > 600:
-            self.data_hr = self.data_hr[-600:]
-            # Ajuster l'échelle X
-            self.ax.set_xlim(self.data_hr[0][0], self.data_hr[-1][0])
+        if not times:
+            return
         
         # Mettre à jour la ligne HR du graphique
-        if self.data_hr:
-            times, hr_values = zip(*self.data_hr)
-            self.line_hr.set_data(times, hr_values)
-        
+        self.line_hr.set_data(times, hr_percents)
+
+        # Incrémenter le temps
+        self.time += 1
+
         if self.ids.target_hr_slider.disabled == False:
             # Récupérer la valeur cible
             target_percent = self.ids.target_hr_slider.value
@@ -211,52 +249,8 @@ class TrackingScreen(MDScreen):
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
-        # # Envoyer les données via WebSocket
-        # if self.server_ws_running:
-        #     asyncio.ensure_future(self.ws_server.send_data_to_clients(self.last_bpm))
-        
         # Rafraîchir le widget
-        self.ids.hr_graph_widget.figure = self.fig
-            
-    def calculate_hr_percent(self, bpm):
-        """
-        Calcule le pourcentage de FCmax
-        """
-        app = App.get_running_app()
-        self.max_hr = app.user_profile.calculate_max_hr()
-        
-        hr_percent = (bpm / self.max_hr) * 100
-
-        return hr_percent
-
-    # ========== RÉCEPTION DES DONNÉES ==========
-    
-    def on_heart_rate_received(self, bpm):
-        """
-        Callback appelé quand une nouvelle FC est reçue
-        
-        Args:
-            bpm: Fréquence cardiaque en BPM
-        """        
-        # Mettre à jour l'affichage
-        self.update_heart_rate(bpm)
-
-        # Envoyer les données FC via WebSocket si le client Unity est connecté
-        if self.ws_server.is_client_connected():
-            asyncio.ensure_future(self.ws_server.send_data_to_clients(bpm))
-    
-    def update_heart_rate(self, bpm):
-        """
-        Met à jour l'affichage de la fréquence cardiaque
-        
-        Args:
-            bpm: Fréquence cardiaque en BPM
-        """
-        # Mettre à jour le label
-        self.ids.heart_rate_label.text = f"{bpm}"
-        
-        # Mémoriser la dernière valeur
-        self.last_bpm = bpm
+        self.ids.hr_graph_widget.figure = self.fig    
     
     # ========== GESTION SERVEUR WEBSOCKET ==========
 
@@ -283,7 +277,7 @@ class TrackingScreen(MDScreen):
             # Notifier Unity du démarrage du serveur websocket
             self.udp_discovery.send_message("command_ws", "START")
 
-        else:
+        elif instance.state == 'normal':
             # Désactiver les contrôles (%FC cible)
             self.ids.target_hr_slider.disabled = True
 
@@ -301,10 +295,10 @@ class TrackingScreen(MDScreen):
         
         if success:
             self.server_ws_running = True
-            toast("Server started")
+            toast("Adaptative mode actived")
             logger.info("Serveur WebSocket activé")
         else:
-            toast("Failed to start server")
+            toast("Unity isn't connected")
             # Remettre le bouton en état normal
             self.ids.server_toggle_button.state = 'normal'
     
@@ -312,35 +306,20 @@ class TrackingScreen(MDScreen):
         """Arrête le serveur WebSocket"""
         await self.ws_server.stop()
         self.server_ws_running = False
-        toast("Server stopped")
+        toast("Adaptative mode deactived")
         logger.info("Serveur WebSocket désactivé") 
 
     # ========== CALLBACKS WEBSOCKET ==========
     
-    def on_ws_message_received(self, websocket, message):
-        """Callback quand un message est reçu d'un client"""
-        logger.info(f"📩 Message reçu depuis Unity : {message}")
-        
-        # # Traiter le message si nécessaire
-        # try:
-        #     data = json.loads(message)
-        #     # Exemple : Unity envoie une commande
-        #     if 'command' in data:
-        #         self.handle_unity_command(data['command'])
-        # except json.JSONDecodeError:
-        #     logger.warning(f"⚠️ Message invalide : {message}")
-    
     def on_ws_client_connected(self, websocket):
         """Callback quand un client se connecte"""
-        toast(f"Unity connected")
         logger.info(f"🔗 Client Unity connecté")
-    
+
     def on_ws_client_disconnected(self, websocket):
         """Callback quand un client se déconnecte"""
-        toast(f"Unity disconnected")
         logger.info(f"🔌 Client Unity déconnecté")
-    
-    def handle_unity_command(self, command: str):
-        """Traite une commande reçue depuis Unity"""
-        logger.info(f"🎮 Commande Unity : {command}")
-        # Implémenter la logique selon les commandes
+
+        # Désactiver le serveur si Unity se déconnecte
+        if self.ids.server_toggle_button.state == 'down':
+            self.ids.server_toggle_button.state = 'normal'
+            asyncio.ensure_future(self._stop_server())

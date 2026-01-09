@@ -118,7 +118,7 @@ class UDPDiscovery:
                     try:
                         # Envoyer le message
                         sock.sendto(message.encode(), (ip_possible, UDP_PORT_SEND))
-                        logger.debug(f"📤 Test IP: {ip_possible}")
+                        # logger.debug(f"📤 Test IP: {ip_possible}")
                     except Exception as e:
                         logger.debug(f"⚠️ Erreur envoi vers {ip_possible}: {e}")
                 
