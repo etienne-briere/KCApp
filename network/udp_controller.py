@@ -30,14 +30,6 @@ class UDPController:
     
     # ========== COMMANDES SPÉCIFIQUES ==========
     
-    def set_difficulty(self, difficulty: str) -> bool:
-        """Définit la difficulté du jeu"""
-        return self.send_command("difficulty", difficulty)
-    
-    def set_speed(self, speed: float) -> bool:
-        """Définit la vitesse du jeu"""
-        return self.send_command("speed", str(speed))
-    
     def pause_game(self) -> bool:
         """Met le jeu en pause"""
         return self.send_command("pause", "true")
@@ -53,3 +45,15 @@ class UDPController:
     def set_target_hr(self, target_hr: float) -> bool:
         """Envoie la FC cible à Unity"""
         return self.send_command("target_hr", str(target_hr))
+    
+    def set_obstacle(self, command: str)-> bool:
+        """Active/Désactive les obstacles"""
+        return self.send_command("obs", command)
+    
+    def set_cube_rate(self, cube_rate: int)-> bool:
+        """Paramètre la fréquence de cubes"""
+        return self.send_command("obs", str(cube_rate))
+    
+    def set_stream_game(self, command: str)-> bool:
+        """Activation/Désactivation du stream de l'écran du jeux"""
+        return self.send_command("obs", command)

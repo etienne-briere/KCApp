@@ -50,11 +50,6 @@ class UDPDiscovery:
         # Récupérer l'IP locale
         self.ip_python = self.get_local_ip()
         logger.info(f"📱 IP locale : {self.ip_python}")
-        
-        # # Démarrer l'envoi d'IP
-        # self.send_ip_running = True
-        # self.send_thread = threading.Thread(target=self._send_ip_loop, daemon=True)
-        # self.send_thread.start()
 
         # Démarrer l'envoi d'IP
         self._start_ip_broadcast()

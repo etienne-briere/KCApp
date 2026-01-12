@@ -75,7 +75,10 @@
                         hint_radius : [6, 0, 6, 0]
                         thumb_color_active: "blue"
                         orientation : "vertical"
-                        disabled : True
+                        disabled : not root.server_ws_running
+
+                        on_value: root.on_slider_change(self.value)
+                        on_touch_up: root.on_slider_touch_up() if self.collide_point(*args[1].pos) else None
                 
                     MDCheckbox:
                         id: server_toggle_button

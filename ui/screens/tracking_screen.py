@@ -43,6 +43,12 @@ class TrackingScreen(MDScreen):
 
         # WebSocket Server
         self.ws_server = None
+
+        # UDP Controller
+        self.udp_controller = None
+
+        # Debounce pour éviter trop d'envois UDP
+        self.slider_update_event = None
     
     def on_kv_post(self, base_widget):
         """
@@ -59,8 +65,9 @@ class TrackingScreen(MDScreen):
         self.ble_manager = app.ble_manager
         self.ws_server = app.ws_server
         self.udp_discovery = app.udp_discovery
+        self.udp_controller = app.udp_controller
         self.hr_session = app.hr_session
-        
+
         # Callback pour recevoir la FC en temps réel
         self.hr_session.on_data_added = self.on_new_hr_data
 
@@ -133,6 +140,51 @@ class TrackingScreen(MDScreen):
         """
         # Mettre à jour le label
         self.ids.heart_rate_label.text = f"{bpm}"
+
+    # ========== GESTION DU SLIDER ==========
+
+    def on_slider_change(self, value):
+        """
+        Appelé quand le slider change (événement `on_value`)
+
+        Args:
+            value: Nouvelle valeur du slider (0-100)
+        """
+        # Mettre à jour la property
+        self.target_hr_value = int(value)
+
+        # Annuler l'envoi précédent (debounce)
+        if self.slider_update_event:
+            self.slider_update_event.cancel()
+
+    def on_slider_touch_up(self):
+        """Appelé quand l'utilisateur relâche le slider"""
+        logger.debug(f"🎯 Slider relâché à {self.target_hr_value}%")
+
+        # Annuler le debounce et envoyer immédiatement
+        if self.slider_update_event:
+            self.slider_update_event.cancel()
+
+        self.send_target_hr_to_unity(self.target_hr_value)
+
+    def send_target_hr_to_unity(self, target_hr: float):
+        """
+        Envoie la FC cible à Unity via UDP
+
+        Args:
+            target_hr: Pourcentage de FC cible (0-100)
+        """
+        if not self.udp_controller:
+            logger.warning("⚠️ UDP Controller non disponible")
+            return
+
+        # Envoyer via UDP
+        success = self.udp_controller.set_target_hr(target_hr)
+
+        if success:
+            logger.info(f"📤 Target HR envoyée à Unity via UDP: {target_hr}%")
+        else:
+            logger.warning(f"⚠️ Échec envoi Target HR (Unity non connecté)")
     
     # ========== GRAPHIQUE MATPLOTLIB ==========
 
@@ -263,9 +315,6 @@ class TrackingScreen(MDScreen):
                 instance.state = 'normal'
                 return
 
-            # Activer les contrôles (%FC cible)
-            self.ids.target_hr_slider.disabled = False
-
             # MAJ du graphique
             if self.ax2:
                 self.ax2.set_ylabel("HR target (%)", color="blue", 
@@ -278,8 +327,6 @@ class TrackingScreen(MDScreen):
             self.udp_discovery.send_message("command_ws", "START")
 
         elif instance.state == 'normal':
-            # Désactiver les contrôles (%FC cible)
-            self.ids.target_hr_slider.disabled = True
 
             # MAJ du graphique
             if self.ax2:
