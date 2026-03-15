@@ -129,7 +129,7 @@ class WebSocketServer:
         Args:
             data: Data à envoyer
         """
-
+        
         message = str(data)
         await asyncio.gather(*[client.send(message) for client in self.clients])
         return True

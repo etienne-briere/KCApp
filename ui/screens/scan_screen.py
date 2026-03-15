@@ -32,12 +32,7 @@ class ScanScreen(MDScreen):
         super().__init__(**kwargs)
 
         # Initialisation des variables
-        self.devices_target = None # Appareils BLE cibles détectés
         self.devices_menu = None
-        self.client = None
-        self.heart_rate_data = None # valeur par defaut
-        self.heart_animation = None
-        self.beat_event = None  # Pour le Clock
     
     def on_enter(self):
         '''
@@ -46,9 +41,10 @@ class ScanScreen(MDScreen):
         # 🔗 Lien vers l'écran d'acceuil
         self.home_screen = self.manager.get_screen('home')
 
-        # Récupérer le BLE Manager depuis l'app
+        # Récupérer les managers de l'application
         app = App.get_running_app()
         self.ble_manager = app.ble_manager
+        self.hr_session = app.hr_session
 
         # Configurer les callbacks (manager.py -> scan_screen.py)
         # utile pour appeler les fonctions de scan_screen.py depuis ble/manager.py
@@ -124,17 +120,32 @@ class ScanScreen(MDScreen):
     def on_connection_changed(self, is_connected, device):
         """Callback de changement de connexion"""
         if is_connected:
+            # Démarrer l'enregistrement des données FC
+            self.hr_session.start_recording()
             self.update_button_state("connected", device.name)
         else:
+            # Arrêter l'enregistrement des données FC
+            self.hr_session.stop_recording()
             self.update_button_state("disconnected")
     
     # ========== DATA ==========
     
     def on_heart_rate_received(self, heart_rate):
-        """Callback fréquence cardiaque"""
-        self.update_heart_rate(heart_rate)
-        # if heart_rate > 0:
-        #     self.animate_heart(heart_rate)
+        """Callback fréquence cardiaque (appelé depuis n'importe quel écran)"""
+
+        if self.manager.current == 'scan':
+            # MAJ UI
+            self.update_heart_rate(heart_rate)
+        
+        # Enregistrer la session (avec calcul du %FCmax)
+        hr_percent = self.calculate_hr_percent(heart_rate)
+        self.hr_session.add_heart_rate(heart_rate, hr_percent)        
+        
+    def calculate_hr_percent(self, bpm: int) -> float:
+        """Calcule le % de FCmax"""
+        app = App.get_running_app()
+        max_hr = app.user_profile.calculate_max_hr()
+        return (bpm / max_hr) * 100
     
     def on_battery_received(self, battery_level):
         """Callback batterie"""
@@ -186,34 +197,7 @@ class ScanScreen(MDScreen):
         else:
             icon.icon, icon.text_color = "battery-alert", [1, 0, 0, 1]
 
-    # ========== ANIMATIONS (pas utilisées)==========
-    
-    def animate_heart(self, bpm):
-        """Anime le cœur"""
-        if not self.ids.get('heart_icon'):
-            return
-        
-        if self.beat_event:
-            self.beat_event.cancel()
-        
-        interval = 60.0 / bpm
-
-        def beat(dt):
-            icon = self.ids.get('heart_icon')
-            if not icon:
-                return False
-            
-            anim = (
-                Animation(font_size=sp(40), duration=0.1, t='out_cubic') +
-                Animation(font_size=sp(35), duration=0.15, t='in_cubic')
-            )
-            anim.start(icon)
-        
-        beat(0)
-        self.beat_event = Clock.schedule_interval(beat, interval)
-    
     # ========== SCREEN LIFECYCLE ==========
     def on_leave(self):
         """Sortie de l'écran"""
-        if self.beat_event:
-            self.beat_event.cancel()
+        pass

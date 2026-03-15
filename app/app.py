@@ -1,15 +1,20 @@
+# Class KivyMD
 from kivymd.app import MDApp
 
+# Class Kivy
 from kivy.lang import Builder
 from kivy.core.window import Window
 
+# Custom modules
 from config import THEME_STYLE, PRIMARY_PALETTE, ACCENT_PALETTE
 from ble.manager import BLEManager
 from network.websocket_server import WebSocketServer
 from network.udp_discovery import UDPDiscovery
 from network.udp_controller import UDPController
 from data.user_profile import UserProfile
+from data.hr_session import HRSession
 
+# Logger
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -26,6 +31,7 @@ class KCApp(MDApp):
         self.ws_server = None
         self.udp_discovery = None
         self.udp_controller = None
+        self.hr_session = None
 
         logger.info("Initialisation de l'application KCApp")
 
@@ -41,6 +47,7 @@ class KCApp(MDApp):
         self.ws_server = WebSocketServer() 
         self.udp_discovery = UDPDiscovery()
         self.udp_controller = UDPController(self.udp_discovery)
+        self.hr_session = HRSession(max_points=3600) # 1h max à 1Hz
 
         # Définir le thème de l'application
         self.theme_cls.theme_style = THEME_STYLE 
@@ -76,6 +83,12 @@ class KCApp(MDApp):
 
         logger.info("Arrêt de l'application - nettoyage des ressources")
 
+        # Sauvegarder automatiquement la session
+        if self.hr_session and self.hr_session.total_points > 0:
+            from datetime import datetime
+            filename = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            self.hr_session.save_to_file(f"sessions/{filename}")
+
         # Arrêter UDP
         if self.udp_discovery:
             self.udp_discovery.stop_discovery()
@@ -99,6 +112,5 @@ class KCApp(MDApp):
             screen_name: Nom de l'écran à afficher
             title: Nouveau titre pour la top bar
         """
-        logger.debug(f"Navigation vers l'écran: {screen_name}")
         self.root.ids.screen_manager.current = screen_name
         self.root.ids.top_bar.title = title

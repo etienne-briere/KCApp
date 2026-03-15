@@ -50,11 +50,6 @@ class UDPDiscovery:
         # Récupérer l'IP locale
         self.ip_python = self.get_local_ip()
         logger.info(f"📱 IP locale : {self.ip_python}")
-        
-        # # Démarrer l'envoi d'IP
-        # self.send_ip_running = True
-        # self.send_thread = threading.Thread(target=self._send_ip_loop, daemon=True)
-        # self.send_thread.start()
 
         # Démarrer l'envoi d'IP
         self._start_ip_broadcast()
@@ -118,7 +113,7 @@ class UDPDiscovery:
                     try:
                         # Envoyer le message
                         sock.sendto(message.encode(), (ip_possible, UDP_PORT_SEND))
-                        logger.debug(f"📤 Test IP: {ip_possible}")
+                        # logger.debug(f"📤 Test IP: {ip_possible}")
                     except Exception as e:
                         logger.debug(f"⚠️ Erreur envoi vers {ip_possible}: {e}")
                 

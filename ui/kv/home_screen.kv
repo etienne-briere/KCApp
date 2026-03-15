@@ -1,100 +1,86 @@
 #:kivy 2.0
 
 <HomeScreen>:
-    MDBoxLayout:
-        orientation: "vertical"
-        padding: dp(40)
-        spacing: dp(30)
-        md_bg_color: app.theme_cls.bg_darkest
-        
-        # ==== Titre ====
-        MDLabel:
-            text: "BLE VR Data Bridge"
-            font_style: "H3"
-            halign: "center"
-            theme_text_color: "Primary"
-            size_hint_y: 0.2
-        
-        # ==== Statut Unity ====
-        MDCard:
+
+    AnchorLayout:
+        anchor_x: "center"
+        anchor_y: "center"
+
+        MDBoxLayout:
             orientation: "vertical"
-            padding: dp(20)
-            spacing: dp(15)
-            size_hint_y: None
-            height: dp(200)
-            elevation: 5
-            md_bg_color: app.theme_cls.bg_dark
-            
-            MDLabel:
-                text: "Unity Status"
-                font_style: "H5"
-                halign: "center"
-                theme_text_color: "Primary"
-            
-            # Icône de statut
+            padding: dp(40)
+            spacing: dp(10)
+            size_hint: 1, None
+            height: self.minimum_height
+
             MDBoxLayout:
                 orientation: "horizontal"
+                spacing: dp(5)
+                size_hint: 1, None
+                height: dp(30)
+
+                # Indicateur de ping (pulsation)
+                MDIcon:
+                    id: ping_indicator
+                    icon: "unity"
+                    theme_text_color: "Custom"
+                    text_color: "grey"
+                    font_size: "40sp"
+                    size_hint_y: 1
+                    halign: "center"
+                    valign: "center"
+                    opacity: 0.3 if not root.unity_connected else 1
+
+                MDLabel:
+                    text: "Unity Status"
+                    font_style: "H5"
+                    halign: "left"
+            
+            # ==== Statut Unity ====
+            MDCard:
+                orientation: "vertical"
+                padding: dp(20)
                 spacing: dp(15)
                 size_hint_y: None
-                height: dp(50)
-                pos_hint: {"center_x": 0.5}
+                height: self.minimum_height
                 
-                MDIcon:
-                    id: status_icon
-                    icon: "loading" if not root.unity_connected else "check-circle"
-                    theme_text_color: "Custom"
-                    text_color: [1, 0.65, 0, 1] if not root.unity_connected else [0, 1, 0, 1]
-                    font_size: "40sp"
-                    size_hint_x: None
-                    width: dp(50)
+                # Icône de statut
+                MDBoxLayout:
+                    orientation: "horizontal"
+                    spacing: dp(15)
+                    size_hint_y: None
+                    height: dp(50)
+                    pos_hint: {"center_x": 0.5}
+                    
+                    # GIF de chargement (visible uniquement si déconnecté)
+                    AsyncImage:
+                        source: root.status_icon_source
+                        size_hint: None, None
+                        height: dp(40) if root.show_loading_gif else dp(0)
+                        width: dp(40) if root.show_loading_gif else dp(0)
+                        anim_delay: 0.02  # Vitesse d'animation (50ms par frame)
+                        opacity: 1 if root.show_loading_gif else 0
+                        disabled: not root.show_loading_gif
+
+                   # Icône de succès (visible uniquement si connecté)
+                    MDIcon:
+                        id: status_icon
+                        icon: "check-circle-outline"
+                        theme_text_color: "Custom"
+                        text_color: [0, 1, 0, 1]
+                        font_size: "50sp"
+                        size_hint_x: None
+                        width: dp(0) if root.show_loading_gif else dp(50)
+                        opacity: 0 if root.show_loading_gif else 1
+                        disabled: root.show_loading_gif
+                    
+                    MDLabel:
+                        id: status_label
+                        text: root.unity_status_text
+                        font_style: "H6"
+                        halign: "left"
+                        valign: "center"
                 
-                MDLabel:
-                    id: status_label
-                    text: root.unity_status_text
-                    font_style: "H6"
-                    theme_text_color: "Primary"
-                    halign: "left"
-                    valign: "center"
+               
             
-            # IP Unity
-            MDBoxLayout:
-                orientation: "horizontal"
-                spacing: dp(10)
-                size_hint_y: None
-                height: dp(40)
-                pos_hint: {"center_x": 0.5}
-                
-                MDIcon:
-                    icon: "ip"
-                    theme_text_color: "Secondary"
-                    size_hint_x: None
-                    width: dp(30)
-                
-                MDLabel:
-                    text: root.unity_ip_text
-                    font_style: "Body1"
-                    theme_text_color: "Secondary"
-                    halign: "left"
-            
-            # Indicateur de ping (pulsation)
-            MDIcon:
-                id: ping_indicator
-                icon: "heart-pulse"
-                theme_text_color: "Custom"
-                text_color: [0, 1, 0, 1]
-                font_size: "30sp"
-                size_hint_y: None
-                height: dp(40)
-                halign: "center"
-                opacity: 0.3 if not root.unity_connected else 1
         
-        # ==== Bouton Reconnect ====
-        MDRaisedButton:
-            text: "Force Reconnect"
-            icon: "refresh"
-            pos_hint: {"center_x": 0.5}
-            size_hint_x: 0.6
-            disabled: root.unity_connected
-            on_release: root.force_reconnect()
-        
-    
