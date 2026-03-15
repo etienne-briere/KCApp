@@ -7,7 +7,7 @@ from kivy.core.window import Window
 
 # Custom modules
 from config import THEME_STYLE, PRIMARY_PALETTE, ACCENT_PALETTE
-from ble.manager import BLEManager
+from ble.ble_manager import BLEManager
 from network.websocket_server import WebSocketServer
 from network.udp_discovery import UDPDiscovery
 from network.udp_controller import UDPController
@@ -55,6 +55,7 @@ class KCApp(MDApp):
         self.theme_cls.accent_palette = ACCENT_PALETTE
 
         # Charger les fichiers .kv
+        Builder.load_file("ui/kv/status_bar.kv")
         Builder.load_file("ui/kv/home_screen.kv")
         Builder.load_file("ui/kv/scan_screen.kv")
         Builder.load_file("ui/kv/pilotage_screen.kv")
@@ -83,11 +84,11 @@ class KCApp(MDApp):
 
         logger.info("Arrêt de l'application - nettoyage des ressources")
 
-        # Sauvegarder automatiquement la session
-        if self.hr_session and self.hr_session.total_points > 0:
-            from datetime import datetime
-            filename = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-            self.hr_session.save_to_file(f"sessions/{filename}")
+        # # Sauvegarder automatiquement la session
+        # if self.hr_session and self.hr_session.total_points > 0:
+        #     from datetime import datetime
+        #     filename = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        #     self.hr_session.save_to_file(f"sessions/{filename}")
 
         # Arrêter UDP
         if self.udp_discovery:

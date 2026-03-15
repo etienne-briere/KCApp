@@ -72,8 +72,8 @@ class TrackingScreen(MDScreen):
         self.hr_session.on_data_added = self.on_new_hr_data
 
         # Callbacks WebSocket
-        self.ws_server.on_client_connected = self.on_ws_client_connected
-        self.ws_server.on_client_disconnected = self.on_ws_client_disconnected
+        # self.ws_server.on_client_connected_tracking = self.on_ws_client_connected
+        # self.ws_server.on_client_disconnected_tracking = self.on_ws_client_disconnected
         
         # Charger toutes les data pré-existantes dans le graphique
         self.load_existing_data()
@@ -86,10 +86,6 @@ class TrackingScreen(MDScreen):
         
         # Désactiver le callback de session
         self.hr_session.on_data_added = None
-        
-        # Arrêter le serveur ws si actif
-        if self.ws_server and self.ws_server.is_running:
-            asyncio.ensure_future(self.ws_server.stop())
         
         # Arrêter les mises à jour
         if self.update_event:
@@ -127,9 +123,6 @@ class TrackingScreen(MDScreen):
         
         # Mettre à jour l'affichage
         self.update_heart_rate(bpm)
-
-        # Envoyer les données FC via WebSocket
-        asyncio.ensure_future(self.ws_server.send_data_to_clients(bpm))
     
     def update_heart_rate(self, bpm):
         """
@@ -153,17 +146,10 @@ class TrackingScreen(MDScreen):
         # Mettre à jour la property
         self.target_hr_value = int(value)
 
-        # Annuler l'envoi précédent (debounce)
-        if self.slider_update_event:
-            self.slider_update_event.cancel()
 
     def on_slider_touch_up(self):
         """Appelé quand l'utilisateur relâche le slider"""
         logger.debug(f"🎯 Slider relâché à {self.target_hr_value}%")
-
-        # Annuler le debounce et envoyer immédiatement
-        if self.slider_update_event:
-            self.slider_update_event.cancel()
 
         self.send_target_hr_to_unity(self.target_hr_value)
 
@@ -239,6 +225,9 @@ class TrackingScreen(MDScreen):
         self.line_hr, = self.ax1.plot([], [], 'r-', linewidth=2, label='HR (%)')
         self.ax1.legend(loc='upper left', facecolor='#1e1e1e', edgecolor='white', labelcolor='white')
         
+        # ✨ Zone de remplissage HR (initialement vide)
+        self.fill_hr = None
+
         # Créer la ligne HR target (vide au départ)
         self.line_hr_target, = self.ax1.plot([], [], 'b-', linewidth=2, label='HR Target (%)')
 
@@ -266,6 +255,10 @@ class TrackingScreen(MDScreen):
         # Supprimer le placeholder
         if self.placeholder_text:
             self.placeholder_text.set_visible(False)
+
+        # ✨ Supprimer l'ancien remplissage
+        if self.fill_hr:
+            self.fill_hr.remove()
         
         # Si on n'a pas reçu de données récentes, on ne fait rien
         if not self.hr_session.is_recording:
@@ -280,10 +273,25 @@ class TrackingScreen(MDScreen):
         # Mettre à jour la ligne HR du graphique
         self.line_hr.set_data(times, hr_percents)
 
+        # ✨ Créer le nouveau remplissage sous la courbe
+        self.fill_hr = self.ax1.fill_between(
+            times, 
+            0,  # Base : 0
+            hr_percents,  # Hauteur : valeurs HR
+            alpha=0.3,  # Transparence
+            color='red',  # Couleur
+            interpolate=True
+        )
+
         # Incrémenter le temps
         self.time += 1
 
-        if self.ids.target_hr_slider.disabled == False:
+        if self.server_ws_running:
+        # if self.ids.target_hr_slider.disabled == False:
+            if self.ax2:
+                self.ax2.set_ylabel("HR target (%)", color="blue", 
+                                   fontsize=12, fontweight="bold")
+                
             # Récupérer la valeur cible
             target_percent = self.ids.target_hr_slider.value
             self.data_hr_target.append((self.time, target_percent))
@@ -293,6 +301,11 @@ class TrackingScreen(MDScreen):
                 times, hr_target_values = zip(*self.data_hr_target)
                 self.line_hr_target.set_data(times, hr_target_values)
         else:
+            # MAJ du graphique
+            if self.ax2:
+                self.ax2.set_ylabel("HR target (%)", color="grey", 
+                                   fontsize=10, fontweight="normal")
+                
             # Effacer les données de la ligne HR target
             self.data_hr_target = []
             self.line_hr_target.set_data([], [])
@@ -304,69 +317,16 @@ class TrackingScreen(MDScreen):
         # Rafraîchir le widget
         self.ids.hr_graph_widget.figure = self.fig    
     
-    # ========== GESTION SERVEUR WEBSOCKET ==========
-
-    def on_toggle(self, instance):
-        """Gère l'activation/désactivation du serveur WebSocket"""
-        if instance.state == 'down':
-            # Vérifier qu'un appareil est connecté
-            if not self.ble_manager or not self.ble_manager.is_connected:
-                toast("Please connect to a HR sensor")
-                instance.state = 'normal'
-                return
-
-            # MAJ du graphique
-            if self.ax2:
-                self.ax2.set_ylabel("HR target (%)", color="blue", 
-                                   fontsize=12, fontweight="bold")
-
-            # Démarrer le serveur WS
-            asyncio.ensure_future(self._start_server())
-
-            # Notifier Unity du démarrage du serveur websocket
-            self.udp_discovery.send_message("command_ws", "START")
-
-        elif instance.state == 'normal':
-
-            # MAJ du graphique
-            if self.ax2:
-                self.ax2.set_ylabel("HR target (%)", color="grey", 
-                                   fontsize=10, fontweight="normal")
-
-            # Arrêter le serveur
-            asyncio.ensure_future(self._stop_server())
-        
-    async def _start_server(self):
-        """Démarre le serveur WebSocket"""
-        success = await self.ws_server.start()
-        
-        if success:
-            self.server_ws_running = True
-            toast("Adaptative mode actived")
-            logger.info("Serveur WebSocket activé")
-        else:
-            toast("Unity isn't connected")
-            # Remettre le bouton en état normal
-            self.ids.server_toggle_button.state = 'normal'
-    
-    async def _stop_server(self):
-        """Arrête le serveur WebSocket"""
-        await self.ws_server.stop()
-        self.server_ws_running = False
-        toast("Adaptative mode deactived")
-        logger.info("Serveur WebSocket désactivé") 
 
     # ========== CALLBACKS WEBSOCKET ==========
     
-    def on_ws_client_connected(self, websocket):
-        """Callback quand un client se connecte"""
-        logger.info(f"🔗 Client Unity connecté")
+    # def on_ws_client_connected(self, websocket):
+    #     """Callback quand un client se connecte"""
+    #     self.server_ws_running = True
+    #     print(f"🔗 Client connecté : {websocket.remote_address}")
 
-    def on_ws_client_disconnected(self, websocket):
-        """Callback quand un client se déconnecte"""
-        logger.info(f"🔌 Client Unity déconnecté")
-
-        # Désactiver le serveur si Unity se déconnecte
-        if self.ids.server_toggle_button.state == 'down':
-            self.ids.server_toggle_button.state = 'normal'
-            asyncio.ensure_future(self._stop_server())
+    # def on_ws_client_disconnected(self, websocket):
+    #     """Callback quand un client se déconnecte"""
+    #     self.server_ws_running = False
+    #     print(f"🔌 Client déconnecté : {websocket.remote_address}")
+        

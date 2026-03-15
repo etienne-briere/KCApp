@@ -1,0 +1,30 @@
+#:import platform kivy.utils.platform
+
+<StatusBar>:
+    orientation: "horizontal"
+    padding: [0, dp(50), dp(20), dp(50)]
+    spacing: dp(10)
+    size_hint_y: None
+    height: dp(30)
+
+    Widget:  # pousse les icônes à droite
+
+    MDIcon:
+        id: ble_icon
+        icon: "bluetooth" if root.ble_connected else "bluetooth-off"
+        theme_text_color: "Custom"
+        text_color: "blue" if root.ble_connected else (1,0,0,1)
+        opacity: 0 if platform == "win" else 1
+        disabled: True if platform == "win" else False
+
+    MDIcon:
+        id: wifi_icon
+        icon: "wifi" if root.wifi_connected else "wifi-off"
+        theme_text_color: "Custom"
+        text_color: "blue" if root.wifi_connected else (1,0,0,1)
+
+    MDIcon:
+        id: hr_icon
+        icon: "heart" if root.hr_connected else "heart-off"
+        theme_text_color: "Custom"
+        text_color: (1,0,0,1)

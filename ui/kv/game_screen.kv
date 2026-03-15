@@ -1,5 +1,19 @@
-<GameScreen>: 
-    
-    MDLabel:
-        text: "Écran du jeux"
-        halign: "center"
+#:kivy 2.0
+#:import dp kivy.metrics.dp
+
+<GameScreen>:
+    MDBoxLayout:
+        orientation: "vertical"
+        spacing: dp(20)
+        padding: dp(20)
+        md_bg_color: "black"
+
+        AnchorLayout:
+            anchor_x: 'center'
+            anchor_y: 'center'
+
+            # ===== Image =====
+            Image:
+                id: game_image
+                
+

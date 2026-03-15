@@ -17,10 +17,14 @@ class WebSocketServer:
         self.clients: Set[websockets.WebSocketServerProtocol] = set()
         self.is_running = False
         
-        # Callbacks
+        # Callbacks vers pilotage_screen
         self.on_message_received: Optional[Callable] = None
         self.on_client_connected: Optional[Callable] = None
         self.on_client_disconnected: Optional[Callable] = None
+
+        # # Callbacks vers tracking_screen
+        # self.on_client_connected_tracking: Optional[Callable] = None
+        # self.on_client_disconnected_tracking: Optional[Callable] = None
     
     async def start(self, host: str = WEBSOCKET_HOST, port: int = WEBSOCKET_PORT) -> bool:
         """
@@ -94,16 +98,20 @@ class WebSocketServer:
         client_address = websocket.remote_address
         logger.info(f"🔗 Client connecté : {client_address}")
         
-        # Callback
+        # Callback vers pilotage_screen
         if self.on_client_connected:
             self.on_client_connected(websocket)
+
+        # # Callback vers tracking_screen
+        # if self.on_client_connected_tracking:
+        #     self.on_client_connected_tracking(websocket)
         
         try:
             # Écouter les messages du client (pas utilisé ?)
             async for message in websocket:
                 logger.debug(f"📩 Message reçu de {client_address} : {message}")
                 
-                # Callback
+                # Callback (si besoin) pour traiter les messages reçus du client
                 if self.on_message_received:
                     self.on_message_received(websocket, message)
                     
@@ -118,9 +126,13 @@ class WebSocketServer:
             self.clients.discard(websocket)
             logger.info(f"🔌 Client retiré : {client_address}")
             
-            # Callback
+            # Callback vers pilotage_screen
             if self.on_client_disconnected:
                 self.on_client_disconnected(websocket)
+            
+            # Callback vers tracking_screen
+            if self.on_client_disconnected_tracking:
+                self.on_client_disconnected_tracking(websocket)
     
     async def send_data_to_clients(self, data: int) -> bool:
         """
@@ -132,6 +144,7 @@ class WebSocketServer:
         
         message = str(data)
         await asyncio.gather(*[client.send(message) for client in self.clients])
+        logger.info(f"FC envoyé : {message}")
         return True
     
     def get_connected_clients_count(self) -> int:

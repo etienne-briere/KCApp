@@ -47,10 +47,10 @@ class ScanScreen(MDScreen):
         self.hr_session = app.hr_session
 
         # Configurer les callbacks (manager.py -> scan_screen.py)
-        # utile pour appeler les fonctions de scan_screen.py depuis ble/manager.py
+        # utile pour appeler les fonctions de scan_screen.py depuis ble/ble_manager.py
         self.ble_manager.on_scan_complete = self.on_scan_complete
         self.ble_manager.on_connection_changed = self.on_connection_changed
-        self.ble_manager.on_heart_rate = self.on_heart_rate_received
+        self.ble_manager.on_heart_rate_scan = self.on_heart_rate_received
         self.ble_manager.on_battery_level = self.on_battery_received
 
     # ========== SCAN ==========
@@ -131,8 +131,8 @@ class ScanScreen(MDScreen):
     # ========== DATA ==========
     
     def on_heart_rate_received(self, heart_rate):
-        """Callback fréquence cardiaque (appelé depuis n'importe quel écran)"""
-
+        """Callback quand FC reçue"""
+        
         if self.manager.current == 'scan':
             # MAJ UI
             self.update_heart_rate(heart_rate)

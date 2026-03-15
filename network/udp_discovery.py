@@ -28,7 +28,7 @@ class UDPDiscovery:
         self.last_ping_time = time.time()
         self.was_connected = False
         
-        # Callbacks (lien vers app/app.py)
+        # Callbacks vers app.py
         self.on_unity_connected: Optional[Callable] = None
         self.on_unity_disconnected: Optional[Callable] = None
         self.on_ping_received: Optional[Callable] = None
@@ -41,9 +41,9 @@ class UDPDiscovery:
         Args:
             auto_reconnect: Si True, relance automatiquement la découverte après déconnexion
         """
-        if self.send_ip_running or self.listen_udp:
-            logger.warning("⚠️ Découverte déjà en cours")
-            return
+        # if self.send_ip_running or self.listen_udp:
+        #     logger.warning("⚠️ Découverte déjà en cours")
+        #     return
         
         self.auto_reconnect = auto_reconnect
         
@@ -195,7 +195,17 @@ class UDPDiscovery:
             # Callback
             if self.on_ping_received:
                 self.on_ping_received()
-    
+
+        # Imahe du stream
+        elif data.startswith(b'IMG:'):
+            img_bytes = data[4:]
+            self.latest_img = img_bytes
+            self.last_img_time = time.time()  # ✅ Heure de reception du dernier message
+
+            # # Callback vers game_screen.py
+            # if self.on_img_received:
+            #     self.on_img_received()
+
     def _check_unity_connection(self):
         """Vérifie si Unity est toujours connecté (timeout ping)"""
         if not self.ip_unity:
@@ -206,15 +216,16 @@ class UDPDiscovery:
         # Si pas de ping depuis 3 secondes
         if elapsed > UDP_PING_TIMEOUT:
             if self.ip_unity:  # Unity était connecté
+                self.ip_unity = None  # Reset pour éviter les appels multiples
                 logger.warning("⚠️ Unity déconnecté (timeout ping)")
-                
+
                 # Renvoyer l'IP pour reconnecter
                 self._start_ip_broadcast()
                 
                 # Callback de déconnexion (une seule fois)
                 if self.on_unity_disconnected:
                     self.on_unity_disconnected()
-                    self.ip_unity = None  # Reset pour éviter les appels multiples
+                    
         
      # ========== ENVOI DE MESSAGES ==========
     
@@ -307,10 +318,11 @@ class UDPDiscovery:
         # Réinitialiser l'état
         self.ip_unity = None
         self.was_connected = False
+        self.listen_udp = False  # Arrêter temporairement l'écoute pour réinitialiser les threads
         
-        # Relancer le broadcast
-        if self.listen_udp:
-            self._start_ip_broadcast()
-        else:
-            self.start_discovery(auto_reconnect=self.auto_reconnect)
+        # # Relancer le broadcast
+        # if self.listen_udp:
+        #     self._start_ip_broadcast()
+        # else:
+        self.start_discovery(auto_reconnect=self.auto_reconnect)
     

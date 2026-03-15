@@ -25,7 +25,7 @@ class HRSession:
         self.max_hr = 0
         self.min_hr = 999
         self.avg_hr = 0
-        
+
         # Callbacks
         self.on_data_added: Optional[Callable] = None
         

@@ -44,7 +44,7 @@ import time
 
 from functools import partial
 
-logging.Logger.manager.root = Logger # intérêt ?
+logging.Logger.manager.root = Logger
 
 #=======================================================================================================================
 #                                             INITIALISATION DES PARAMETRES

@@ -1,5 +1,6 @@
 #:import MDTopAppBar kivymd.uix.toolbar
 
+#:import StatusBar ui.widgets.status_bar.StatusBar
 #:import HomeScreen ui.screens.home_screen.HomeScreen
 #:import ScanScreen ui.screens.scan_screen.ScanScreen
 #:import TrackingScreen ui.screens.tracking_screen.TrackingScreen
@@ -16,8 +17,12 @@ BoxLayout:
         title: "Accueil"
         md_bg_color:(0.12, 0.12, 0.12, 1)
         left_action_items: [["account-circle", lambda x: print(x)]]
-        right_action_items: [["cog", lambda x: print(x)]]
-		
+        right_action_items: [["", lambda x: print(x)]]
+    
+    # -------- SUIVI BLE / Wi-Fi / FC ------
+    StatusBar:
+        id: status_bar
+
     # ---------- SCREEN MANAGER ----------
     ScreenManager:
         id: screen_manager
@@ -37,9 +42,9 @@ BoxLayout:
         PilotageScreen:
             name: "pilotage"
         
-        GameScreen:
-            name: "game"
-    
+        # GameScreen:
+        #     name: "game"
+
     # ---------- BOTTOM NAVIGATION (FIXE) ----------
     MDBottomNavigation:
 		size_hint_y: None
@@ -77,11 +82,11 @@ BoxLayout:
                 screen_manager.current = "pilotage"
                 top_bar.title = "Game control"
         
-        MDBottomNavigationItem:
-            name: "game_tab"
-            text: "Game Screen"
-            icon: "fit-to-screen-outline"
-            on_tab_press:
-                screen_manager.current = "game"
-                top_bar.title = "Game Screen"
+        # MDBottomNavigationItem:
+        #     name: "game_tab"
+        #     text: "Game Screen"
+        #     icon: "fit-to-screen-outline"
+        #     on_tab_press:
+        #         screen_manager.current = "game"
+        #         top_bar.title = "Game Screen"
 

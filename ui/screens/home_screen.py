@@ -3,52 +3,46 @@ from kivy.properties import StringProperty, BooleanProperty
 from kivy.app import App
 from utils.logger import get_logger
 from kivy.uix.image import AsyncImage
+from kivy.clock import Clock
+from kivy.clock import mainthread
+
 
 logger = get_logger(__name__)
 
 class HomeScreen(MDScreen):
     """Écran d'accueil"""
     
-    unity_status_text = StringProperty("Waiting for Unity...")
     unity_connected = BooleanProperty(False)
     status_icon_source = StringProperty("assets/loading.gif")
-    show_loading_gif = BooleanProperty(True)
     
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
         app = App.get_running_app()
+
+        # Managers
+        self.udp_discovery = app.udp_discovery
         
         # Configurer les callbacks UDP
-        app.udp_discovery.on_unity_connected = self.on_unity_connected
-        app.udp_discovery.on_unity_disconnected = self.on_unity_disconnected
-        app.udp_discovery.on_ping_received = self.on_ping_received
-        
-        # Vérifier si déjà connecté
-        if app.udp_discovery.is_unity_connected():
-            self.on_unity_connected(app.udp_discovery.ip_unity)
-        else:
-            self.unity_status_text = "Waiting for Unity..."
-            self.unity_connected = False
-            self.show_loading_gif = True
-            
-    def on_unity_connected(self, ip_unity: str):
+        self.udp_discovery.on_unity_connected = self.handle_unity_connected
+        self.udp_discovery.on_unity_disconnected = self.handle_unity_disconnected
+        self.udp_discovery.on_ping_received = self.handle_ping_received
+
+        # Vérifier la connexion Unity (au cas où on arrive dans l'écran après la connexion)
+        self.unity_connected = self.udp_discovery.is_unity_connected()
+
+    # ========== CALLBACKS UDP ==========
+
+    @mainthread
+    def handle_unity_connected(self, ip_unity: str, dt=0):
         """Callback quand Unity se connecte"""
-        logger.info(f"✅ Unity connecté : {ip_unity}")
-        self.unity_status_text = f"Connected: {ip_unity}"
         self.unity_connected = True
 
-        # Masquer le gif du loader
-        self.show_loading_gif = False
-    
-    def on_unity_disconnected(self):
+    @mainthread
+    def handle_unity_disconnected(self, dt=0):
         """Callback quand Unity se déconnecte"""
-        logger.warning("⚠️ Unity déconnecté - Recherche en cours...")
-        
-        self.unity_status_text = "Waiting for Unity..."
         self.unity_connected = False
-        self.show_loading_gif = True 
     
-    def on_ping_received(self):
+    def handle_ping_received(self):
         """Callback quand un ping Unity est reçu"""
         # Optionnel : afficher un indicateur visuel
         if hasattr(self.ids, 'ping_indicator'):
@@ -64,7 +58,4 @@ class HomeScreen(MDScreen):
         """Bouton pour forcer la reconnexion"""
         app = App.get_running_app()
         app.udp_discovery.force_reconnect()
-                
-        self.unity_status_text = "Waiting for Unity..."
         self.unity_connected = False
-        self.show_loading_gif = True

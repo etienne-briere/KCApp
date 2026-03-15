@@ -5,11 +5,31 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8074f988-f27d-4092-9956-2c27bac4b128" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ble/manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/ble/manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/hr_session.py" beforeDir="false" afterPath="$PROJECT_DIR$/data/hr_session.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main_old_version.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_old_version.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/network/udp_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/network/udp_controller.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/network/udp_discovery.py" beforeDir="false" afterPath="$PROJECT_DIR$/network/udp_discovery.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/network/websocket_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/network/websocket_server.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sessions/session_20260109_152250.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/sessions/session_20260110_123929.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/sessions/session_20260110_124100.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/sessions/session_20260112_135912.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/sessions/session_20260112_140250.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/sessions/session_20260112_140707.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/sessions/session_20260112_140945.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/sessions/session_20260112_141117.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/sessions/session_20260112_154548.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/sessions/session_20260112_154923.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/kv/game_screen.kv" beforeDir="false" afterPath="$PROJECT_DIR$/ui/kv/game_screen.kv" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ui/kv/home_screen.kv" beforeDir="false" afterPath="$PROJECT_DIR$/ui/kv/home_screen.kv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/kv/pilotage_screen.kv" beforeDir="false" afterPath="$PROJECT_DIR$/ui/kv/pilotage_screen.kv" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ui/kv/tracking_screen.kv" beforeDir="false" afterPath="$PROJECT_DIR$/ui/kv/tracking_screen.kv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/screens/game_screen.py" beforeDir="false" afterPath="$PROJECT_DIR$/ui/screens/game_screen.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ui/screens/home_screen.py" beforeDir="false" afterPath="$PROJECT_DIR$/ui/screens/home_screen.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/screens/pilotage_screen.py" beforeDir="false" afterPath="$PROJECT_DIR$/ui/screens/pilotage_screen.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ui/screens/scan_screen.py" beforeDir="false" afterPath="$PROJECT_DIR$/ui/screens/scan_screen.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ui/screens/tracking_screen.py" beforeDir="false" afterPath="$PROJECT_DIR$/ui/screens/tracking_screen.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />

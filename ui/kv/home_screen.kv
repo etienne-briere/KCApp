@@ -38,49 +38,45 @@
             
             # ==== Statut Unity ====
             MDCard:
-                orientation: "vertical"
+                orientation: "horizontal"
                 padding: dp(20)
                 spacing: dp(15)
                 size_hint_y: None
                 height: self.minimum_height
-                
-                # Icône de statut
-                MDBoxLayout:
-                    orientation: "horizontal"
-                    spacing: dp(15)
-                    size_hint_y: None
-                    height: dp(50)
-                    pos_hint: {"center_x": 0.5}
                     
-                    # GIF de chargement (visible uniquement si déconnecté)
-                    AsyncImage:
-                        source: root.status_icon_source
-                        size_hint: None, None
-                        height: dp(40) if root.show_loading_gif else dp(0)
-                        width: dp(40) if root.show_loading_gif else dp(0)
-                        anim_delay: 0.02  # Vitesse d'animation (50ms par frame)
-                        opacity: 1 if root.show_loading_gif else 0
-                        disabled: not root.show_loading_gif
+                # GIF de chargement (visible uniquement si unity déconnecté)
+                AsyncImage:
+                    source: root.status_icon_source
+                    size_hint: None, None
+                    height: dp(40) if not root.unity_connected else dp(0)
+                    width: dp(40) if not root.unity_connected else dp(0)
+                    anim_delay: 0.02  # Vitesse d'animation (50ms par frame)
+                    opacity: 1 if not root.unity_connected else 0
 
-                   # Icône de succès (visible uniquement si connecté)
-                    MDIcon:
-                        id: status_icon
-                        icon: "check-circle-outline"
-                        theme_text_color: "Custom"
-                        text_color: [0, 1, 0, 1]
-                        font_size: "50sp"
-                        size_hint_x: None
-                        width: dp(0) if root.show_loading_gif else dp(50)
-                        opacity: 0 if root.show_loading_gif else 1
-                        disabled: root.show_loading_gif
-                    
-                    MDLabel:
-                        id: status_label
-                        text: root.unity_status_text
-                        font_style: "H6"
-                        halign: "left"
-                        valign: "center"
+                # Icône de succès (visible uniquement si unity connecté)
+                MDIcon:
+                    id: status_icon
+                    icon: "check-circle-outline"
+                    theme_text_color: "Custom"
+                    text_color: [0, 1, 0, 1]
+                    font_size: "50sp"
+                    size_hint_x: None
+                    width: dp(0) if not root.unity_connected else dp(50)
+                    opacity: 0 if not root.unity_connected else 1
                 
-               
+                MDLabel:
+                    id: status_label
+                    text: "Connected" if root.unity_connected else "Waiting for Unity..."
+                    font_style: "Body1"
+                    halign: "left"
+                    valign: "center"
             
-        
+                MDIconButton:
+                    icon: "refresh"
+                    theme_text_color: "Custom"
+                    text_color: "grey"
+                    size_hint: None, None
+                    icon_size: "30sp"
+                    opacity: 1 if not root.unity_connected else 0
+                    on_release: root.force_reconnect()
+                

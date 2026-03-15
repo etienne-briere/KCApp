@@ -1,30 +1,266 @@
+#:kivy 2.0
+#:import dp kivy.metrics.dp
+
 <PilotageScreen>:
-
-    AnchorLayout:
-        anchor_x: "left"
-        anchor_y: "center"
-
-        MDBoxLayout:
-            orientation: "vertical"
-            spacing: dp(20)
-            padding: dp(20)
-            size_hint: 1, None
-            height: self.minimum_height
-
+    MDBoxLayout:
+        orientation: "vertical"
+        
+        # ==== SCROLLABLE CONTENT ====
+        ScrollView:
+            do_scroll_x: False
+            
             MDBoxLayout:
-                orientation: "horizontal"
-                spacing: dp(12)
-                size_hint_x: 1
-                height: dp(48)
-
-                MDCheckbox:
-                    id: obs_checkbox
-                    size_hint_x: None
-                    #width: dp(48)
-                    on_press: print(self)
-
+                orientation: "vertical"
+                spacing: dp(20)
+                padding: dp(20)
+                size_hint_y: None
+                height: self.minimum_height
+                
+                # ==== STATUS CONNECTION UNITY ====
+                MDCard:
+                    orientation: "horizontal"
+                    padding: dp(15)
+                    spacing: dp(10)
+                    size_hint_y: None
+                    height: dp(70)
+                    elevation: 3
+                    md_bg_color: [0, 0.5, 0, 0.3] if root.unity_connected else [0.5, 0, 0, 0.3]
+                    
+                    MDIcon:
+                        icon: "unity"
+                        theme_text_color: "Custom"
+                        text_color: [0, 1, 0, 1] if root.unity_connected else [1, 0, 0, 1]
+                        font_size: "40sp"
+                        size_hint_x: None
+                        width: dp(50)
+                    
+                    MDLabel:
+                        text: "Unity Connected" if root.unity_connected else "Unity Disconnected"
+                        font_style: "H6"
+                        theme_text_color: "Custom"
+                        text_color: [0, 1, 0, 1] if root.unity_connected else [1, 0, 0, 1]
+                        halign: "left"
+                        valign: "center"
+                
+                # ==== OBSTACLES SECTION ====
                 MDLabel:
-                    text: "Obstacles"
-                    font_style: "Body1"
-                    halign: "left"
-                    valign: "middle"
+                    text: "Environment"
+                    font_style: "H5"
+                    size_hint_y: None
+                    height: dp(40)
+                
+                # Ligne ON/OFF Obstacles
+                MDCard:
+                    orientation: "horizontal"
+                    padding: dp(15), dp(15), dp(50), dp(15)
+                    spacing: dp(15)
+                    size_hint_y: None
+                    height: dp(70)
+                    elevation: 2
+                    
+                    # Icône
+                    MDIcon:
+                        icon: "cube-outline"
+                        theme_text_color: "Primary"
+                        font_size: "30sp"
+                        size_hint_x: None
+                        width: dp(30)
+                    
+                    # Label
+                    MDLabel:
+                        text: "Obstacles"
+                        font_style: "Body1"
+                        halign: "left"
+                        valign: "center"
+
+                    # Switch
+                    MDSwitch:
+                        id: obstacles_switch
+                        active: root.obstacles_enabled
+                        pos_hint: {"center_y": 0.25}
+                        size_hint_x: None
+                        width: dp(60)
+                        on_active: root.on_obstacles_toggle(self.active)
+                    
+                # ==== ADAPTIVE MODE SECTION ====
+                MDLabel:
+                    text: "Heart Rate Control"
+                    font_style: "H5"
+                    size_hint_y: None
+                    height: dp(40)
+                
+                # Ligne ON/OFF Mode Adaptatif
+                MDCard:
+                    orientation: "horizontal"
+                    padding: dp(15), dp(15), dp(50), dp(15)
+                    spacing: dp(15)
+                    size_hint_y: None
+                    height: dp(70)
+                    elevation: 2
+                    
+                    # Icône
+                    MDIcon:
+                        icon: "heart-pulse"
+                        font_size: "30sp"
+                        size_hint_x: None
+                        width: dp(30)
+                    
+                    # Label
+                    MDLabel:
+                        text: "Adaptive Mode"
+                        font_style: "Body1"
+                        halign: "left"
+                        valign: "center"
+                    
+                    # Switch
+                    MDSwitch:
+                        id: adaptive_mode_switch
+                        active: root.adaptive_mode_enabled
+                        pos_hint: {"center_y": 0.25}
+                        size_hint_x: None
+                        width: dp(60)
+                        on_active: root.on_adaptive_mode_toggle(self.active)
+                
+                # ==== SLIDER: CUBE FREQUENCY (visible si mode adaptatif OFF) ====
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(20)
+                    spacing: dp(15)
+                    size_hint_y: None
+                    height: dp(150) if not root.adaptive_mode_enabled else 0
+                    opacity: 1 if not root.adaptive_mode_enabled else 0
+                    disabled: root.adaptive_mode_enabled
+                    elevation: 2
+                    
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(30)
+                        
+                        MDIcon:
+                            icon: "speedometer"
+                            font_size: "30sp"
+                            size_hint_x: None
+                            width: dp(30)
+                        
+                        MDLabel:
+                            text: "Cube Frequency"
+                            font_style: "H6"
+                            theme_text_color: "Primary"
+                            halign: "left"
+                    
+                    MDLabel:
+                        text: "{} cubes/min".format(int(root.cube_per_min))
+                        font_style: "Body1"
+                        halign: "center"
+                        size_hint_y: None
+                        height: dp(25)
+                    
+                    MDSlider:
+                        id: cube_frequency_slider
+                        min: 15
+                        max: 120
+                        value: root.cube_per_min
+                        step: 1
+                        hint: True
+                        hint_text: "{} /min".format(int(self.value))
+                        on_value: root.on_cube_frequency_change(self.value)
+                        on_touch_up: root.on_cube_frequency_touch_up() if self.collide_point(*args[1].pos) else None
+                
+                # ==== SLIDER: TARGET HR (visible si mode adaptatif ON) ====
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(20)
+                    spacing: dp(15)
+                    size_hint_y: None
+                    height: dp(150) if root.adaptive_mode_enabled else 0
+                    opacity: 1 if root.adaptive_mode_enabled else 0
+                    disabled: not root.adaptive_mode_enabled
+                    elevation: 2
+                    
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(30)
+                        
+                        MDIcon:
+                            icon: "target"
+                            font_size: "30sp"
+                            size_hint_x: None
+                            width: dp(30)
+                        
+                        MDLabel:
+                            text: "Target Heart Rate"
+                            font_style: "H6"
+                            halign: "left"
+                    
+                    MDLabel:
+                        text: "{}% of HRmax".format(int(root.target_hr))
+                        font_style: "Body1"
+                        halign: "center"
+                        size_hint_y: None
+                        height: dp(25)
+                    
+                    MDSlider:
+                        id: target_hr_slider
+                        min: 10
+                        max: 100
+                        value: root.target_hr
+                        step: 1
+                        hint: True
+                        hint_text: "{}%".format(int(self.value))
+                        on_value: root.on_target_hr_change(self.value) 
+                        on_touch_up: root.on_target_hr_touch_up() if self.collide_point(*args[1].pos) else None
+                
+                # ==== GAME ACTIONS ====
+                MDLabel:
+                    text: "Game Actions"
+                    font_style: "H5"
+                    theme_text_color: "Primary"
+                    size_hint_y: None
+                    height: dp(40)
+                
+                # Boutons d'action
+                MDBoxLayout:
+                    orientation: "horizontal"
+                    spacing: dp(15)
+                    size_hint_y: None
+                    height: self.minimum_height
+
+                    Widget:  # pousse les boutons à droite
+                    
+                    MDIconButton:
+                        icon: "pause-circle-outline"
+                        theme_text_color: "Custom"
+                        text_color: "grey"
+                        size_hint: None, None
+                        icon_size: "60sp"
+                        on_release: root.pause_game()
+                        disabled: not root.unity_connected
+
+                    MDIconButton:
+                        icon: "play-circle-outline"
+                        theme_text_color: "Custom"
+                        text_color: "grey"
+                        size_hint: None, None
+                        icon_size: "60sp"
+                        on_release: root.resume_game()
+                        disabled: not root.unity_connected
+                    
+                    MDIconButton:
+                        icon: "restart"
+                        theme_text_color: "Custom"
+                        text_color: "grey"
+                        size_hint: None, None
+                        icon_size: "60sp"
+                        on_release: root.restart_game()
+                        disabled: not root.unity_connected
+                    
+                    Widget:  # pousse les boutons à gauche
+                
+                # Espace en bas
+                Widget:
+                    size_hint_y: None
+                    height: dp(20)
