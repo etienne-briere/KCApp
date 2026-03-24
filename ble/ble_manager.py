@@ -214,12 +214,12 @@ class BLEManager:
         if self.on_heart_rate_scan:
             self.on_heart_rate_scan(heart_rate)
         
-         # Callback UI
-        if self.on_heart_rate_pilotage:
-            self.on_heart_rate_pilotage(heart_rate)
+        # # Callback UI
+        # if self.on_heart_rate_pilotage:
+        #     self.on_heart_rate_pilotage(heart_rate)
         
         if self.on_hr_received:
-            self.on_hr_received()
+            self.on_hr_received(heart_rate)
         
     
     async def _keep_alive(self):

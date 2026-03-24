@@ -119,7 +119,6 @@ class TrackingScreen(MDScreen):
             bpm: Fréquence cardiaque
             hr_percent: Pourcentage de FCmax
         """
-        logger.debug(f"📊 Nouvelle donnée: {bpm} BPM à t={elapsed_time}s")
         
         # Mettre à jour l'affichage
         self.update_heart_rate(bpm)

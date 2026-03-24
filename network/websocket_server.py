@@ -130,9 +130,9 @@ class WebSocketServer:
             if self.on_client_disconnected:
                 self.on_client_disconnected(websocket)
             
-            # Callback vers tracking_screen
-            if self.on_client_disconnected_tracking:
-                self.on_client_disconnected_tracking(websocket)
+            # # Callback vers tracking_screen
+            # if self.on_client_disconnected_tracking:
+            #     self.on_client_disconnected_tracking(websocket)
     
     async def send_data_to_clients(self, data: int) -> bool:
         """
@@ -144,7 +144,7 @@ class WebSocketServer:
         
         message = str(data)
         await asyncio.gather(*[client.send(message) for client in self.clients])
-        logger.info(f"FC envoyé : {message}")
+        logger.info(f"❤️ FC envoyé : {message}")
         return True
     
     def get_connected_clients_count(self) -> int:

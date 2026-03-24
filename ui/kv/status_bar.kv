@@ -13,7 +13,7 @@
         id: ble_icon
         icon: "bluetooth" if root.ble_connected else "bluetooth-off"
         theme_text_color: "Custom"
-        text_color: "blue" if root.ble_connected else (1,0,0,1)
+        text_color: "green" if root.ble_connected else "red"
         opacity: 0 if platform == "win" else 1
         disabled: True if platform == "win" else False
 
@@ -21,10 +21,16 @@
         id: wifi_icon
         icon: "wifi" if root.wifi_connected else "wifi-off"
         theme_text_color: "Custom"
-        text_color: "blue" if root.wifi_connected else (1,0,0,1)
+        text_color: "green" if root.wifi_connected else "red"
 
     MDIcon:
         id: hr_icon
-        icon: "heart" if root.hr_connected else "heart-off"
+        icon: "heart" if root.hr_sensor_connected else "heart-off"
         theme_text_color: "Custom"
-        text_color: (1,0,0,1)
+        text_color: "green" if root.hr_sensor_connected else "red"
+    
+    MDIcon:
+        id: unity_icon
+        icon: "unity" 
+        theme_text_color: "Custom"
+        text_color: "green" if root.unity_connected else "red"

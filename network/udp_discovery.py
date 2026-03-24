@@ -28,10 +28,14 @@ class UDPDiscovery:
         self.last_ping_time = time.time()
         self.was_connected = False
         
-        # Callbacks vers app.py
+        # Callbacks vers home_screen.py
         self.on_unity_connected: Optional[Callable] = None
         self.on_unity_disconnected: Optional[Callable] = None
         self.on_ping_received: Optional[Callable] = None
+
+        # Callback vers status_bar.py
+        self.on_unity_connected2: Optional[Callable] = None
+        self.on_unity_disconnected2: Optional[Callable] = None
 
     # ========== DÉMARRAGE / ARRÊT ==========
     
@@ -186,6 +190,7 @@ class UDPDiscovery:
             # Callback
             if self.on_unity_connected:
                 self.on_unity_connected(self.ip_unity)
+            
         
         # Ping de Unity
         elif data == b'ping_Unity':
@@ -195,6 +200,8 @@ class UDPDiscovery:
             # Callback
             if self.on_ping_received:
                 self.on_ping_received()
+            if self.on_unity_connected2:
+                self.on_unity_connected2(self.ip_unity)
 
         # Imahe du stream
         elif data.startswith(b'IMG:'):
@@ -225,6 +232,8 @@ class UDPDiscovery:
                 # Callback de déconnexion (une seule fois)
                 if self.on_unity_disconnected:
                     self.on_unity_disconnected()
+                if self.on_unity_disconnected2:
+                    self.on_unity_disconnected2()
                     
         
      # ========== ENVOI DE MESSAGES ==========

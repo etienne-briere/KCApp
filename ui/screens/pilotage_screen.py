@@ -15,6 +15,7 @@ class PilotageScreen(MDScreen):
 
     # Properties pour l'UI
     unity_connected = BooleanProperty(False) # connexion Unity
+    hr_sensor_connected = BooleanProperty(False) # capteur connecté
     obstacles_enabled = BooleanProperty(True) # obtacles
     adaptive_mode_enabled = BooleanProperty(False) # mode adaptatif
     cube_per_min = NumericProperty(60) # cubes/min
@@ -50,11 +51,11 @@ class PilotageScreen(MDScreen):
         self.hr_session = app.hr_session
 
         # Callback pour recevoir la FC en temps réel
-        self.ble_manager.on_heart_rate_pilotage = self.on_new_hr_data
+        # self.ble_manager.on_heart_rate_pilotage = self.on_new_hr_data
 
-        # Callbacks WebSocket
-        self.ws_server.on_client_connected = self.on_ws_client_connected
-        self.ws_server.on_client_disconnected = self.on_ws_client_disconnected
+        # # Callbacks WebSocket
+        # self.ws_server.on_client_connected = self.on_ws_client_connected
+        # self.ws_server.on_client_disconnected = self.on_ws_client_disconnected
 
         # Configurer les callbacks UDP (détecter connexion/déconnexion Unity)
         app.udp_discovery.on_unity_connected = self.handle_unity_connected
@@ -87,49 +88,49 @@ class PilotageScreen(MDScreen):
         if self.udp_controller:
             self.udp_controller.set_obstacle("1" if is_active else "0")
     
-    # ========== ADAPTIVE MODE ==========
+    # # ========== ADAPTIVE MODE ==========
     
-    def on_adaptive_mode_toggle(self, is_active):
-        """Toggle mode adaptatif ON/OFF"""
-        self.adaptive_mode_enabled = is_active
-        logger.info(f"❤️ Mode adaptatif: {'ON' if is_active else 'OFF'}")
+    # def on_adaptive_mode_toggle(self, is_active):
+    #     """Toggle mode adaptatif ON/OFF"""
+    #     self.adaptive_mode_enabled = is_active
+    #     logger.info(f"❤️ Mode adaptatif: {'ON' if is_active else 'OFF'}")
         
-        # Vérifier la connexion Unity
-        self.unity_connected = self.udp_discovery.is_unity_connected()
+    #     # Vérifier la connexion Unity
+    #     self.unity_connected = self.udp_discovery.is_unity_connected()
         
-        if is_active == True :
+    #     if is_active == True :
 
-            # Vérifier qu'un appareil est connecté
-            if not self.ble_manager or not self.ble_manager.is_connected:
-                self.adaptive_mode_enabled = False
-                toast("Please connect to a HR sensor")
-                return
+    #         # Vérifier qu'un appareil est connecté
+    #         if not self.ble_manager or not self.ble_manager.is_connected:
+    #             self.adaptive_mode_enabled = False
+    #             toast("Please connect to a HR sensor")
+    #             return
             
-            # Vérifier que Unity est connecté
-            if not self.unity_connected :
-                self.adaptive_mode_enabled = False
-                toast("Please connect the game")
-                return
+    #         # Vérifier que Unity est connecté
+    #         if not self.unity_connected :
+    #             self.adaptive_mode_enabled = False
+    #             toast("Please connect the game")
+    #             return
             
-            # Activer le serveur WebSocket
-            asyncio.ensure_future(self._start_server())
+    #         # Activer le serveur WebSocket
+    #         asyncio.ensure_future(self._start_server())
 
-            # Notifier Unity du démarrage du serveur websocket
-            if self.udp_discovery:
-                self.udp_discovery.send_message("command_ws", "1")
+    #         # Notifier Unity du démarrage du serveur websocket
+    #         if self.udp_discovery:
+    #             self.udp_discovery.send_message("command_ws", "1")
                 
-                # Envoyer le %FCmax cible
-                self.send_target_hr()
-        else : 
-            # désactiver le serveur WebSocket
-            asyncio.ensure_future(self._stop_server())
+    #             # Envoyer le %FCmax cible
+    #             self.send_target_hr()
+    #     else : 
+    #         # désactiver le serveur WebSocket
+    #         asyncio.ensure_future(self._stop_server())
 
-            # Notifier Unity de l'arrêt du serveur websocket
-            if self.udp_discovery:
-                self.udp_discovery.send_message("command_ws", "0")
+    #         # Notifier Unity de l'arrêt du serveur websocket
+    #         if self.udp_discovery:
+    #             self.udp_discovery.send_message("command_ws", "0")
 
-                # Envoyer la fréquence de cube
-                self.send_cube_frequency()
+    #             # Envoyer la fréquence de cube
+    #             self.send_cube_frequency()
         
     
     # ========== CUBE FREQUENCY ==========
@@ -202,43 +203,43 @@ class PilotageScreen(MDScreen):
             else:
                 toast("❌ Failed to restart")
     
-    # ========== GESTION WEBSOCKET ==========
+    # # ========== GESTION WEBSOCKET ==========
     
-    async def _start_server(self):
-        """Démarre le serveur WebSocket"""
-        success = await self.ws_server.start()
+    # async def _start_server(self):
+    #     """Démarre le serveur WebSocket"""
+    #     success = await self.ws_server.start()
 
-        if success:
-            self.adaptive_mode_enabled = True
-            logger.info("Serveur WebSocket activé")
-        else:
-            self.adaptive_mode_enabled = False
+    #     if success:
+    #         self.adaptive_mode_enabled = True
+    #         logger.info("Serveur WebSocket activé")
+    #     else:
+    #         self.adaptive_mode_enabled = False
             
-    async def _stop_server(self):
-        """Arrête le serveur WebSocket"""
-        await self.ws_server.stop()
-        self.adaptive_mode_enabled = False
+    # async def _stop_server(self):
+    #     """Arrête le serveur WebSocket"""
+    #     await self.ws_server.stop()
+    #     self.adaptive_mode_enabled = False
         
     
-    # ========== CALLBACKS HR SESSION ==========
+    # # ========== CALLBACKS HR SESSION ==========
 
-    def on_new_hr_data(self, bpm):
-        """Callback quand FC reçue"""
+    # def on_new_hr_data(self, bpm):
+    #     """Callback quand FC reçue"""
 
-        logger.debug(f"📊 Nouvelle donnée: {bpm} BPM.")
+    #     logger.debug(f"📊 Nouvelle donnée: {bpm} BPM.")
 
-        if self.adaptive_mode_enabled:
-            # Envoyer les données FC via WebSocket
-            asyncio.ensure_future(self.ws_server.send_data_to_clients(bpm))    
+    #     if self.adaptive_mode_enabled:
+    #         # Envoyer les données FC via WebSocket
+    #         asyncio.ensure_future(self.ws_server.send_data_to_clients(bpm))    
     
-    # ========== CALLBACKS WEBSOCKET ==========
+    # # ========== CALLBACKS WEBSOCKET ==========
     
-    def on_ws_client_connected(self, websocket):
-        """Callback quand un client se connecte"""
-        print(f"🔗 Client Unity connecté")
-        self.adaptive_mode_enabled = True
+    # def on_ws_client_connected(self, websocket):
+    #     """Callback quand un client se connecte"""
+    #     print(f"🔗 Client Unity connecté")
+    #     self.adaptive_mode_enabled = True
 
-    def on_ws_client_disconnected(self, websocket):
-        """Callback quand un client se déconnecte"""
-        self.adaptive_mode_enabled = False
-        print(f"🔌 Client Unity déconnecté")
+    # def on_ws_client_disconnected(self, websocket):
+    #     """Callback quand un client se déconnecte"""
+    #     self.adaptive_mode_enabled = False
+    #     print(f"🔌 Client Unity déconnecté")
