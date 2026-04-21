@@ -1,11 +1,11 @@
 import asyncio
 from time import time
 
-from kivy.properties import BooleanProperty
+from kivy.properties import BooleanProperty, StringProperty
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.toast import toast
 
-from network.connectivity import is_bluetooth_enabled, is_wifi_enabled
+from app.network.connectivity import is_bluetooth_enabled, is_wifi_enabled
 from kivy.clock import Clock
 from kivy.app import App
 from kivy.animation import Animation
@@ -24,12 +24,16 @@ class StatusBar(MDBoxLayout):
     wifi_connected = BooleanProperty(False)
     hr_sensor_connected = BooleanProperty(False)
     unity_connected = BooleanProperty(False)
-    adaptive_mode_enabled = BooleanProperty(True) # mode adaptatif
+    adaptive_mode_enabled = BooleanProperty(True)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.last_hr_received = 0
 
     def on_kv_post(self, base_widget):
         Clock.schedule_interval(self.update_status, 2)
         # Vérification régulière du timeout HR
-        Clock.schedule_interval(self.check_hr_timeout, 1)
+        # Clock.schedule_interval(self.check_hr_timeout, 1)
 
     def update_status(self, dt):
 
@@ -53,16 +57,26 @@ class StatusBar(MDBoxLayout):
         # Vérifier les connexions BLE et Wi-Fi
         self.ble_connected = is_bluetooth_enabled()
         self.wifi_connected = is_wifi_enabled()
+
+        # Vérifier la connexion Unity
+        self.unity_connected = self.udp_discovery.is_unity_connected()
+
+        # Vérifier la connexion du capteur de FC
+        self.hr_sensor_connected = self.ble_manager.is_connected
     
     # ========== CALLBACKS UDP ==========
 
     def handle_unity_connected(self, ip_unity: str, dt=0):
         """Callback quand Unity se connecte"""
-        self.unity_connected = True
+        if not self.unity_connected:
+            self.unity_connected = True
+            toast("Unity connected")
             
     def handle_unity_disconnected(self, dt=0):
         """Callback quand Unity se déconnecte"""
-        self.unity_connected = False
+        if self.unity_connected:
+            self.unity_connected = False
+            toast("Unity disconnected")
     
     # ========== CALLBACKS HR ==========
     
@@ -71,14 +85,15 @@ class StatusBar(MDBoxLayout):
         logger.debug(f"📊 Nouvelle donnée: {bpm} BPM.")
 
         # Notif que le capteur est connecté
-        self.hr_sensor_connected = True
+        # self.hr_sensor_connected = True
 
         # Mettre à jour le timestamp de la dernière FC reçue
         self.last_hr_received = time()
 
+        print(f"Unity connected: {self.unity_connected}, Adaptive mode: {self.adaptive_mode_enabled}, WS running: {self.ws_server.is_running}")
         if self.adaptive_mode_enabled and self.unity_connected:
             if not self.ws_server.is_running:
-                # Activer le serveur WebSocket
+                # # Activer le serveur WebSocket
                 asyncio.ensure_future(self._start_server())
                 
                 # Notifier Unity du démarrage du serveur websocket
@@ -93,20 +108,20 @@ class StatusBar(MDBoxLayout):
             # désactiver le serveur WebSocket
             asyncio.ensure_future(self._stop_server())
 
-            # Notifier Unity de l'arrêt du serveur websocket
-            if self.udp_discovery:
-                self.udp_discovery.send_message("command_ws", "0")
+            # # Notifier Unity de l'arrêt du serveur websocket
+            # if self.udp_discovery:
+            #     self.udp_discovery.send_message("command_ws", "0")
     
-    def check_hr_timeout(self, dt):
-        """Vérifie si HR n’a plus été reçu depuis 2 secondes"""
-        if self.hr_sensor_connected:
-            elapsed = time() - self.last_hr_received
-            if elapsed > 2:  # 2 secondes sans ping
-                self.hr_sensor_connected = False
-                if hasattr(self.ids, 'hr_icon'):
-                    self.ids.hr_icon.icon = "heart-off"
-                    self.ids.hr_icon.opacity = 1
-                    Animation.cancel_all(self.ids.hr_icon)
+    # def check_hr_timeout(self, dt):
+    #     """Vérifie si HR n’a plus été reçu depuis 2 secondes"""
+    #     if self.hr_sensor_connected:
+    #         elapsed = time() - self.last_hr_received
+    #         if elapsed > 2:  # 2 secondes sans ping
+    #             self.hr_sensor_connected = False
+    #             if hasattr(self.ids, 'hr_icon'):
+    #                 self.ids.hr_icon.icon = "heart-off"
+    #                 self.ids.hr_icon.opacity = 1
+    #                 Animation.cancel_all(self.ids.hr_icon)
     
     # ========== CALLBACKS WEBSOCKET ==========
     
@@ -114,11 +129,11 @@ class StatusBar(MDBoxLayout):
         """Callback quand un client se connecte"""
         print(f"🔗 [WS] Client Unity connecté")
         self.adaptive_mode_enabled = True
-
+        
     def on_ws_client_disconnected(self, websocket):
         """Callback quand un client se déconnecte"""
         print(f"🔌 [WS] Client Unity déconnecté")
-            
+
     # ========== GESTION WEBSOCKET ==========
     
     async def _start_server(self):

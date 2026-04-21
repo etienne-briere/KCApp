@@ -57,5 +57,9 @@ class HomeScreen(MDScreen):
     def force_reconnect(self):
         """Bouton pour forcer la reconnexion"""
         app = App.get_running_app()
+
+        # Forcer la reconnexion en arrêtant le serveur WebSocket et en redémarrant la découverte UDP
+        app.ws_server.stop()
         app.udp_discovery.force_reconnect()
         self.unity_connected = False
+

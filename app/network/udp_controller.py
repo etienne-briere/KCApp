@@ -1,4 +1,4 @@
-from network.udp_discovery import UDPDiscovery
+from app.network.udp_discovery import UDPDiscovery
 from utils.logger import get_logger
 
 logger = get_logger(__name__)

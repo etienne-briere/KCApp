@@ -1,9 +1,10 @@
 import asyncio
 import bleak
 from config import BLE_SCAN_TIMEOUT, BLE_TARGET_DEVICES
-from ble.constants import HEART_RATE_UUID, CHAR_BATTERY_LEVEL
+from app.ble.constants import HEART_RATE_UUID, CHAR_BATTERY_LEVEL
 from typing import Optional, Callable, List
 from kivymd.toast import toast
+from kivy.app import App
 
 from utils.logger import get_logger
 
@@ -13,6 +14,10 @@ class BLEManager:
     """Gestionnaire BLE pour capteur de FC"""
     
     def __init__(self):
+        # Managers
+        app = App.get_running_app()
+        self.ws_server = app.ws_server
+
         # État du scan
         self.devices_found: List = []
         self.is_scanning = False

@@ -190,6 +190,8 @@ class UDPDiscovery:
             # Callback
             if self.on_unity_connected:
                 self.on_unity_connected(self.ip_unity)
+            if self.on_unity_connected2:
+                self.on_unity_connected2(self.ip_unity)
             
         
         # Ping de Unity
@@ -230,11 +232,10 @@ class UDPDiscovery:
                 self._start_ip_broadcast()
                 
                 # Callback de déconnexion (une seule fois)
-                if self.on_unity_disconnected:
-                    self.on_unity_disconnected()
                 if self.on_unity_disconnected2:
                     self.on_unity_disconnected2()
-                    
+                if self.on_unity_disconnected:
+                    self.on_unity_disconnected()
         
      # ========== ENVOI DE MESSAGES ==========
     

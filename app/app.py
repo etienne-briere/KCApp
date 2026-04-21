@@ -11,12 +11,12 @@ from kivy.clock import Clock
 
 # Custom modules
 from config import THEME_STYLE, PRIMARY_PALETTE, ACCENT_PALETTE
-from ble.ble_manager import BLEManager
-from network.websocket_server import WebSocketServer
-from network.udp_discovery import UDPDiscovery
-from network.udp_controller import UDPController
-from data.user_profile import UserProfile
-from data.hr_session import HRSession
+from app.ble.ble_manager import BLEManager
+from app.network.websocket_server import WebSocketServer
+from app.network.udp_discovery import UDPDiscovery
+from app.network.udp_controller import UDPController
+from app.data.user_profile import UserProfile
+from app.data.hr_session import HRSession
 from ui.widgets.status_bar import StatusBar
 
 # Logger
