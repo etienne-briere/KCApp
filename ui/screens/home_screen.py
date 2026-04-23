@@ -5,6 +5,7 @@ from utils.logger import get_logger
 from kivy.uix.image import AsyncImage
 from kivy.clock import Clock
 from kivy.clock import mainthread
+from utils.event_bus import event_bus
 
 
 logger = get_logger(__name__)
@@ -21,26 +22,34 @@ class HomeScreen(MDScreen):
 
         # Managers
         self.udp_discovery = app.udp_discovery
-        
-        # Configurer les callbacks UDP
-        self.udp_discovery.on_unity_connected = self.handle_unity_connected
-        self.udp_discovery.on_unity_disconnected = self.handle_unity_disconnected
-        self.udp_discovery.on_ping_received = self.handle_ping_received
 
         # Vérifier la connexion Unity (au cas où on arrive dans l'écran après la connexion)
         self.unity_connected = self.udp_discovery.is_unity_connected()
 
+        # S'abonner pour écouter les eventbus
+        event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
+
+        self.udp_discovery.on_ping_received = self.handle_ping_received
+    
+    def on_leave(self):
+        event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
+
     # ========== CALLBACKS UDP ==========
 
-    @mainthread
-    def handle_unity_connected(self, ip_unity: str, dt=0):
-        """Callback quand Unity se connecte"""
-        self.unity_connected = True
+    # @mainthread
+    # def handle_unity_connected(self, ip_unity: str, dt=0):
+    #     """Callback quand Unity se connecte"""
+    #     self.unity_connected = True
+
+    # @mainthread
+    # def handle_unity_disconnected(self, dt=0):
+    #     """Callback quand Unity se déconnecte"""
+    #     self.unity_connected = False
 
     @mainthread
-    def handle_unity_disconnected(self, dt=0):
-        """Callback quand Unity se déconnecte"""
-        self.unity_connected = False
+    def handle_unity_connection(self, data):
+        connected = data["connected"]
+        self.unity_connected = connected
     
     def handle_ping_received(self):
         """Callback quand un ping Unity est reçu"""

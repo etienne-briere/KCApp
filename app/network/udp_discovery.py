@@ -31,13 +31,7 @@ class UDPDiscovery:
         self.was_connected = False
         
         # Callbacks vers home_screen.py
-        # self.on_unity_connected: Optional[Callable] = None
-        # self.on_unity_disconnected: Optional[Callable] = None
         self.on_ping_received: Optional[Callable] = None
-
-        # Callback vers status_bar.py
-        # self.on_unity_connected2: Optional[Callable] = None
-        # self.on_unity_disconnected2: Optional[Callable] = None
 
     # ========== DÉMARRAGE / ARRÊT ==========
     
@@ -189,11 +183,6 @@ class UDPDiscovery:
             # Initialiser le timestamp du ping
             self.last_ping_time = time.time()
             
-            # # Callback
-            if self.on_unity_connected:
-                self.on_unity_connected(self.ip_unity)
-            
-
             event_bus.emit("unity_connection_changed", {
                 "connected": True,
                 "ip": self.ip_unity
@@ -208,8 +197,6 @@ class UDPDiscovery:
             # Callback
             if self.on_ping_received:
                 self.on_ping_received()
-            # if self.on_unity_connected2:
-            #     self.on_unity_connected2(self.ip_unity)
            
 
         # Imahe du stream

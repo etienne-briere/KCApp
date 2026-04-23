@@ -5,7 +5,7 @@ from kivy.app import App
 from kivymd.toast import toast
 
 import asyncio
-
+from utils.event_bus import event_bus
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -23,8 +23,6 @@ class PilotageScreen(MDScreen):
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.udp_controller = None
-        self.udp_discovery = None
 
         # Fréquence de cube
         self.cube_frequency = round(1/(self.cube_per_min/60), 2)
@@ -44,22 +42,17 @@ class PilotageScreen(MDScreen):
         """Appelé à l'ouverture de l'écran"""
         # Managers
         app = App.get_running_app()
-        self.ble_manager = app.ble_manager
         self.ws_server = app.ws_server
         self.udp_controller = app.udp_controller
         self.udp_discovery = app.udp_discovery
         self.hr_session = app.hr_session
 
-        # Callback pour recevoir la FC en temps réel
-        # self.ble_manager.on_heart_rate_pilotage = self.on_new_hr_data
-
         # # Callbacks WebSocket
         # self.ws_server.on_client_connected = self.on_ws_client_connected
         # self.ws_server.on_client_disconnected = self.on_ws_client_disconnected
 
-        # Configurer les callbacks UDP (détecter connexion/déconnexion Unity)
-        app.udp_discovery.on_unity_connected = self.handle_unity_connected
-        app.udp_discovery.on_unity_disconnected = self.handle_unity_disconnected
+        # S'abonner pour écouter les eventbus
+        event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
 
         # Vérifier la connexion Unity (au cas où on arrive dans l'écran après la connexion)
         self.unity_connected = self.udp_discovery.is_unity_connected()
@@ -67,15 +60,14 @@ class PilotageScreen(MDScreen):
         # Vérifier l'activation du serveur ws (au cas où on arrive dans l'écran après la déconnexion)
         self.adaptive_mode_enabled = self.ws_server.is_running
     
+    def on_leave(self):
+        event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
+    
     # ========== CALLBACKS UDP ==========
-
-    def handle_unity_connected(self, ip_unity: str, dt=0):
-        """Callback quand Unity se connecte"""
-        self.unity_connected = True
-
-    def handle_unity_disconnected(self, dt=0):
-        """Callback quand Unity se déconnecte"""
-        self.unity_connected = False
+    
+    def handle_unity_connection(self, data):
+        connected = data["connected"]
+        self.unity_connected = connected
 
     # ========== OBSTACLES ==========
     
