@@ -4,6 +4,8 @@ import threading
 import time
 from typing import Optional, Callable
 from utils.logger import get_logger
+from utils.event_bus import event_bus
+
 from config import UDP_PORT_SEND, UDP_PORT_RECEIVE, UDP_PING_TIMEOUT
 
 logger = get_logger(__name__)
@@ -29,13 +31,13 @@ class UDPDiscovery:
         self.was_connected = False
         
         # Callbacks vers home_screen.py
-        self.on_unity_connected: Optional[Callable] = None
-        self.on_unity_disconnected: Optional[Callable] = None
+        # self.on_unity_connected: Optional[Callable] = None
+        # self.on_unity_disconnected: Optional[Callable] = None
         self.on_ping_received: Optional[Callable] = None
 
         # Callback vers status_bar.py
-        self.on_unity_connected2: Optional[Callable] = None
-        self.on_unity_disconnected2: Optional[Callable] = None
+        # self.on_unity_connected2: Optional[Callable] = None
+        # self.on_unity_disconnected2: Optional[Callable] = None
 
     # ========== DÉMARRAGE / ARRÊT ==========
     
@@ -187,11 +189,15 @@ class UDPDiscovery:
             # Initialiser le timestamp du ping
             self.last_ping_time = time.time()
             
-            # Callback
+            # # Callback
             if self.on_unity_connected:
                 self.on_unity_connected(self.ip_unity)
-            if self.on_unity_connected2:
-                self.on_unity_connected2(self.ip_unity)
+            
+
+            event_bus.emit("unity_connection_changed", {
+                "connected": True,
+                "ip": self.ip_unity
+            })
             
         
         # Ping de Unity
@@ -202,8 +208,9 @@ class UDPDiscovery:
             # Callback
             if self.on_ping_received:
                 self.on_ping_received()
-            if self.on_unity_connected2:
-                self.on_unity_connected2(self.ip_unity)
+            # if self.on_unity_connected2:
+            #     self.on_unity_connected2(self.ip_unity)
+           
 
         # Imahe du stream
         elif data.startswith(b'IMG:'):
@@ -230,12 +237,11 @@ class UDPDiscovery:
 
                 # Renvoyer l'IP pour reconnecter
                 self._start_ip_broadcast()
-                
-                # Callback de déconnexion (une seule fois)
-                if self.on_unity_disconnected2:
-                    self.on_unity_disconnected2()
-                if self.on_unity_disconnected:
-                    self.on_unity_disconnected()
+
+                event_bus.emit("unity_connection_changed", {
+                    "connected": False,
+                    "ip": None
+                })
         
      # ========== ENVOI DE MESSAGES ==========
     

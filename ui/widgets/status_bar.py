@@ -32,16 +32,19 @@ class StatusBar(MDBoxLayout):
         self.last_hr_received = 0
 
     def on_kv_post(self, base_widget):
+
         Clock.schedule_interval(self.update_status, 2)
 
         # Abonnement aux EventBus
         event_bus.subscribe("heart_rate_received", self.handle_hr_received)
+        event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
     
     def on_parent(self, widget, parent):
         '''Appelé automatiquement si ajout/suppresion dans l'UI'''
         # sécurité si widget retiré
         if parent is None:
             event_bus.unsubscribe("heart_rate_received", self.handle_hr_received)
+            event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
 
     def update_status(self, dt):
 
@@ -49,17 +52,10 @@ class StatusBar(MDBoxLayout):
         app = App.get_running_app()
         self.udp_discovery = app.udp_discovery
         self.ws_server = app.ws_server
-        
-        # callbacks UDP
-        self.udp_discovery.on_unity_connected2 = self.handle_unity_connected
-        self.udp_discovery.on_unity_disconnected2 = self.handle_unity_disconnected
 
         # Vérifier les connexions BLE et Wi-Fi
         self.ble_connected = is_bluetooth_enabled()
         self.wifi_connected = is_wifi_enabled()
-
-        # Vérifier la connexion Unity
-        self.unity_connected = self.udp_discovery.is_unity_connected()
 
          # Si pas de FC depuis 5 secondes → capteur considéré inactif
         if time() - self.last_hr_received > 3:
@@ -68,17 +64,15 @@ class StatusBar(MDBoxLayout):
             self.hr_sensor_connected = True
     
     # ========== CALLBACKS UDP ==========
-
-    def handle_unity_connected(self, ip_unity: str, dt=0):
-        """Callback quand Unity se connecte"""
-        if not self.unity_connected:
-            self.unity_connected = True
-            toast("Unity connected")
-            
-    def handle_unity_disconnected(self, dt=0):
-        """Callback quand Unity se déconnecte"""
+    
+    def handle_unity_connection(self, data):
+        """Callback quand Unity se connecte ou se déconnecte"""
+        ip = data.get("ip")
+        self.unity_connected = data["connected"]
+        
         if self.unity_connected:
-            self.unity_connected = False
+            toast(f"Unity connected ({ip})")
+        else :
             toast("Unity disconnected")
     
     # ========== CALLBACKS HR ==========
