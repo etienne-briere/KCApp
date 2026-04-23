@@ -29,9 +29,6 @@ class UDPDiscovery:
         # Dernière réception de ping
         self.last_ping_time = time.time()
         self.was_connected = False
-        
-        # Callbacks vers home_screen.py
-        self.on_ping_received: Optional[Callable] = None
 
     # ========== DÉMARRAGE / ARRÊT ==========
     
@@ -193,10 +190,10 @@ class UDPDiscovery:
         elif data == b'ping_Unity':
             self.last_ping_time = time.time()
             logger.debug("Ping Unity reçu")
-            
-            # Callback
-            if self.on_ping_received:
-                self.on_ping_received()
+
+            event_bus.emit("unity_ping_received", {
+                "timestamp": self.last_ping_time
+            })
            
 
         # Imahe du stream

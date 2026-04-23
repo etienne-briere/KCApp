@@ -28,30 +28,22 @@ class HomeScreen(MDScreen):
 
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
+        event_bus.subscribe("unity_ping_received", self.handle_ping_received)
 
-        self.udp_discovery.on_ping_received = self.handle_ping_received
+        # self.udp_discovery.on_ping_received = self.handle_ping_received
     
     def on_leave(self):
         event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
+        event_bus.unsubscribe("unity_ping_received", self.handle_ping_received)
 
     # ========== CALLBACKS UDP ==========
-
-    # @mainthread
-    # def handle_unity_connected(self, ip_unity: str, dt=0):
-    #     """Callback quand Unity se connecte"""
-    #     self.unity_connected = True
-
-    # @mainthread
-    # def handle_unity_disconnected(self, dt=0):
-    #     """Callback quand Unity se déconnecte"""
-    #     self.unity_connected = False
 
     @mainthread
     def handle_unity_connection(self, data):
         connected = data["connected"]
         self.unity_connected = connected
     
-    def handle_ping_received(self):
+    def handle_ping_received(self, data):
         """Callback quand un ping Unity est reçu"""
         # Optionnel : afficher un indicateur visuel
         if hasattr(self.ids, 'ping_indicator'):
