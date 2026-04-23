@@ -30,9 +30,6 @@ class UDPDiscovery:
         self.last_ping_time = time.time()
         self.was_connected = False
 
-        # adaptive mode
-        self.adaptive_mode_enabled = True # mode adaptatif
-
     # ========== DÉMARRAGE / ARRÊT ==========
     
     def start_discovery(self, auto_reconnect: bool = True):

@@ -25,7 +25,6 @@ class StatusBar(MDBoxLayout):
     wifi_connected = BooleanProperty(False)
     hr_sensor_connected = BooleanProperty(False)
     unity_connected = BooleanProperty(False)
-    adaptive_mode_enabled = BooleanProperty(True)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -79,32 +78,9 @@ class StatusBar(MDBoxLayout):
     
     def handle_hr_received(self, bpm):
         """Callback quand FC reçue"""
-        logger.debug(f"📊 Nouvelle donnée: {bpm} BPM.")
 
         # Mettre à jour le timestamp de la dernière FC reçue
         self.last_hr_received = time()
-
-        print(f"Unity connected: {self.unity_connected}, Adaptive mode: {self.adaptive_mode_enabled}, WS running: {self.ws_server.is_running}")
-        if self.adaptive_mode_enabled and self.unity_connected:
-            if not self.ws_server.is_running:
-                # # Activer le serveur WebSocket
-                asyncio.ensure_future(self._start_server())
-                
-                # Notifier Unity du démarrage du serveur websocket
-                if self.udp_discovery:
-                    self.udp_discovery.send_message("command_ws", "1")
-
-        if self.ws_server.is_running:
-            # Envoyer les données FC via WebSocket
-            asyncio.ensure_future(self.ws_server.send_data_to_clients(bpm))
-        
-        if not self.unity_connected and self.ws_server.is_running:
-            # désactiver le serveur WebSocket
-            asyncio.ensure_future(self._stop_server())
-
-            # # Notifier Unity de l'arrêt du serveur websocket
-            # if self.udp_discovery:
-            #     self.udp_discovery.send_message("command_ws", "0")
 
     # ========== GESTION WEBSOCKET ==========
     

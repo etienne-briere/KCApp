@@ -17,7 +17,8 @@ from app.network.udp_discovery import UDPDiscovery
 from app.network.udp_controller import UDPController
 from app.data.user_profile import UserProfile
 from app.data.hr_session import HRSession
-from ui.widgets.status_bar import StatusBar
+from app.controllers.adaptive_controller import AdaptiveController
+# from ui.widgets.status_bar import StatusBar
 
 # Logger
 from utils.logger import get_logger
@@ -37,7 +38,7 @@ class KCApp(MDApp):
         self.udp_discovery = None
         self.udp_controller = None
         self.hr_session = None
-        self.status_bar = None
+        # self.status_bar = None
 
         logger.info("Initialisation de l'application KCApp")
 
@@ -54,7 +55,8 @@ class KCApp(MDApp):
         self.udp_discovery = UDPDiscovery()
         self.udp_controller = UDPController(self.udp_discovery)
         self.hr_session = HRSession(max_points=3600) # 1h max à 1Hz
-        self.status_bar = StatusBar()
+        # self.status_bar = StatusBar()
+        self.adaptive_controller = AdaptiveController()
 
         # Définir le thème de l'application
         self.theme_cls.theme_style = THEME_STYLE 

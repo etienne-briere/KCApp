@@ -193,10 +193,6 @@ class BLEManager:
         
         # Émettre un événement global pour que les autres composants puissent réagir à la nouvelle FC
         event_bus.emit("heart_rate_received", heart_rate)
-        
-        # # A supprimer car callback vers status_bar.py
-        # if self.on_hr_received:
-        #     self.on_hr_received(heart_rate)
     
     async def _keep_alive(self):
         """Maintient la connexion active"""
