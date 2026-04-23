@@ -71,10 +71,6 @@ class TrackingScreen(MDScreen):
 
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC
         event_bus.subscribe("heart_rate_received", self.on_heart_rate_received)
-
-        # Callbacks WebSocket
-        # self.ws_server.on_client_connected_tracking = self.on_ws_client_connected
-        # self.ws_server.on_client_disconnected_tracking = self.on_ws_client_disconnected
         
         # Charger toutes les data pré-existantes dans le graphique
         self.load_existing_data()
@@ -319,16 +315,4 @@ class TrackingScreen(MDScreen):
         # Rafraîchir le widget
         self.ids.hr_graph_widget.figure = self.fig    
     
-
-    # ========== CALLBACKS WEBSOCKET ==========
-    
-    # def on_ws_client_connected(self, websocket):
-    #     """Callback quand un client se connecte"""
-    #     self.server_ws_running = True
-    #     print(f"🔗 Client connecté : {websocket.remote_address}")
-
-    # def on_ws_client_disconnected(self, websocket):
-    #     """Callback quand un client se déconnecte"""
-    #     self.server_ws_running = False
-    #     print(f"🔌 Client déconnecté : {websocket.remote_address}")
         

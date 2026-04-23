@@ -33,8 +33,6 @@ class ScanScreen(MDScreen):
         '''
         Activer dès l'ouverture de l'écran
         '''
-        # 🔗 Lien vers l'écran d'acceuil
-        self.home_screen = self.manager.get_screen('home')
 
         # Récupérer les managers de l'application
         app = App.get_running_app()

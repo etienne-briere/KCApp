@@ -28,7 +28,7 @@ class BLEManager:
         self.is_connected = False
 
         # callback vers status_bar.py (à supprimer car on utilise un EventBus pour transmettre les données de FC à tous les composants intéressés, y compris le status_bar))
-        self.on_hr_received: Optional[Callable] = None
+        # self.on_hr_received: Optional[Callable] = None
     
     # ========== Scan BLE ========== #
 
@@ -208,9 +208,9 @@ class BLEManager:
         # Émettre un événement global pour que les autres composants puissent réagir à la nouvelle FC
         event_bus.emit("heart_rate_received", heart_rate)
         
-        # A supprimer car callback vers status_bar.py
-        if self.on_hr_received:
-            self.on_hr_received(heart_rate)
+        # # A supprimer car callback vers status_bar.py
+        # if self.on_hr_received:
+        #     self.on_hr_received(heart_rate)
     
     async def _keep_alive(self):
         """Maintient la connexion active"""
