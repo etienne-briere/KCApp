@@ -69,9 +69,7 @@ class TrackingScreen(MDScreen):
         self.udp_controller = app.udp_controller
         self.hr_session = app.hr_session
 
-        # Callback pour recevoir la FC en temps réel
-        # self.hr_session.on_data_added = self.on_new_hr_data
-        # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC et batterie
+        # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC
         event_bus.subscribe("heart_rate_received", self.on_heart_rate_received)
 
         # Callbacks WebSocket

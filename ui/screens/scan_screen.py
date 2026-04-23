@@ -10,6 +10,7 @@ from kivy.metrics import sp
 from kivy.clock import Clock
 
 # Custom modules
+from app import data
 from utils.event_bus import event_bus
 from utils.logger import get_logger
 logger = get_logger(__name__)
@@ -27,13 +28,6 @@ class ScanScreen(MDScreen):
     battery_text = StringProperty("-- %")
     battery_icon = StringProperty("battery-high")
     battery_color = ListProperty([0, 1, 0, 1])  # Vert par défaut
-    is_scanning = BooleanProperty(False)
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        # Initialisation des variables
-        self.devices_menu = None
     
     def on_enter(self):
         '''
@@ -47,16 +41,20 @@ class ScanScreen(MDScreen):
         self.ble_manager = app.ble_manager
         self.hr_session = app.hr_session
 
-        # Configurer les callbacks (manager.py -> scan_screen.py)
-        # utile pour appeler les fonctions de scan_screen.py depuis ble/ble_manager.py
-        self.ble_manager.on_scan_complete = self.on_scan_complete
-        self.ble_manager.on_connection_changed = self.on_connection_changed
-        # self.ble_manager.on_heart_rate_scan = self.on_heart_rate_received
-        # self.ble_manager.on_battery_level = self.on_battery_received
-
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC et batterie
         event_bus.subscribe("heart_rate_received", self.on_heart_rate_received) 
         event_bus.subscribe("battery_received", self.on_battery_received)
+        event_bus.subscribe("connection_changed", self.on_connection_changed)
+        event_bus.subscribe("scan_completed", self.on_scan_complete)
+    
+    def on_leave(self):
+        """Sortie de l'écran"""
+
+        # Nettoyer les callbacks pour éviter les fuites de mémoire et les appels indésirables
+        event_bus.unsubscribe("heart_rate_received", self.on_heart_rate_received)
+        event_bus.unsubscribe("battery_received", self.on_battery_received)
+        event_bus.unsubscribe("connection_changed", self.on_connection_changed)
+        event_bus.unsubscribe("scan_completed", self.on_scan_complete)
 
     # ========== SCAN ==========
     
@@ -122,8 +120,12 @@ class ScanScreen(MDScreen):
         self.update_button_state("connecting", device.name)
         await self.ble_manager.connect_to_device(device)
     
-    def on_connection_changed(self, is_connected, device):
+    def on_connection_changed(self, data):
         """Callback de changement de connexion"""
+        # data contient {"is_connected": bool, "device": device}
+        is_connected = data["is_connected"]
+        device = data["device"]
+        
         if is_connected:
             # Démarrer l'enregistrement des données FC
             self.hr_session.start_recording()
@@ -201,12 +203,5 @@ class ScanScreen(MDScreen):
             icon.icon, icon.text_color = "battery-low", [1, 0.65, 0, 1]
         else:
             icon.icon, icon.text_color = "battery-alert", [1, 0, 0, 1]
-
-    # ========== SCREEN LIFECYCLE ==========
-    def on_leave(self):
-        """Sortie de l'écran"""
-
-        # Nettoyer les callbacks pour éviter les fuites de mémoire et les appels indésirables
-        event_bus.unsubscribe("heart_rate_received", self.on_heart_rate_received)
-        event_bus.unsubscribe("battery_received", self.on_battery_received)
+    
         

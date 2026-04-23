@@ -21,25 +21,13 @@ class BLEManager:
 
         # État du scan
         self.devices_found: List = []
-        self.is_scanning = False
         
         # État de la connexion
         self.client: Optional[bleak.BleakClient] = None
         self.connected_device = None
         self.is_connected = False
 
-        # Callbacks vers UI (à assigner pour remplacer on_heart_rate_scan et on_heart_rate_pilotage)
-        self.on_heart_rate: Optional[Callable] = None
-        
-        # Callbacks vers scan_screen.py
-        self.on_scan_complete: Optional[Callable] = None
-        self.on_connection_changed: Optional[Callable] = None
-        # self.on_heart_rate_scan: Optional[Callable] = None
-        # self.on_battery_level: Optional[Callable] = None
-
-        # Callback vers pilotage_screen.py
-        self.on_heart_rate_pilotage: Optional[Callable] = None
-
+        # callback vers status_bar.py (à supprimer car on utilise un EventBus pour transmettre les données de FC à tous les composants intéressés, y compris le status_bar))
         self.on_hr_received: Optional[Callable] = None
     
     # ========== Scan BLE ========== #
@@ -52,7 +40,6 @@ class BLEManager:
             List: Appareils trouvés
         """
         try:
-            self.is_scanning = True
             logger.info(f"🔍 Démarrage du scan BLE (timeout: {timeout}s)")
             
             # Scanner les appareils
@@ -65,22 +52,19 @@ class BLEManager:
             ]
             
             logger.info(f"✅ {len(self.devices_found)} appareils trouvés")
-            
-            # Callback UI
-            if self.on_scan_complete:
-                self.on_scan_complete(self.devices_found)
+
+            # Émettre un événement global pour que les autres composants puissent réagir à la fin du scan
+            event_bus.emit("scan_completed", self.devices_found)
             
             return self.devices_found
             
         except Exception as e:
             logger.error(f"❌ Erreur Bluetooth : {e}")
             toast("Bluetooth is not available")
-            if self.on_scan_complete:
-                self.on_scan_complete([])
+            
+            # Émettre un événement global pour que les autres composants puissent réagir à la fin du scan même en cas d'erreur
+            event_bus.emit("scan_completed", [])
             return []
-        
-        finally:
-            self.is_scanning = False
     
     def get_device_by_address(self, address: str):
         """Trouve un appareil par son adresse"""
@@ -114,9 +98,11 @@ class BLEManager:
             
             logger.info(f"✅ Connecté à {device.name}")
             
-            # Callback UI
-            if self.on_connection_changed:
-                self.on_connection_changed(True, device)
+            # Émettre un événement global pour que les autres composants puissent réagir à la nouvelle connexion
+            event_bus.emit("connection_changed", {
+                "is_connected": True,
+                "device": device
+            })
             
             # Lire le niveau de batterie initial
             await self._read_initial_battery()
@@ -136,9 +122,11 @@ class BLEManager:
             logger.error(f"❌ Erreur de connexion : {e}")
             self.is_connected = False
             
-            # Callback UI
-            if self.on_connection_changed:
-                self.on_connection_changed(False, device)
+            # Émettre un événement global pour que les autres composants puissent réagir à la nouvelle connexion
+            event_bus.emit("connection_changed", {
+                "is_connected": False,
+                "device": device
+            })
             
             return False
     
@@ -157,9 +145,11 @@ class BLEManager:
                 self.is_connected = False
                 self.client = None
                 
-                # Callback UI
-                if self.on_connection_changed:
-                    self.on_connection_changed(False, None)
+                # Émettre un événement global pour que les autres composants puissent réagir à la déconnexion
+                event_bus.emit("connection_changed", {
+                    "is_connected": False,
+                    "device": None
+                })
     
     # ========== Services BLE ========== #
 
@@ -194,10 +184,6 @@ class BLEManager:
             battery_data = await self.client.read_gatt_char(CHAR_BATTERY_LEVEL)
             battery_level = battery_data[0]
             logger.info(f"🔋 Batterie : {battery_level}%")
-            
-            # # Callback UI
-            # if self.on_battery_level:
-            #     self.on_battery_level(battery_level)
 
             # Émettre un événement global pour que les autres composants puissent réagir à la nouvelle donnée de batterie
             event_bus.emit("battery_received", battery_level)
@@ -219,20 +205,12 @@ class BLEManager:
         heart_rate = int(data[1])
         logger.debug(f"❤️ {heart_rate} BPM")
         
-        # # Callback UI
-        # if self.on_heart_rate_scan:
-        #     self.on_heart_rate_scan(heart_rate)
-        
         # Émettre un événement global pour que les autres composants puissent réagir à la nouvelle FC
         event_bus.emit("heart_rate_received", heart_rate)
         
-        # # Callback UI
-        # if self.on_heart_rate_pilotage:
-        #     self.on_heart_rate_pilotage(heart_rate)
-        
+        # A supprimer car callback vers status_bar.py
         if self.on_hr_received:
             self.on_hr_received(heart_rate)
-        
     
     async def _keep_alive(self):
         """Maintient la connexion active"""
