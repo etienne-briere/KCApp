@@ -30,6 +30,9 @@ class UDPDiscovery:
         self.last_ping_time = time.time()
         self.was_connected = False
 
+        # adaptive mode
+        self.adaptive_mode_enabled = True # mode adaptatif
+
     # ========== DÉMARRAGE / ARRÊT ==========
     
     def start_discovery(self, auto_reconnect: bool = True):
@@ -38,9 +41,6 @@ class UDPDiscovery:
         Args:
             auto_reconnect: Si True, relance automatiquement la découverte après déconnexion
         """
-        # if self.send_ip_running or self.listen_udp:
-        #     logger.warning("⚠️ Découverte déjà en cours")
-        #     return
         
         self.auto_reconnect = auto_reconnect
         
@@ -194,9 +194,17 @@ class UDPDiscovery:
             event_bus.emit("unity_ping_received", {
                 "timestamp": self.last_ping_time
             })
-           
+        
+        # pas encore implémenter dans Unity
+        elif data.startswith(b'Model:'):
+            model_selected = data[4:]
 
-        # Imahe du stream
+            if model_selected == ["DRL", "PID"]:
+                event_bus.emit("mode_adaptive_enabled", True)
+            elif model_selected == ["Fixe", "Incremental"]:
+                event_bus.emit("mode_adaptive_enabled", False)
+
+        # Image du stream
         elif data.startswith(b'IMG:'):
             img_bytes = data[4:]
             self.latest_img = img_bytes

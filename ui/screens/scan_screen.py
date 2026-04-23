@@ -29,6 +29,13 @@ class ScanScreen(MDScreen):
     battery_icon = StringProperty("battery-high")
     battery_color = ListProperty([0, 1, 0, 1])  # Vert par défaut
     
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Liste vide des appareils BLE
+        self.devices_found = []
+
     def on_enter(self):
         '''
         Activer dès l'ouverture de l'écran
@@ -73,12 +80,14 @@ class ScanScreen(MDScreen):
         
         # Lancer le scan
         await self.ble_manager.scan_devices()
-
+    
     def on_scan_complete(self, devices):
         """Callback de fin de scan"""
         if not devices:
             self.update_button_state("no_devices")
+            self.devices_found = []
         else:
+            self.devices_found = devices
             count = len(devices)
             self.ids.devices_list_button.text = f"{count} device{'s' if count > 1 else ''} found"
             self.ids.devices_list_button.icon = "menu-swap"
@@ -89,7 +98,7 @@ class ScanScreen(MDScreen):
     
     def open_devices_menu(self, caller_button):
         """Ouvre le menu des appareils"""
-        devices = self.ble_manager.devices_found
+        devices = self.devices_found
         
         if not devices:
             return

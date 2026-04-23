@@ -15,20 +15,11 @@ class BLEManager:
     """Gestionnaire BLE pour capteur de FC"""
     
     def __init__(self):
-        # Managers
-        app = App.get_running_app()
-        self.ws_server = app.ws_server
 
-        # État du scan
-        self.devices_found: List = []
-        
         # État de la connexion
         self.client: Optional[bleak.BleakClient] = None
         self.connected_device = None
         self.is_connected = False
-
-        # callback vers status_bar.py (à supprimer car on utilise un EventBus pour transmettre les données de FC à tous les composants intéressés, y compris le status_bar))
-        # self.on_hr_received: Optional[Callable] = None
     
     # ========== Scan BLE ========== #
 
@@ -46,18 +37,16 @@ class BLEManager:
             devices_scanned = await bleak.BleakScanner.discover(timeout)
             
             # Filtrer les appareils cibles
-            self.devices_found = [
+            devices_found = [
                 d for d in devices_scanned 
                 if any(brand in (d.name or "") for brand in BLE_TARGET_DEVICES)
             ]
             
-            logger.info(f"✅ {len(self.devices_found)} appareils trouvés")
+            logger.info(f"✅ {len(devices_found)} appareils trouvés")
 
             # Émettre un événement global pour que les autres composants puissent réagir à la fin du scan
-            event_bus.emit("scan_completed", self.devices_found)
-            
-            return self.devices_found
-            
+            event_bus.emit("scan_completed", devices_found)
+                        
         except Exception as e:
             logger.error(f"❌ Erreur Bluetooth : {e}")
             toast("Bluetooth is not available")
@@ -65,10 +54,7 @@ class BLEManager:
             # Émettre un événement global pour que les autres composants puissent réagir à la fin du scan même en cas d'erreur
             event_bus.emit("scan_completed", [])
             return []
-    
-    def get_device_by_address(self, address: str):
-        """Trouve un appareil par son adresse"""
-        return next((d for d in self.devices_found if d.address == address), None)
+
     
     # ========== Connexion BLE ========== #
 

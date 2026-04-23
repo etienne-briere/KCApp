@@ -15,9 +15,8 @@ class PilotageScreen(MDScreen):
 
     # Properties pour l'UI
     unity_connected = BooleanProperty(False) # connexion Unity
-    hr_sensor_connected = BooleanProperty(False) # capteur connecté
-    obstacles_enabled = BooleanProperty(True) # obtacles
-    adaptive_mode_enabled = BooleanProperty(False) # mode adaptatif
+    obstacles_enabled = BooleanProperty(False) # obtacles
+    adaptive_mode_enabled = BooleanProperty(True) # mode adaptatif
     cube_per_min = NumericProperty(60) # cubes/min
     target_hr = NumericProperty(50)  # % FCmax
     
@@ -31,34 +30,27 @@ class PilotageScreen(MDScreen):
         self.cube_frequency_event = None
         self.target_hr_event = None
 
-        # WebSocket Server
-        self.ws_server = None
+        # # WebSocket Server
+        # self.ws_server = None
 
         # UDP
-        self.udp_controller = None
-        self.udp_discovery = None
+        # self.udp_controller = None
+        # self.udp_discovery = None
     
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
-        # Managers
         app = App.get_running_app()
-        self.ws_server = app.ws_server
+        
+        # Managers
         self.udp_controller = app.udp_controller
         self.udp_discovery = app.udp_discovery
         self.hr_session = app.hr_session
-
-        # # Callbacks WebSocket
-        # self.ws_server.on_client_connected = self.on_ws_client_connected
-        # self.ws_server.on_client_disconnected = self.on_ws_client_disconnected
 
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
 
         # Vérifier la connexion Unity (au cas où on arrive dans l'écran après la connexion)
         self.unity_connected = self.udp_discovery.is_unity_connected()
-
-        # Vérifier l'activation du serveur ws (au cas où on arrive dans l'écran après la déconnexion)
-        self.adaptive_mode_enabled = self.ws_server.is_running
     
     def on_leave(self):
         event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
