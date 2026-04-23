@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 
 # Standard library
 import asyncio
+from utils.event_bus import event_bus
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -69,7 +70,9 @@ class TrackingScreen(MDScreen):
         self.hr_session = app.hr_session
 
         # Callback pour recevoir la FC en temps réel
-        self.hr_session.on_data_added = self.on_new_hr_data
+        # self.hr_session.on_data_added = self.on_new_hr_data
+        # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC et batterie
+        event_bus.subscribe("heart_rate_received", self.on_heart_rate_received)
 
         # Callbacks WebSocket
         # self.ws_server.on_client_connected_tracking = self.on_ws_client_connected
@@ -80,6 +83,7 @@ class TrackingScreen(MDScreen):
 
         # Démarrer la mise à jour du graphique (1 Hz)
         self.update_event = Clock.schedule_interval(self.update_graph, 1)
+        
             
     def on_leave(self):
         """Appelé à la sortie de l'écran"""
@@ -90,6 +94,9 @@ class TrackingScreen(MDScreen):
         # Arrêter les mises à jour
         if self.update_event:
             self.update_event.cancel()
+        
+        # Nettoyer les callbacks pour éviter les fuites de mémoire et les appels indésirables
+        event_bus.unsubscribe("heart_rate_received", self.on_heart_rate_received)
     
     # ========== GESTION DES DONNÉES EXISTANTES ==========
 
@@ -109,15 +116,13 @@ class TrackingScreen(MDScreen):
         else:
             logger.info("📊 Aucune donnée existante à charger")
     
-    def on_new_hr_data(self, elapsed_time, bpm, hr_percent):
+    def on_heart_rate_received(self, bpm):
         """
         Callback appelé quand une nouvelle donnée est ajoutée à la session
         (Appelé automatiquement depuis scan_screen)
         
         Args:
-            elapsed_time: Temps écoulé en secondes
             bpm: Fréquence cardiaque
-            hr_percent: Pourcentage de FCmax
         """
         
         # Mettre à jour l'affichage

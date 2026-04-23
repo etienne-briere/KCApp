@@ -10,6 +10,7 @@ from kivy.metrics import sp
 from kivy.clock import Clock
 
 # Custom modules
+from utils.event_bus import event_bus
 from utils.logger import get_logger
 logger = get_logger(__name__)
 
@@ -50,8 +51,12 @@ class ScanScreen(MDScreen):
         # utile pour appeler les fonctions de scan_screen.py depuis ble/ble_manager.py
         self.ble_manager.on_scan_complete = self.on_scan_complete
         self.ble_manager.on_connection_changed = self.on_connection_changed
-        self.ble_manager.on_heart_rate_scan = self.on_heart_rate_received
-        self.ble_manager.on_battery_level = self.on_battery_received
+        # self.ble_manager.on_heart_rate_scan = self.on_heart_rate_received
+        # self.ble_manager.on_battery_level = self.on_battery_received
+
+        # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC et batterie
+        event_bus.subscribe("heart_rate_received", self.on_heart_rate_received) 
+        event_bus.subscribe("battery_received", self.on_battery_received)
 
     # ========== SCAN ==========
     
@@ -200,4 +205,8 @@ class ScanScreen(MDScreen):
     # ========== SCREEN LIFECYCLE ==========
     def on_leave(self):
         """Sortie de l'écran"""
-        pass
+
+        # Nettoyer les callbacks pour éviter les fuites de mémoire et les appels indésirables
+        event_bus.unsubscribe("heart_rate_received", self.on_heart_rate_received)
+        event_bus.unsubscribe("battery_received", self.on_battery_received)
+        

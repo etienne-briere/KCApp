@@ -6,6 +6,7 @@ from typing import Optional, Callable, List
 from kivymd.toast import toast
 from kivy.app import App
 
+from utils.event_bus import event_bus
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -33,8 +34,8 @@ class BLEManager:
         # Callbacks vers scan_screen.py
         self.on_scan_complete: Optional[Callable] = None
         self.on_connection_changed: Optional[Callable] = None
-        self.on_heart_rate_scan: Optional[Callable] = None
-        self.on_battery_level: Optional[Callable] = None
+        # self.on_heart_rate_scan: Optional[Callable] = None
+        # self.on_battery_level: Optional[Callable] = None
 
         # Callback vers pilotage_screen.py
         self.on_heart_rate_pilotage: Optional[Callable] = None
@@ -194,9 +195,12 @@ class BLEManager:
             battery_level = battery_data[0]
             logger.info(f"🔋 Batterie : {battery_level}%")
             
-            # Callback UI
-            if self.on_battery_level:
-                self.on_battery_level(battery_level)
+            # # Callback UI
+            # if self.on_battery_level:
+            #     self.on_battery_level(battery_level)
+
+            # Émettre un événement global pour que les autres composants puissent réagir à la nouvelle donnée de batterie
+            event_bus.emit("battery_received", battery_level)
                 
         except Exception as e:
             logger.error(f"Erreur lecture batterie : {e}")
@@ -215,9 +219,12 @@ class BLEManager:
         heart_rate = int(data[1])
         logger.debug(f"❤️ {heart_rate} BPM")
         
-        # Callback UI
-        if self.on_heart_rate_scan:
-            self.on_heart_rate_scan(heart_rate)
+        # # Callback UI
+        # if self.on_heart_rate_scan:
+        #     self.on_heart_rate_scan(heart_rate)
+        
+        # Émettre un événement global pour que les autres composants puissent réagir à la nouvelle FC
+        event_bus.emit("heart_rate_received", heart_rate)
         
         # # Callback UI
         # if self.on_heart_rate_pilotage:
