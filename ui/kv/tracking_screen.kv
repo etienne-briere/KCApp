@@ -52,9 +52,36 @@
                 MatplotFigure:
                     id: hr_graph_widget
                     size_hint: 0.9, 1
+            
+           # Boutons d'action
+            MDBoxLayout:
+                orientation: "horizontal"
+                spacing: dp(15)
+                size_hint_y: None
+                height: self.minimum_height
 
-        
+                Widget:  # pousse les boutons à droite
+                
+                MDIconButton:
+                    icon: "restart"
+                    theme_text_color: "Custom"
+                    text_color: "grey"
+                    size_hint: None, None
+                    icon_size: "40sp"
+                    on_release: root.reset_graph()
+                
+                MDIconButton:
+                    icon: "file-export-outline"
+                    theme_text_color: "Custom"
+                    text_color: "grey"
+                    size_hint: None, None
+                    icon_size: "40sp"
+                    # on_release: root.reset_graph()
+                
+                Widget:  # pousse les boutons à gauche
+
     
+
 
 
 

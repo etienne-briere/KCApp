@@ -59,8 +59,7 @@ class HRSession:
         self.sum_hr = 0
         self.max_hr = 0
         self.min_hr = 999
-        self.start_time = None
-        self.is_recording = False
+        self.start_time = time.time()
 
     # =========================
     # INPUT (EVENT BUS)

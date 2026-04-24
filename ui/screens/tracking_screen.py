@@ -37,7 +37,6 @@ class TrackingScreen(MDScreen):
         # Configuration Matplotlib
         self.fig = None
         self.line_hr = None
-        self.line_hr_target = None
         self.placeholder_text = None
 
         # UDP Controller
@@ -107,7 +106,7 @@ class TrackingScreen(MDScreen):
         self.ax1.set_facecolor("none") # Fond transparent
         self.ax1.margins(x=0, y=0) # Pas de marges autour des données
         self.fig.tight_layout() # Ajuster le layout
-        self.ax1.grid(True, alpha=0.3) # Grille légère
+        self.ax1.grid(True, alpha=0.2) # Grille légère
 
         # Texte indicatif quand pas de données
         self.placeholder_text = self.ax1.text(
@@ -135,22 +134,16 @@ class TrackingScreen(MDScreen):
 
         # Limites des axes
         self.ax1.set_xlim(0, 600)  # 10 minutes
-        self.ax1.set_ylim(0, 100)  # 0-100% FCmax
+        self.ax1.set_ylim(0, 100)  # 0-100 %FCmax
         
         # Créer la ligne HR (vide au départ)
         self.line_hr, = self.ax1.plot([], [], 'r-', linewidth=2, label='HR (%)')
-        self.ax1.legend(loc='upper left', facecolor='#1e1e1e', edgecolor='white', labelcolor='white')
-        
-        # ✨ Zone de remplissage HR (initialement vide)
-        self.fill_hr = None
-
-        # Créer la ligne HR target (vide au départ)
-        self.line_hr_target, = self.ax1.plot([], [], 'b-', linewidth=2, label='HR Target (%)')
+        # self.ax1.legend(loc='upper left', facecolor='#1e1e1e', edgecolor='white', labelcolor='white')
 
         # Ajouter la figure au widget
         self.ids.hr_graph_widget.figure = self.fig
     
-    # --- CALLBACK ----#
+    #==== CALLBACK ====#
     
     def on_hr_updated(self, point):
 
@@ -160,67 +153,49 @@ class TrackingScreen(MDScreen):
         # UI label
         self.ids.heart_rate_label.text = str(bpm)
 
-        # update graph incrementally (IMPORTANT)
+        # MAJ UI
+        self.ax1.set_ylabel("HRmax (%)", color="red", fontsize=12)
+
+        # Supprimer le placeholder
+        if self.placeholder_text:
+            self.placeholder_text.set_visible(False)
+
+        # update graph
         self.line_hr.set_data(
             [p["t"] for p in self.hr_session.data],
             [p["percent"] or 0 for p in self.hr_session.data]
         )
 
         self.fig.canvas.draw_idle()
-                
-    def update_graph(self, dt):
-        """Met à jour le graphique toutes les secondes"""
+    
+    def reset_graph(self):
+        self.hr_session.reset()
+        self.ax1.set_xlim(0, 600)
+        self.fig.canvas.draw_idle()
         
-        # Vérifier qu'un appareil est connecté
-        if not self.ble_manager or not self.ble_manager.is_connected:
-            # Afficher le texte indicatif
-            self.placeholder_text.set_visible(True)
+    # def update_graph(self, dt):
+    #     """Met à jour le graphique toutes les secondes"""
+        
+    #     # Vérifier qu'un appareil est connecté
+    #     if not self.ble_manager or not self.ble_manager.is_connected:
+    #         # Afficher le texte indicatif
+    #         self.placeholder_text.set_visible(True)
 
-            # Forcer le redessinage
-            self.fig.canvas.draw()
-            self.fig.canvas.flush_events()
-            return
+    #         # Forcer le redessinage
+    #         self.fig.canvas.draw()
+    #         self.fig.canvas.flush_events()
+    #         return
         
-        # MAJ UI
-        self.ax1.set_ylabel("HRmax (%)", color="red", fontsize=12)
+    #     # MAJ UI
+    #     self.ax1.set_ylabel("HRmax (%)", color="red", fontsize=12)
         
-        # Supprimer le placeholder
-        if self.placeholder_text:
-            self.placeholder_text.set_visible(False)
+    #     # Supprimer le placeholder
+    #     if self.placeholder_text:
+    #         self.placeholder_text.set_visible(False)
 
-        # ✨ Supprimer l'ancien remplissage
-        if self.fill_hr:
-            self.fill_hr.remove()
-        
-        # Si on n'a pas reçu de données récentes, on ne fait rien
-        if not self.hr_session.is_recording:
-            return
-        
-        # Récupérer TOUTES les données de la session
-        times, hr_percents = self.hr_session.get_graph_percent()
+    #     # Forcer le redessinage
+    #     self.fig.canvas.draw()
+    #     self.fig.canvas.flush_events()
 
-        if not times:
-            return
-        
-        # Mettre à jour la ligne HR du graphique
-        self.line_hr.set_data(times, hr_percents)
-
-        # # ✨ Créer le nouveau remplissage sous la courbe
-        # self.fill_hr = self.ax1.fill_between(
-        #     times, 
-        #     0,  # Base : 0
-        #     hr_percents,  # Hauteur : valeurs HR
-        #     alpha=0.3,  # Transparence
-        #     color='red',  # Couleur
-        #     interpolate=True
-        # )
-
-        # # Incrémenter le temps
-        # self.time += 1
-        
-        # Forcer le redessinage
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
-
-        # Rafraîchir le widget
-        self.ids.hr_graph_widget.figure = self.fig    
+    #     # Rafraîchir le widget
+    #     self.ids.hr_graph_widget.figure = self.fig    
