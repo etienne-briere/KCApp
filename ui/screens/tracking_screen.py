@@ -63,7 +63,6 @@ class TrackingScreen(MDScreen):
         self.hr_session = app.hr_session
 
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC
-        # event_bus.subscribe("heart_rate_received", self.on_heart_rate_received)
         event_bus.subscribe("hr_data_updated", self.on_hr_updated)
         
         # Charger toutes les data pré-existantes dans le graphique
@@ -71,7 +70,6 @@ class TrackingScreen(MDScreen):
             
     def on_leave(self):
         """Appelé à la sortie de l'écran"""
-        
         # Nettoyer les callbacks pour éviter les fuites de mémoire et les appels indésirables
         event_bus.unsubscribe("hr_data_updated", self.on_hr_updated)
     

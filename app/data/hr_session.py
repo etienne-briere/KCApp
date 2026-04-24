@@ -77,13 +77,11 @@ class HRSession:
         t = time.time() - self.start_time
 
         percent = self._compute_percent(bpm)
-        zone = self._compute_zone(percent) if percent else None
 
         point = {
             "t": t,
             "bpm": bpm,
-            "percent": percent,
-            "zone": zone
+            "percent": percent
         }
 
         self.data.append(point)
@@ -106,17 +104,6 @@ class HRSession:
             return (bpm / max_hr) * 100
         except:
             return None
-
-    def _compute_zone(self, percent: float) -> int:
-        if percent < 60:
-            return 1
-        elif percent < 70:
-            return 2
-        elif percent < 80:
-            return 3
-        elif percent < 90:
-            return 4
-        return 5
     
     # =========================
     # GRAPH DATA
@@ -171,14 +158,17 @@ class HRSession:
 
         logger.info(f"💾 JSON saved: {path}")
 
-    def save_csv(self, path: str):
+    def save_csv(self):
+
+        from datetime import datetime
+        path = f"sessions/session_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
 
         with open(path, "w") as f:
-            f.write("time,bpm,percent,zone\n")
+            f.write("Time,FC,%FCmax\n")
 
             for p in self.data:
                 f.write(
-                    f"{p['t']},{p['bpm']},{p['percent']},{p['zone']}\n"
+                    f"{p['t']},{p['bpm']},{p['percent']}\n"
                 )
 
         logger.info(f"💾 CSV saved: {path}")

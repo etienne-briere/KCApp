@@ -71,12 +71,12 @@
                     on_release: root.reset_graph()
                 
                 MDIconButton:
-                    icon: "file-export-outline"
+                    icon: "download-circle-outline"
                     theme_text_color: "Custom"
                     text_color: "grey"
                     size_hint: None, None
                     icon_size: "40sp"
-                    # on_release: root.reset_graph()
+                    on_release: app.hr_session.save_csv()
                 
                 Widget:  # pousse les boutons à gauche
 
