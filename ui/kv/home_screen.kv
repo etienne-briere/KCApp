@@ -79,4 +79,36 @@
                     icon_size: "30sp"
                     opacity: 1 if not root.unity_connected else 0
                     on_release: root.force_reconnect()
+            
+            Widget:
+            
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(10)
+                size_hint: 1, None
+                height: self.minimum_height
+
+                MDLabel:
+                    text: "Aperçu"
+                    font_style: "H5"
+                    halign: "left"
+
+                Widget:
+
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(20)
+                    spacing: dp(15)
+                    size_hint_y: None
+                    height: self.minimum_height
+            
+                    # ==== Entrée âge joueur ====
+                    MDTextField:
+                        id: age_input
+                        hint_text: "Âge"
+                        helper_text: "Entrez un âge"
+                        helper_text_mode: "on_focus"
+                        input_filter: "int"
+                        mode: "rectangle"
+                        size_hint_x: 1
                 
