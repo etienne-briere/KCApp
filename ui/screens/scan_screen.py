@@ -151,9 +151,9 @@ class ScanScreen(MDScreen):
             # MAJ UI
             self.update_heart_rate(heart_rate)
         
-        # Enregistrer la session (avec calcul du %FCmax)
-        hr_percent = self.calculate_hr_percent(heart_rate)
-        self.hr_session.add_heart_rate(heart_rate, hr_percent)        
+        # # Enregistrer la session (avec calcul du %FCmax)
+        # hr_percent = self.calculate_hr_percent(heart_rate)
+        # self.hr_session.add_heart_rate(heart_rate, hr_percent)        
         
     def calculate_hr_percent(self, bpm: int) -> float:
         """Calcule le % de FCmax"""

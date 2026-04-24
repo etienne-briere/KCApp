@@ -93,11 +93,11 @@ class KCApp(MDApp):
 
         logger.info("Arrêt de l'application - nettoyage des ressources")
 
-        # # Sauvegarder automatiquement la session
-        # if self.hr_session and self.hr_session.total_points > 0:
-        #     from datetime import datetime
-        #     filename = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        #     self.hr_session.save_to_file(f"sessions/{filename}")
+        # Sauvegarder automatiquement la session
+        if self.hr_session and self.hr_session.sum_hr > 0:
+            from datetime import datetime
+            filename = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            self.hr_session.save_csv(f"sessions/{filename}")
 
         # Arrêter UDP
         if self.udp_discovery:

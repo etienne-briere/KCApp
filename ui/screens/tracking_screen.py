@@ -32,7 +32,7 @@ class TrackingScreen(MDScreen):
         self.hr_session = None
         
         # Initialisation du temps
-        self.time = 0
+        # self.time = 0
         
         # Configuration Matplotlib
         self.fig = None
@@ -43,8 +43,8 @@ class TrackingScreen(MDScreen):
         # UDP Controller
         self.udp_controller = None
 
-        # Debounce pour éviter trop d'envois UDP
-        self.slider_update_event = None
+        # # Debounce pour éviter trop d'envois UDP
+        # self.slider_update_event = None
     
     def on_kv_post(self, base_widget):
         """
@@ -64,33 +64,23 @@ class TrackingScreen(MDScreen):
         self.hr_session = app.hr_session
 
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC
-        event_bus.subscribe("heart_rate_received", self.on_heart_rate_received)
+        # event_bus.subscribe("heart_rate_received", self.on_heart_rate_received)
+        event_bus.subscribe("hr_data_updated", self.on_hr_updated)
         
         # Charger toutes les data pré-existantes dans le graphique
         self.load_existing_data()
-
-        # Démarrer la mise à jour du graphique (1 Hz)
-        self.update_event = Clock.schedule_interval(self.update_graph, 1)
-        
             
     def on_leave(self):
         """Appelé à la sortie de l'écran"""
         
-        # Désactiver le callback de session
-        self.hr_session.on_data_added = None
-        
-        # Arrêter les mises à jour
-        if self.update_event:
-            self.update_event.cancel()
-        
         # Nettoyer les callbacks pour éviter les fuites de mémoire et les appels indésirables
-        event_bus.unsubscribe("heart_rate_received", self.on_heart_rate_received)
+        event_bus.unsubscribe("hr_data_updated", self.on_hr_updated)
     
     # ========== GESTION DES DONNÉES EXISTANTES ==========
 
     def load_existing_data(self):
         """Charge toutes les données de la session dans le graphique"""
-        times, hr_percents = self.hr_session.get_data_for_graph_percent()
+        times, hr_percents = self.hr_session.get_graph_percent()
         
         if times and hr_percents:
             logger.info(f"📊 Chargement de {len(times)} points existants")
@@ -103,14 +93,6 @@ class TrackingScreen(MDScreen):
             self.fig.canvas.flush_events()
         else:
             logger.info("📊 Aucune donnée existante à charger")
-    
-    def on_heart_rate_received(self, bpm):
-        """
-        Callback appelé quand une nouvelle donnée est ajoutée à la session
-        """
-        
-        # Mettre à jour l'affichage
-        self.ids.heart_rate_label.text = f"{bpm}"
     
     # ========== GRAPHIQUE MATPLOTLIB ==========
 
@@ -167,7 +149,25 @@ class TrackingScreen(MDScreen):
 
         # Ajouter la figure au widget
         self.ids.hr_graph_widget.figure = self.fig
-            
+    
+    # --- CALLBACK ----#
+    
+    def on_hr_updated(self, point):
+
+        bpm = point["bpm"]
+        t = point["t"]
+
+        # UI label
+        self.ids.heart_rate_label.text = str(bpm)
+
+        # update graph incrementally (IMPORTANT)
+        self.line_hr.set_data(
+            [p["t"] for p in self.hr_session.data],
+            [p["percent"] or 0 for p in self.hr_session.data]
+        )
+
+        self.fig.canvas.draw_idle()
+                
     def update_graph(self, dt):
         """Met à jour le graphique toutes les secondes"""
         
@@ -182,9 +182,7 @@ class TrackingScreen(MDScreen):
             return
         
         # MAJ UI
-        self.ax1.set_ylabel("HRmax (%)", color="red", 
-                            fontsize=12, fontweight="bold"
-                            )
+        self.ax1.set_ylabel("HRmax (%)", color="red", fontsize=12)
         
         # Supprimer le placeholder
         if self.placeholder_text:
@@ -199,7 +197,7 @@ class TrackingScreen(MDScreen):
             return
         
         # Récupérer TOUTES les données de la session
-        times, hr_percents = self.hr_session.get_data_for_graph_percent()
+        times, hr_percents = self.hr_session.get_graph_percent()
 
         if not times:
             return
@@ -207,18 +205,18 @@ class TrackingScreen(MDScreen):
         # Mettre à jour la ligne HR du graphique
         self.line_hr.set_data(times, hr_percents)
 
-        # ✨ Créer le nouveau remplissage sous la courbe
-        self.fill_hr = self.ax1.fill_between(
-            times, 
-            0,  # Base : 0
-            hr_percents,  # Hauteur : valeurs HR
-            alpha=0.3,  # Transparence
-            color='red',  # Couleur
-            interpolate=True
-        )
+        # # ✨ Créer le nouveau remplissage sous la courbe
+        # self.fill_hr = self.ax1.fill_between(
+        #     times, 
+        #     0,  # Base : 0
+        #     hr_percents,  # Hauteur : valeurs HR
+        #     alpha=0.3,  # Transparence
+        #     color='red',  # Couleur
+        #     interpolate=True
+        # )
 
-        # Incrémenter le temps
-        self.time += 1
+        # # Incrémenter le temps
+        # self.time += 1
         
         # Forcer le redessinage
         self.fig.canvas.draw()
@@ -226,5 +224,3 @@ class TrackingScreen(MDScreen):
 
         # Rafraîchir le widget
         self.ids.hr_graph_widget.figure = self.fig    
-    
-        
