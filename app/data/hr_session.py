@@ -1,8 +1,12 @@
 from datetime import datetime
+import time
+
 from typing import List, Optional, Tuple, Callable
 from collections import deque
 import json
+import uuid
 
+from utils.event_bus import event_bus
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -15,204 +19,156 @@ class HRSession:
         Args:
             max_points: Nombre maximum de points à conserver (défaut: 1h à 1Hz)
         """
-        # Données de session
-        self.data_hr: deque = deque(maxlen=max_points)  # (timestamp, bpm, hr_percent)
-        self.session_start_time: Optional[datetime] = None
+        self.session_id = str(uuid.uuid4())
+
+        # stockage des points (dict)
+        self.data: deque = deque(maxlen=max_points)
+
+        self.start_time: Optional[float] = None
         self.is_recording = False
-        
-        # Statistiques
-        self.total_points = 0
+
+        # stats O(1)
+        self.sum_hr = 0
         self.max_hr = 0
         self.min_hr = 999
-        self.avg_hr = 0
 
-        # Callbacks
-        self.on_data_added: Optional[Callable] = None
-        
-        logger.info(f"Session HR initialisée (max: {max_points} points)")
+        logger.info(f"🆕 HRSession init ({self.session_id})")
+
+        event_bus.subscribe("heart_rate_received", self.on_hr_received)
     
     # ========== GESTION DE SESSION ==========
     
     def start_recording(self):
         """Démarre l'enregistrement de la session"""
         if self.is_recording:
-            logger.warning("⚠️ Enregistrement déjà en cours")
             return
         
-        self.session_start_time = datetime.now()
+        self.start_time = time.time()
         self.is_recording = True
-        logger.info(f"📹 Enregistrement démarré: {self.session_start_time}")
+
+        logger.info("▶️ HR recording started")
     
     def stop_recording(self):
         """Arrête l'enregistrement"""
-        if not self.is_recording:
-            logger.warning("⚠️ Aucun enregistrement en cours")
-            return
-        
         self.is_recording = False
-        duration = self.get_session_duration()
-        logger.info(f"⏹️ Enregistrement arrêté - Durée: {duration}s")
-    
-    def clear_session(self):
-        """Réinitialise la session (pas utilisé)"""
-        self.data_hr.clear()
-        self.session_start_time = None
-        self.is_recording = False
-        self.total_points = 0
+        logger.info(f"⏹️ HR recording stopped ({self.get_duration():.1f}s)")
+
+    def reset(self):
+        """Réinitialise la session"""
+        self.data.clear()
+        self.sum_hr = 0
         self.max_hr = 0
         self.min_hr = 999
-        self.avg_hr = 0
-        
-        logger.info("🗑️ Session réinitialisée")
-    
-    # ========== AJOUT DE DONNÉES ==========
-    
-    def add_heart_rate(self, bpm: int, hr_percent: Optional[float] = None):
-        """
-        Ajoute une donnée de FC à la session
-        
-        Args:
-            bpm: Fréquence cardiaque en BPM
-            hr_percent: Pourcentage de FCmax (optionnel)
-        """
+        self.start_time = time.time()
+
+    # =========================
+    # INPUT (EVENT BUS)
+    # =========================
+
+    def on_hr_received(self, bpm: int):
+
         if not self.is_recording:
-            logger.debug("⚠️ Enregistrement non démarré - donnée ignorée")
             return
-        
-        # Calculer le timestamp relatif (secondes depuis le début)
-        elapsed_time = self.get_session_duration()
-        
-        # Ajouter les données
-        self.data_hr.append((elapsed_time, bpm, hr_percent))
-        self.total_points += 1
-        
-        # Mettre à jour les statistiques
-        self._update_stats(bpm)
-        
-        logger.debug(f"➕ HR ajoutée: {bpm} BPM à t={elapsed_time}s")
-        
-        # Callback
-        if self.on_data_added:
-            self.on_data_added(elapsed_time, bpm, hr_percent)
-    
-    def _update_stats(self, bpm: int):
-        """Met à jour les statistiques de la session"""
+
+        # éviter les fausses valeurs 
+        if bpm < 30 or bpm > 220:
+            return
+
+        t = time.time() - self.start_time
+
+        percent = self._compute_percent(bpm)
+
+        point = {
+            "t": t,
+            "bpm": bpm,
+            "percent": percent
+        }
+
+        self.data.append(point)
+
+        # stats O(1)
+        self.sum_hr += bpm
         self.max_hr = max(self.max_hr, bpm)
         self.min_hr = min(self.min_hr, bpm)
-        
-        # Calculer la moyenne
-        if self.data_hr:
-            total = sum(point[1] for point in self.data_hr)
-            self.avg_hr = total / len(self.data_hr)
-    
-    # ========== RÉCUPÉRATION DE DONNÉES ==========
-    
-    def get_all_data(self) -> List[Tuple[float, int, Optional[float]]]:
-        """
-        Retourne toutes les données de la session (pas utilisé)
-        
-        Returns:
-            List de tuples (timestamp, bpm, hr_percent)
-        """
-        return list(self.data_hr)
-    
-    def get_data_for_graph(self) -> Tuple[List[float], List[int]]:
-        """
-        Retourne les données formatées pour le graphique (pas utilisé)
-        
-        Returns:
-            Tuple (times, bpms)
-        """
-        if not self.data_hr:
-            return [], []
-        
-        times = [point[0] for point in self.data_hr]
-        bpms = [point[1] for point in self.data_hr]
-        
-        return times, bpms
-    
-    def get_data_for_graph_percent(self) -> Tuple[List[float], List[float]]:
-        """
-        Retourne les données en % FCmax pour le graphique
-        
-        Returns:
-            Tuple (times, hr_percents)
-        """
-        if not self.data_hr:
-            return [], []
-        
-        times = [point[0] for point in self.data_hr]
-        hr_percents = [point[2] if point[2] is not None else 0 for point in self.data_hr]
-        
-        return times, hr_percents
-    
-    # ========== STATISTIQUES ==========
-    
-    def get_session_duration(self) -> float:
-        """
-        Retourne la durée de la session en secondes
-        
-        Returns:
-            Durée en secondes
-        """
-        if not self.session_start_time:
-            return 0.0
-        
-        return (datetime.now() - self.session_start_time).total_seconds()
-    
-    def get_stats(self) -> dict:
-        """
-        Retourne les statistiques de la session
-        
-        Returns:
-            Dictionnaire avec les stats
-        """
-        return {
-            'duration': self.get_session_duration(),
-            'total_points': self.total_points,
-            'max_hr': self.max_hr if self.max_hr > 0 else None,
-            'min_hr': self.min_hr if self.min_hr < 999 else None,
-            'avg_hr': round(self.avg_hr, 1) if self.avg_hr > 0 else None,
-            'is_recording': self.is_recording,
-            'start_time': self.session_start_time.isoformat() if self.session_start_time else None
-        }
-    
-    # ========== SAUVEGARDE / CHARGEMENT ==========
-    
-    def save_to_file(self, filepath: str) -> bool:
-        """
-        Sauvegarde la session dans un fichier JSON
-        
-        Args:
-            filepath: Chemin du fichier
-            
-        Returns:
-            True si sauvegarde réussie
-        """
+
+        event_bus.emit("hr_data_updated", point)
+
+    # =========================
+    # CALCULS
+    # =========================
+
+    def _compute_percent(self, bpm: int) -> Optional[float]:
         try:
-            data = {
-                'session_info': {
-                    'start_time': self.session_start_time.isoformat() if self.session_start_time else None,
-                    'duration': self.get_session_duration(),
-                    'total_points': self.total_points
-                },
-                'statistics': self.get_stats(),
-                'data': [
-                    {
-                        'time': point[0],
-                        'bpm': point[1],
-                        'hr_percent': point[2]
-                    }
-                    for point in self.data_hr
-                ]
-            }
-            
-            with open(filepath, 'w') as f:
-                json.dump(data, f, indent=2)
-            
-            logger.info(f"💾 Session sauvegardée: {filepath}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Erreur sauvegarde session: {e}")
-            return False
+            from kivy.app import App
+            max_hr = App.get_running_app().user_profile.calculate_max_hr()
+            return (bpm / max_hr) * 100
+        except:
+            return None
+    
+    # =========================
+    # GRAPH DATA
+    # =========================
+
+    def get_graph_data(self) -> Tuple[List[float], List[int]]:
+        return (
+            [p["t"] for p in self.data],
+            [p["bpm"] for p in self.data]
+        )
+
+    def get_graph_percent(self) -> Tuple[List[float], List[float]]:
+        return (
+            [p["t"] for p in self.data],
+            [p["percent"] or 0 for p in self.data]
+        )
+
+    # =========================
+    # STATS
+    # =========================
+
+    def get_duration(self) -> float:
+        if not self.start_time:
+            return 0
+        return time.time() - self.start_time
+
+    def get_stats(self) -> dict:
+        n = len(self.data)
+
+        return {
+            "duration": self.get_duration(),
+            "points": n,
+            "max": self.max_hr if n else None,
+            "min": self.min_hr if n else None,
+            "avg": (self.sum_hr / n) if n else None
+        }
+
+    # =========================
+    # EXPORT
+    # =========================
+
+    def save_json(self, path: str):
+
+        payload = {
+            "session_id": self.session_id,
+            "duration": self.get_duration(),
+            "data": list(self.data)
+        }
+
+        with open(path, "w") as f:
+            json.dump(payload, f, indent=2)
+
+        logger.info(f"💾 JSON saved: {path}")
+
+    def save_csv(self):
+
+        from datetime import datetime
+        path = f"sessions/session_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+        with open(path, "w") as f:
+            f.write("Time,FC,%FCmax\n")
+
+            for p in self.data:
+                f.write(
+                    f"{p['t']},{p['bpm']},{p['percent']}\n"
+                )
+
+        logger.info(f"💾 CSV saved: {path}")

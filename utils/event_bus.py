@@ -21,7 +21,6 @@ class EventBus:
     def emit(self, event_name, data=None):
         if event_name in self.listeners:
             for callback in list(self.listeners[event_name]):
-                print(f"[EventBus] {event_name} → {callback.__name__}")
                 Clock.schedule_once(lambda dt, cb=callback: cb(data))
     
 event_bus = EventBus()

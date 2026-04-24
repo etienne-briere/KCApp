@@ -1,0 +1,130 @@
+# =========================
+
+# 🐍 Python
+
+# =========================
+
+**pycache**/
+*.pyc
+*.pyo
+*.pyd
+*.pyc.*
+*.py,cover
+.python-version
+
+# =========================
+
+# 📦 Environnements
+
+# =========================
+
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# =========================
+
+# 🧪 Tests / Coverage
+
+# =========================
+
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# =========================
+
+# 🛠️ Build / Packaging
+
+# =========================
+
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# =========================
+
+# 📱 Kivy / Buildozer / Android
+
+# =========================
+
+.bin/
+.buildozer/
+*.apk
+*.aab
+.android/
+.gradle/
+
+# =========================
+
+# 🧠 VSCode / IDE
+
+# =========================
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+
+# 🧾 Logs
+
+# =========================
+
+*.log
+
+# =========================
+
+# 🗃️ OS files
+
+# =========================
+
+.DS_Store
+Thumbs.db
+
+# =========================
+
+# 🎮 Unity (si projet lié)
+
+# =========================
+
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+UserSettings/
+
+# Garder les fichiers importants Unity
+
+!Assets/
+!ProjectSettings/
+!Packages/
+
+# =========================
+
+# 🔌 Bluetooth / Data temporaires
+
+# =========================
+
+*.csv
+*.tmp
+
+# =========================
+
+# 🔐 Secrets / Config locaux
+
+# =========================
+
+*.env
+*.json
+secrets.json
+config.local.json

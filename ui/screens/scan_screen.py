@@ -144,16 +144,10 @@ class ScanScreen(MDScreen):
     
     # ========== DATA ==========
     
-    def on_heart_rate_received(self, heart_rate):
+    def on_heart_rate_received(self, bpm):
         """Callback quand FC reçue"""
         
-        if self.manager.current == 'scan':
-            # MAJ UI
-            self.update_heart_rate(heart_rate)
-        
-        # Enregistrer la session (avec calcul du %FCmax)
-        hr_percent = self.calculate_hr_percent(heart_rate)
-        self.hr_session.add_heart_rate(heart_rate, hr_percent)        
+        self.ids.heart_rate_label.text = f"{bpm}"   
         
     def calculate_hr_percent(self, bpm: int) -> float:
         """Calcule le % de FCmax"""
@@ -161,20 +155,11 @@ class ScanScreen(MDScreen):
         max_hr = app.user_profile.calculate_max_hr()
         return (bpm / max_hr) * 100
     
-    def on_battery_received(self, battery_level):
+    def on_battery_received(self, level):
         """Callback batterie"""
-        self.update_battery(battery_level)
-    
-    def update_heart_rate(self, bpm):
-        """Met à jour l'affichage FC"""
-        self.ids.heart_rate_label.text = f"{bpm}"
-    
-    def update_battery(self, level):
-        """Met à jour l'affichage batterie"""
         self.ids.battery_label.text = f"{level} %"
         if level != "--":
             self.update_battery_icon(level)
-    
     
     # ========== UI HELPERS ==========
     
