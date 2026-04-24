@@ -24,8 +24,6 @@ class TrackingScreen(MDScreen):
 
     # Properties pour l'UI
     heart_rate_label = StringProperty("--")
-    target_hr_value = NumericProperty(50)
-    server_ws_running = BooleanProperty(False)
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -42,9 +40,6 @@ class TrackingScreen(MDScreen):
         self.line_hr_target = None
         self.placeholder_text = None
 
-        # WebSocket Server
-        self.ws_server = None
-
         # UDP Controller
         self.udp_controller = None
 
@@ -57,14 +52,13 @@ class TrackingScreen(MDScreen):
         et que les ids sont disponibles.
         """
         # Initialiser le graphique Matplotlib
-        self.setup_graph()
+        self.init_graph()
     
     def on_pre_enter(self):
         """Appelé à l'ouverture de l'écran"""
         # Récupérer les managers
         app = App.get_running_app()
         self.ble_manager = app.ble_manager
-        self.ws_server = app.ws_server
         self.udp_discovery = app.udp_discovery
         self.udp_controller = app.udp_controller
         self.hr_session = app.hr_session
@@ -113,73 +107,18 @@ class TrackingScreen(MDScreen):
     def on_heart_rate_received(self, bpm):
         """
         Callback appelé quand une nouvelle donnée est ajoutée à la session
-        (Appelé automatiquement depuis scan_screen)
-        
-        Args:
-            bpm: Fréquence cardiaque
         """
         
         # Mettre à jour l'affichage
-        self.update_heart_rate(bpm)
-    
-    def update_heart_rate(self, bpm):
-        """
-        Met à jour l'affichage de la fréquence cardiaque
-        
-        Args:
-            bpm: Fréquence cardiaque en BPM
-        """
-        # Mettre à jour le label
         self.ids.heart_rate_label.text = f"{bpm}"
-
-    # ========== GESTION DU SLIDER ==========
-
-    def on_slider_change(self, value):
-        """
-        Appelé quand le slider change (événement `on_value`)
-
-        Args:
-            value: Nouvelle valeur du slider (0-100)
-        """
-        # Mettre à jour la property
-        self.target_hr_value = int(value)
-
-
-    def on_slider_touch_up(self):
-        """Appelé quand l'utilisateur relâche le slider"""
-        logger.debug(f"🎯 Slider relâché à {self.target_hr_value}%")
-
-        self.send_target_hr_to_unity(self.target_hr_value)
-
-    def send_target_hr_to_unity(self, target_hr: float):
-        """
-        Envoie la FC cible à Unity via UDP
-
-        Args:
-            target_hr: Pourcentage de FC cible (0-100)
-        """
-        if not self.udp_controller:
-            logger.warning("⚠️ UDP Controller non disponible")
-            return
-
-        # Envoyer via UDP
-        success = self.udp_controller.set_target_hr(target_hr)
-
-        if success:
-            logger.info(f"📤 Target HR envoyée à Unity via UDP: {target_hr}%")
-        else:
-            logger.warning(f"⚠️ Échec envoi Target HR (Unity non connecté)")
     
     # ========== GRAPHIQUE MATPLOTLIB ==========
 
-    def setup_graph(self):
+    def init_graph(self):
         """Initialise le graphique Matplotlib"""
         
         # Créer la figure et les axes
         self.fig, self.ax1 = plt.subplots()
-
-        # Ajout du 2ème axe Y (%FC cible)
-        self.ax2 = self.ax1.twinx()
 
         # Style du graphique
         self.fig.patch.set_alpha(0.0) # Fond transparent
@@ -203,12 +142,10 @@ class TrackingScreen(MDScreen):
         # Labels des axes
         self.ax1.set_ylabel("HRmax (%)", color="grey")
         self.ax1.set_xlabel("Time (s)", color="grey")
-        self.ax2.set_ylabel("HR target (%)", color="grey")
 
         # Couleurs des axes
         self.ax1.tick_params(axis='x', colors='grey')  # temps
         self.ax1.tick_params(axis='y', colors='grey')  # %FCmax
-        self.ax2.tick_params(axis='y', colors='grey')  # %FC cible
 
         # Couleur du contour des axes
         for spine in self.ax1.spines.values():
@@ -217,7 +154,6 @@ class TrackingScreen(MDScreen):
         # Limites des axes
         self.ax1.set_xlim(0, 600)  # 10 minutes
         self.ax1.set_ylim(0, 100)  # 0-100% FCmax
-        self.ax2.set_ylim(0, 100)  # 0-100% FC cible
         
         # Créer la ligne HR (vide au départ)
         self.line_hr, = self.ax1.plot([], [], 'r-', linewidth=2, label='HR (%)')
@@ -283,30 +219,6 @@ class TrackingScreen(MDScreen):
 
         # Incrémenter le temps
         self.time += 1
-
-        if self.server_ws_running:
-        # if self.ids.target_hr_slider.disabled == False:
-            if self.ax2:
-                self.ax2.set_ylabel("HR target (%)", color="blue", 
-                                   fontsize=12, fontweight="bold")
-                
-            # Récupérer la valeur cible
-            target_percent = self.ids.target_hr_slider.value
-            self.data_hr_target.append((self.time, target_percent))
-
-            # Mettre à jour la ligne HR target du graphique
-            if self.data_hr_target:
-                times, hr_target_values = zip(*self.data_hr_target)
-                self.line_hr_target.set_data(times, hr_target_values)
-        else:
-            # MAJ du graphique
-            if self.ax2:
-                self.ax2.set_ylabel("HR target (%)", color="grey", 
-                                   fontsize=10, fontweight="normal")
-                
-            # Effacer les données de la ligne HR target
-            self.data_hr_target = []
-            self.line_hr_target.set_data([], [])
         
         # Forcer le redessinage
         self.fig.canvas.draw()
