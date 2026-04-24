@@ -148,12 +148,6 @@ class ScanScreen(MDScreen):
         """Callback quand FC reçue"""
         
         self.ids.heart_rate_label.text = f"{bpm}"   
-        
-    def calculate_hr_percent(self, bpm: int) -> float:
-        """Calcule le % de FCmax"""
-        app = App.get_running_app()
-        max_hr = app.user_profile.calculate_max_hr()
-        return (bpm / max_hr) * 100
     
     def on_battery_received(self, level):
         """Callback batterie"""
