@@ -111,4 +111,5 @@
                         input_filter: "int"
                         mode: "rectangle"
                         size_hint_x: 1
+                        on_focus: if not self.focus: root.update_age(self.text)
                 

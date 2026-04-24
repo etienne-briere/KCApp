@@ -1,12 +1,11 @@
 from kivymd.uix.screen import MDScreen
-from kivy.properties import StringProperty, BooleanProperty
+from kivy.properties import StringProperty, BooleanProperty, NumericProperty
 from kivy.app import App
 from utils.logger import get_logger
 from kivy.uix.image import AsyncImage
 from kivy.clock import Clock
 from kivy.clock import mainthread
 from utils.event_bus import event_bus
-
 
 logger = get_logger(__name__)
 
@@ -29,8 +28,6 @@ class HomeScreen(MDScreen):
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
         event_bus.subscribe("unity_ping_received", self.handle_ping_received)
-
-        # self.udp_discovery.on_ping_received = self.handle_ping_received
     
     def on_leave(self):
         event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
@@ -63,4 +60,20 @@ class HomeScreen(MDScreen):
         app.ws_server.stop()
         app.udp_discovery.force_reconnect()
         self.unity_connected = False
+    
+    def update_age(self, value):
+        app = App.get_running_app()
 
+        try:
+            if value == "":
+                return  # ou une valeur par défaut
+
+            age = int(value)
+
+            if 5 <= age <= 100:  # validation logique
+                app.user_profile.age = age
+                print("Age mis à jour :", age)
+            else:
+                print("Âge hors limites")
+        except ValueError:
+            print("Entrée âge invalide")

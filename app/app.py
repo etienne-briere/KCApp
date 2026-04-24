@@ -55,7 +55,6 @@ class KCApp(MDApp):
         self.udp_discovery = UDPDiscovery()
         self.udp_controller = UDPController(self.udp_discovery)
         self.hr_session = HRSession(max_points=3600) # 1h max à 1Hz
-        # self.status_bar = StatusBar()
         self.adaptive_controller = AdaptiveController()
 
         # Définir le thème de l'application
