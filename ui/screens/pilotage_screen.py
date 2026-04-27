@@ -30,12 +30,6 @@ class PilotageScreen(MDScreen):
         self.cube_frequency_event = None
         self.target_hr_event = None
 
-        # # WebSocket Server
-        # self.ws_server = None
-
-        # UDP
-        # self.udp_controller = None
-        # self.udp_discovery = None
     
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
@@ -48,18 +42,24 @@ class PilotageScreen(MDScreen):
 
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
+        event_bus.subscribe("HRmax_target_updated", self.handle_HRmax_target)
 
         # Vérifier la connexion Unity (au cas où on arrive dans l'écran après la connexion)
         self.unity_connected = self.udp_discovery.is_unity_connected()
     
     def on_leave(self):
         event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
+        event_bus.unsubscribe("HRmax_target_updated", self.handle_HRmax_target)
     
-    # ========== CALLBACKS UDP ==========
+    # ========== CALLBACKS ==========
     
     def handle_unity_connection(self, data):
         connected = data["connected"]
         self.unity_connected = connected
+    
+    def handle_HRmax_target(self, data):
+        HRmax_target = int(data)
+        self.ids.target_hr_slider.value = HRmax_target
 
     # ========== OBSTACLES ==========
     

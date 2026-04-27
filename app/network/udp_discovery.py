@@ -192,14 +192,29 @@ class UDPDiscovery:
                 "timestamp": self.last_ping_time
             })
         
-        # pas encore implémenter dans Unity
-        elif data.startswith(b'Model:'):
-            model_selected = data[4:]
+        elif data.startswith(b'userAge:'):
+            message = data.decode()
+            age = int(message[8:])
+            
+            event_bus.emit("age_updated", age)
 
-            if model_selected == ["DRL", "PID"]:
-                event_bus.emit("mode_adaptive_enabled", True)
-            elif model_selected == ["Fixe", "Incremental"]:
-                event_bus.emit("mode_adaptive_enabled", False)
+        elif data.startswith(b'userHRMTarget:'):
+            message = data.decode()
+            HRmax_target = int(message[14:])
+            
+            event_bus.emit("HRmax_target_updated", HRmax_target)
+
+        # pas encore implémenter dans Unity
+        elif data.startswith(b'SelectedModel:'):
+            message = data.decode()
+            model_selected = message[14:]
+
+            event_bus.emit("model_updated", model_selected)
+
+            # if model_selected == ["DRL", "PID"]:
+            #     event_bus.emit("mode_adaptive_enabled", True)
+            # elif model_selected == ["Fixe", "Incremental"]:
+            #     event_bus.emit("mode_adaptive_enabled", False)
 
         # Image du stream
         elif data.startswith(b'IMG:'):
