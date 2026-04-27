@@ -8,108 +8,152 @@
 
         MDBoxLayout:
             orientation: "vertical"
-            padding: dp(40)
-            spacing: dp(10)
-            size_hint: 1, None
+            spacing: dp(40)
+            padding: dp(20)
+            size_hint: 0.9, None
             height: self.minimum_height
 
-            MDBoxLayout:
-                orientation: "horizontal"
-                spacing: dp(5)
-                size_hint: 1, None
-                height: dp(30)
-
-                # Indicateur de ping (pulsation)
-                MDIcon:
-                    id: ping_indicator
-                    icon: "unity"
-                    theme_text_color: "Custom"
-                    text_color: "grey"
-                    font_size: "40sp"
-                    size_hint_y: 1
-                    halign: "center"
-                    valign: "center"
-                    opacity: 0.3 if not root.unity_connected else 1
-
-                MDLabel:
-                    text: "Unity Status"
-                    font_style: "H5"
-                    halign: "left"
-            
-            # ==== Statut Unity ====
-            MDCard:
-                orientation: "horizontal"
-                padding: dp(20)
-                spacing: dp(15)
-                size_hint_y: None
-                height: self.minimum_height
-                    
-                # GIF de chargement (visible uniquement si unity déconnecté)
-                AsyncImage:
-                    source: root.status_icon_source
-                    size_hint: None, None
-                    height: dp(40) if not root.unity_connected else dp(0)
-                    width: dp(40) if not root.unity_connected else dp(0)
-                    anim_delay: 0.02  # Vitesse d'animation (50ms par frame)
-                    opacity: 1 if not root.unity_connected else 0
-
-                # Icône de succès (visible uniquement si unity connecté)
-                MDIcon:
-                    id: status_icon
-                    icon: "check-circle-outline"
-                    theme_text_color: "Custom"
-                    text_color: [0, 1, 0, 1]
-                    font_size: "50sp"
-                    size_hint_x: None
-                    width: dp(0) if not root.unity_connected else dp(50)
-                    opacity: 0 if not root.unity_connected else 1
-                
-                MDLabel:
-                    id: status_label
-                    text: "Connected" if root.unity_connected else "Waiting for Unity..."
-                    font_style: "Body1"
-                    halign: "left"
-                    valign: "center"
-            
-                MDIconButton:
-                    icon: "refresh"
-                    theme_text_color: "Custom"
-                    text_color: "grey"
-                    size_hint: None, None
-                    icon_size: "30sp"
-                    opacity: 1 if not root.unity_connected else 0
-                    on_release: root.force_reconnect()
-            
-            Widget:
-            
+            # ---- ZONE STATUS ---
             MDBoxLayout:
                 orientation: "vertical"
                 spacing: dp(10)
                 size_hint: 1, None
                 height: self.minimum_height
 
+                MDBoxLayout:
+                    orientation: "horizontal"
+                    spacing: dp(5)
+                    size_hint: 1, None
+                    height: self.minimum_height
+
+                    # Indicateur de ping (pulsation)
+                    MDIcon:
+                        id: ping_indicator
+                        icon: "unity"
+                        theme_text_color: "Custom"
+                        text_color: "grey"
+                        font_size: "30sp"
+                        size_hint_y: 1
+                        halign: "center"
+                        valign: "center"
+                        opacity: 0.3 if not root.unity_connected else 1
+
+                    MDLabel:
+                        text: "Unity Status"
+                        font_style: "H5"
+                        halign: "left"
+                
+                # ==== Statut Unity ====
+                MDCard:
+                    orientation: "horizontal"
+                    padding: dp(20)
+                    spacing: dp(15)
+                    elevation: 4
+                    size_hint_y: None
+                    height: self.minimum_height
+                        
+                    # GIF de chargement (visible uniquement si unity déconnecté)
+                    AsyncImage:
+                        source: root.status_icon_source
+                        size_hint: None, None
+                        height: dp(40) if not root.unity_connected else dp(0)
+                        width: dp(40) if not root.unity_connected else dp(0)
+                        anim_delay: 0.02  # Vitesse d'animation (50ms par frame)
+                        opacity: 1 if not root.unity_connected else 0
+
+                    # Icône de succès (visible uniquement si unity connecté)
+                    MDIcon:
+                        id: status_icon
+                        icon: "check-circle-outline"
+                        theme_text_color: "Custom"
+                        text_color: [0, 1, 0, 1]
+                        font_size: "50sp"
+                        size_hint_x: None
+                        width: dp(0) if not root.unity_connected else dp(50)
+                        opacity: 0 if not root.unity_connected else 1
+                    
+                    MDLabel:
+                        id: status_label
+                        text: "Connected" if root.unity_connected else "Waiting for Unity..."
+                        font_style: "Body1"
+                        halign: "left"
+                        valign: "center"
+                
+                    MDIconButton:
+                        icon: "refresh"
+                        theme_text_color: "Custom"
+                        text_color: "grey"
+                        size_hint: None, None
+                        icon_size: "30sp"
+                        opacity: 1 if not root.unity_connected else 0
+                        on_release: root.force_reconnect()
+                            
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(20)
+                size_hint: 1, None
+                height: self.minimum_height #if root.unity_connected else 0
+                # opacity: 1 if root.unity_connected else 0
+
                 MDLabel:
-                    text: "Aperçu"
+                    text: "Session en cours"
                     font_style: "H5"
                     halign: "left"
 
-                Widget:
-
                 MDCard:
-                    orientation: "vertical"
+                    orientation: "horizontal"
                     padding: dp(20)
-                    spacing: dp(15)
+                    spacing: dp(10)
+                    elevation: 4
                     size_hint_y: None
-                    height: self.minimum_height
+                    height: dp(100)
             
                     # ==== Entrée âge joueur ====
-                    MDTextField:
-                        id: age_input
-                        hint_text: "Âge"
-                        helper_text: "Entrez un âge"
-                        helper_text_mode: "on_focus"
-                        input_filter: "int"
-                        mode: "rectangle"
-                        size_hint_x: 1
-                        on_focus: if not self.focus: root.update_age(self.text)
+                    AnchorLayout:
+                        anchor_x: "center"
+                        anchor_y: "center"
+
+                        MDBoxLayout:
+                            orientation: "horizontal"
+                            spacing: dp(10)
+                            size_hint_x: 1
+                            
+                            MDTextField:
+                                id: age_input
+                                hint_text: "Âge"
+                                helper_text: "Entrez l'âge du joueur"
+                                helper_text_mode: "on_focus"
+                                input_filter: "int"
+                                mode: "rectangle"
+                                on_focus: if not self.focus: root.update_age(self.text)
+                            
+                            MDIconButton:
+                                icon: "send-outline"
+                                theme_text_color: "Custom"
+                                text_color: "skyblue"
+                                size_hint: None, None
+                                icon_size: "30sp"
+                                # on_release: root.force_reconnect()
+                    
+                    # ==== Séparateur ====
+                    Widget:
+                        size_hint_x: None
+                        width: dp(1)
+                        canvas:
+                            Color:
+                                rgba: app.theme_cls.divider_color
+                            Rectangle:
+                                pos: self.pos
+                                size: self.size
                 
+                    # ===== Affichage du modèle sélectionné dans Unity ====
+                    AnchorLayout:
+                        anchor_x: "center"
+                        anchor_y: "center"
+
+                        # Label
+                        MDLabel:
+                            id: selected_model
+                            text: root.selected_model
+                            font_style: "Body1"
+                            halign: "center"

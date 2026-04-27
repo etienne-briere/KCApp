@@ -14,6 +14,7 @@ class HomeScreen(MDScreen):
     
     unity_connected = BooleanProperty(False)
     status_icon_source = StringProperty("assets/loading.gif")
+    selected_model= StringProperty("")
     
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
