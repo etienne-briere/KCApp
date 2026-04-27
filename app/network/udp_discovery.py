@@ -6,7 +6,10 @@ from typing import Optional, Callable
 from utils.logger import get_logger
 from utils.event_bus import event_bus
 
+from kivy.app import App
+
 from config import UDP_PORT_SEND, UDP_PORT_RECEIVE, UDP_PING_TIMEOUT
+from app.data.game_session import GameSession
 
 logger = get_logger(__name__)
 
@@ -164,6 +167,9 @@ class UDPDiscovery:
             data: Données reçues
             address: Adresse de l'expéditeur
         """
+        app = App.get_running_app()
+        session = app.session
+
         # IP Unity reçue
         if data.startswith(b'IP_Unity:'):
             message = data.decode()
@@ -207,9 +213,25 @@ class UDPDiscovery:
         # pas encore implémenter dans Unity
         elif data.startswith(b'SelectedModel:'):
             message = data.decode()
-            model_selected = message[14:]
+            key, value = message.split(":")
 
-            event_bus.emit("model_updated", model_selected)
+            index_model = int(value)
+
+            if index_model == 0 :
+                model_name = "FIXE"
+            elif index_model == 1 :
+                model_name = "INCREMENTAL"
+            elif index_model == 2 :
+                model_name = "PID"
+            elif index_model == 3 :
+                model_name = "LTI"
+            elif index_model == 4 :
+                model_name = "DRL"
+
+            # Update config
+            session.config.update_from_udp(key, model_name)
+
+            event_bus.emit("config_updated", session.config)
 
             # if model_selected == ["DRL", "PID"]:
             #     event_bus.emit("mode_adaptive_enabled", True)

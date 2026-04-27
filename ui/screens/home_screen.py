@@ -16,7 +16,7 @@ class HomeScreen(MDScreen):
     
     unity_connected = BooleanProperty(False)
     status_icon_source = StringProperty("assets/loading.gif")
-    selected_model= StringProperty("PID")
+    selected_model= StringProperty("")
     
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
@@ -25,21 +25,24 @@ class HomeScreen(MDScreen):
         # Managers
         self.udp_discovery = app.udp_discovery
         self.udp_controller = app.udp_controller
+        self.session = app.session
 
         # Vérifier la connexion Unity (au cas où on arrive dans l'écran après la connexion)
         self.unity_connected = self.udp_discovery.is_unity_connected()
+        if self.unity_connected :
+            self.selected_model = self.session.config.model
 
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
         event_bus.subscribe("unity_ping_received", self.handle_ping_received)
         event_bus.subscribe("age_updated", self.handle_age)
-        event_bus.subscribe("model_updated", self.handle_model)
+        event_bus.subscribe("config_updated", self.on_config_updated)
     
     def on_leave(self):
         event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
         event_bus.unsubscribe("unity_ping_received", self.handle_ping_received)
         event_bus.unsubscribe("age_updated", self.handle_age)
-        event_bus.unsubscribe("model_updated", self.handle_model)
+        event_bus.subscribe("config_updated", self.on_config_updated)
 
     # ========== CALLBACKS UDP ==========
 
@@ -78,6 +81,12 @@ class HomeScreen(MDScreen):
             self.selected_model = "LTI"
         elif index_model == 3 :
             self.selected_model = "DRL"
+    
+    def on_config_updated(self, config):
+        model_name = config.model
+
+        # Mise à jour UI
+        self.selected_model = model_name
 
     def force_reconnect(self):
         """Bouton pour forcer la reconnexion"""

@@ -18,6 +18,7 @@ from app.network.udp_controller import UDPController
 from app.data.user_profile import UserProfile
 from app.data.hr_session import HRSession
 from app.controllers.adaptive_controller import AdaptiveController
+from app.data.game_session import GameSession
 # from ui.widgets.status_bar import StatusBar
 
 # Logger
@@ -56,6 +57,7 @@ class KCApp(MDApp):
         self.udp_controller = UDPController(self.udp_discovery)
         self.hr_session = HRSession(max_points=3600) # 1h max à 1Hz
         self.adaptive_controller = AdaptiveController()
+        self.session = GameSession()
 
         # Définir le thème de l'application
         self.theme_cls.theme_style = THEME_STYLE 

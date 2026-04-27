@@ -20,5 +20,5 @@ WEBSOCKET_PORT = 8765
 # Paramètres UDP
 UDP_PORT_SEND = 5003
 UDP_PORT_RECEIVE = 5006
-UDP_PING_TIMEOUT = 3.0  # Secondes avant de considérer Unity déconnecté
+UDP_PING_TIMEOUT = 4  # Secondes avant de considérer Unity déconnecté
 
