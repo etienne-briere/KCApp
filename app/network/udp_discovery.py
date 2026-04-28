@@ -171,70 +171,145 @@ class UDPDiscovery:
         app = App.get_running_app()
         session = app.session
 
-        # IP Unity reçue
-        if data.startswith(b'IP_Unity:'):
-            message = data.decode()
-            self.ip_unity = message.split("IP_Unity:")[1].strip()
-            
-            logger.info(f"✅ Unity connecté : {self.ip_unity}")
-            
-            # Arrêter l'envoi d'IP
-            self.send_ip_running = False
-            
-            # Initialiser le timestamp du ping
-            self.last_ping_time = time.time()
-            
-            event_bus.emit("unity_connection_changed", {
-                "connected": True,
-                "ip": self.ip_unity
-            })
-            
-        
-        elif data.startswith(b'userAge:'):
-            message = data.decode()
-            key, value = message.split(":")
-
-            # Update User
-            session.user_profile.update_from_udp(key, value)
-
-        elif data.startswith(b'userHRMTarget:'):
-            message = data.decode()
-            key, value = message.split(":")
-
-            # Update config
-            session.config.update_from_udp(key, value)
-
-        # Modèle adaptatif choisi
-        elif data.startswith(b'SelectedModel:'):
-            message = data.decode()
-            key, value = message.split(":")
-
-            index_model = int(value)
-
-            if index_model == 0 :
-                model_name = "FIXE"
-            elif index_model == 1 :
-                model_name = "INCREMENTAL"
-            elif index_model == 2 :
-                model_name = "PID"
-            elif index_model == 3 :
-                model_name = "LTI"
-            elif index_model == 4 :
-                model_name = "DRL"
-
-            # Update config
-            session.config.update_from_udp(key, model_name)
-
-            event_bus.emit("session_updated", session)
-
-        # Ping de Unity
-        elif data == b'ping_Unity':
+        # --- CAS SPÉCIAUX (pas de parsing clé:valeur) ---
+        if data == b'ping_Unity':
             self.last_ping_time = time.time()
             logger.debug("Ping Unity reçu")
 
             event_bus.emit("unity_ping_received", {
                 "timestamp": self.last_ping_time
             })
+            return
+
+        if data.startswith(b'IP_Unity:'):
+            message = data.decode()
+            self.ip_unity = message.split("IP_Unity:")[1].strip()
+
+            logger.info(f"✅ Unity connecté : {self.ip_unity}")
+
+            self.send_ip_running = False
+            self.last_ping_time = time.time()
+
+            event_bus.emit("unity_connection_changed", {
+                "connected": True,
+                "ip": self.ip_unity
+            })
+            return
+
+        # --- CAS GÉNÉRAL : clé:valeur ---
+        try:
+            message = data.decode("utf-8")
+            key, value = message.split(":", 1) # 1 seul split
+        except ValueError:
+            logger.warning(f"Message UDP mal formé : {data}")
+            return
+
+        # --- ROUTAGE ---
+        if key == "userAge":
+            session.user_profile.update_from_udp(key, value)
+
+        elif key == "userHRMTarget":
+            session.config.update_from_udp(key, value)
+
+        elif key == "SelectedModel":
+            model_map = {
+                0: "FIXE",
+                1: "INCREMENTAL",
+                2: "PID",
+                3: "LTI",
+                4: "DRL"
+            }
+
+            try:
+                index_model = int(value)
+                model_name = model_map.get(index_model, "UNKNOWN")
+            except ValueError:
+                logger.warning(f"Index modèle invalide : {value}")
+                return
+
+            session.config.update_from_udp(key, model_name)
+
+        else:
+            logger.debug(f"Clé UDP non gérée : {key}")
+            return
+
+        # --- NOTIFICATION GLOBALE ---
+        event_bus.emit("session_updated", session)
+    
+    # def _handle_udp_message(self, data: bytes, address: tuple):
+    #     """
+    #     Traite un message UDP reçu
+        
+    #     Args:
+    #         data: Données reçues
+    #         address: Adresse de l'expéditeur
+    #     """
+    #     app = App.get_running_app()
+    #     session = app.session
+
+    #     # IP Unity reçue
+    #     if data.startswith(b'IP_Unity:'):
+    #         message = data.decode()
+    #         self.ip_unity = message.split("IP_Unity:")[1].strip()
+            
+    #         logger.info(f"✅ Unity connecté : {self.ip_unity}")
+            
+    #         # Arrêter l'envoi d'IP
+    #         self.send_ip_running = False
+            
+    #         # Initialiser le timestamp du ping
+    #         self.last_ping_time = time.time()
+            
+    #         event_bus.emit("unity_connection_changed", {
+    #             "connected": True,
+    #             "ip": self.ip_unity
+    #         })
+            
+    #     elif data.startswith(b'userAge:'):
+    #         message = data.decode()
+    #         key, value = message.split(":")
+
+    #         # Update User
+    #         session.user_profile.update_from_udp(key, value)
+
+    #     elif data.startswith(b'userHRMTarget:'):
+    #         message = data.decode()
+    #         key, value = message.split(":")
+
+    #         # Update config
+    #         session.config.update_from_udp(key, value)
+
+    #     # Modèle adaptatif choisi
+    #     elif data.startswith(b'SelectedModel:'):
+    #         message = data.decode()
+    #         key, value = message.split(":")
+
+    #         index_model = int(value)
+
+    #         if index_model == 0 :
+    #             model_name = "FIXE"
+    #         elif index_model == 1 :
+    #             model_name = "INCREMENTAL"
+    #         elif index_model == 2 :
+    #             model_name = "PID"
+    #         elif index_model == 3 :
+    #             model_name = "LTI"
+    #         elif index_model == 4 :
+    #             model_name = "DRL"
+
+    #         # Update config
+    #         session.config.update_from_udp(key, model_name)
+
+    #         event_bus.emit("session_updated", session)
+
+    #     # Ping de Unity
+    #     elif data == b'ping_Unity':
+    #         self.last_ping_time = time.time()
+    #         logger.debug("Ping Unity reçu")
+
+    #         event_bus.emit("unity_ping_received", {
+    #             "timestamp": self.last_ping_time
+    #         })
 
     def _check_unity_connection(self):
         """Vérifie si Unity est toujours connecté (timeout ping)"""
