@@ -16,7 +16,8 @@ class HomeScreen(MDScreen):
     
     unity_connected = BooleanProperty(False)
     status_icon_source = StringProperty("assets/loading.gif")
-    selected_model= StringProperty("")
+    selected_model = StringProperty("")
+    age_user = StringProperty("")
     
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
@@ -31,18 +32,17 @@ class HomeScreen(MDScreen):
         self.unity_connected = self.udp_discovery.is_unity_connected()
         if self.unity_connected :
             self.selected_model = self.session.config.model
+            self.age_user = str(self.session.user_profile.age)
 
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
         event_bus.subscribe("unity_ping_received", self.handle_ping_received)
-        event_bus.subscribe("age_updated", self.handle_age)
-        event_bus.subscribe("config_updated", self.on_config_updated)
+        event_bus.subscribe("session_updated", self.on_session_updated)
     
     def on_leave(self):
         event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
         event_bus.unsubscribe("unity_ping_received", self.handle_ping_received)
-        event_bus.unsubscribe("age_updated", self.handle_age)
-        event_bus.subscribe("config_updated", self.on_config_updated)
+        event_bus.subscribe("session_updated", self.on_session_updated)
 
     # ========== CALLBACKS UDP ==========
 
@@ -63,30 +63,13 @@ class HomeScreen(MDScreen):
             )
             anim.start(self.ids.ping_indicator)
     
-    def handle_age (self, data):
-        "Callback quand age du joueur modifié"
-        age = str(data)
-        self.ids.age_input.text = age
     
-    def handle_model(self, data):
-        "callabck quand modèle change"
-        index_model = int(data)
-        if index_model == 0 :
-            self.selected_model = "FIXE"
-        elif index_model == 1 :
-            self.selected_model = "INCREMENTAL"
-        elif index_model == 2 :
-            self.selected_model = "PID"
-        elif index_model == 3 :
-            self.selected_model = "LTI"
-        elif index_model == 3 :
-            self.selected_model = "DRL"
-    
-    def on_config_updated(self, config):
-        model_name = config.model
+    def on_session_updated(self, session):
+         # Mise à jour UI
+        self.selected_model = session.config.model
+        self.age_user = str(session.user_profile.age)
 
-        # Mise à jour UI
-        self.selected_model = model_name
+    # ===== Foncions reliées à l'UI =====
 
     def force_reconnect(self):
         """Bouton pour forcer la reconnexion"""

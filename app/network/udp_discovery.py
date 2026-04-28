@@ -9,7 +9,8 @@ from utils.event_bus import event_bus
 from kivy.app import App
 
 from config import UDP_PORT_SEND, UDP_PORT_RECEIVE, UDP_PING_TIMEOUT
-from app.data.game_session import GameSession
+# from app.data.game_session import GameSession
+# from app.data.user_profile import UserProfile
 
 logger = get_logger(__name__)
 
@@ -189,28 +190,19 @@ class UDPDiscovery:
             })
             
         
-        # Ping de Unity
-        elif data == b'ping_Unity':
-            self.last_ping_time = time.time()
-            logger.debug("Ping Unity reçu")
-
-            event_bus.emit("unity_ping_received", {
-                "timestamp": self.last_ping_time
-            })
-        
         elif data.startswith(b'userAge:'):
             message = data.decode()
-            age = int(message[8:])
-            
-            event_bus.emit("age_updated", age)
+            key, value = message.split(":")
+
+            session.user_profile.age = int(value)
 
         elif data.startswith(b'userHRMTarget:'):
             message = data.decode()
-            HRmax_target = int(message[14:])
-            
-            event_bus.emit("HRmax_target_updated", HRmax_target)
+            key, value = message.split(":")
+            # HRmax_target = int(message[14:])
+            # event_bus.emit("HRmax_target_updated", HRmax_target)
 
-        # pas encore implémenter dans Unity
+        # Modèle adaptatif choisi
         elif data.startswith(b'SelectedModel:'):
             message = data.decode()
             key, value = message.split(":")
@@ -231,18 +223,23 @@ class UDPDiscovery:
             # Update config
             session.config.update_from_udp(key, model_name)
 
-            event_bus.emit("config_updated", session.config)
+            event_bus.emit("session_updated", session)
 
-            # if model_selected == ["DRL", "PID"]:
-            #     event_bus.emit("mode_adaptive_enabled", True)
-            # elif model_selected == ["Fixe", "Incremental"]:
-            #     event_bus.emit("mode_adaptive_enabled", False)
+        
+        # Ping de Unity
+        elif data == b'ping_Unity':
+            self.last_ping_time = time.time()
+            logger.debug("Ping Unity reçu")
 
-        # Image du stream
-        elif data.startswith(b'IMG:'):
-            img_bytes = data[4:]
-            self.latest_img = img_bytes
-            self.last_img_time = time.time()  # ✅ Heure de reception du dernier message
+            event_bus.emit("unity_ping_received", {
+                "timestamp": self.last_ping_time
+            })
+
+        # # Image du stream
+        # elif data.startswith(b'IMG:'):
+        #     img_bytes = data[4:]
+        #     self.latest_img = img_bytes
+        #     self.last_img_time = time.time()  # ✅ Heure de reception du dernier message
 
             # # Callback vers game_screen.py
             # if self.on_img_received:
