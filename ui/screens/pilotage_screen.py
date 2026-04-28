@@ -15,7 +15,7 @@ class PilotageScreen(MDScreen):
 
     # Properties pour l'UI
     unity_connected = BooleanProperty(False) # connexion Unity
-    obstacles_enabled = BooleanProperty(False) # obtacles
+    obs_enabled = BooleanProperty(False) # obtacles
     adaptive_mode_enabled = BooleanProperty(True) # mode adaptatif
     cube_per_min = NumericProperty(60) # cubes/min
     target_hr = NumericProperty(50)  # % FCmax
@@ -45,12 +45,12 @@ class PilotageScreen(MDScreen):
         self.unity_connected = self.udp_discovery.is_unity_connected()
         if self.unity_connected:
             self.target_hr = self.session.config.target_hr_percent
+            self.obs_enabled = self.session.config.obs_enabled
 
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
         event_bus.subscribe("session_updated", self.on_session_updated)
         
-    
     def on_leave(self):
         event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
         event_bus.unsubscribe("session_updated", self.on_session_updated)
@@ -64,12 +64,13 @@ class PilotageScreen(MDScreen):
     def on_session_updated(self, session):
          # Mise à jour UI
         self.target_hr = session.config.target_hr_percent
+        self.obs_enabled = session.config.obs_enabled
 
     # ========== OBSTACLES ==========
     
     def on_obstacles_toggle(self, is_active):
         """Toggle obstacles ON/OFF"""
-        self.obstacles_enabled = is_active
+        self.obs_enabled = is_active
         logger.info(f"🎮 Obstacles: {'ON' if is_active else 'OFF'}")
         
         # Envoyer via UDP

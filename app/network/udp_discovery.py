@@ -210,6 +210,9 @@ class UDPDiscovery:
 
         elif key == "userHRMTarget":
             session.config.update_from_udp(key, value)
+        
+        elif key == "obs":
+            session.config.update_from_udp(key, value)
 
         elif key == "SelectedModel":
             model_map = {
