@@ -194,13 +194,15 @@ class UDPDiscovery:
             message = data.decode()
             key, value = message.split(":")
 
-            session.user_profile.age = int(value)
+            # Update User
+            session.user_profile.update_from_udp(key, value)
 
         elif data.startswith(b'userHRMTarget:'):
             message = data.decode()
             key, value = message.split(":")
-            # HRmax_target = int(message[14:])
-            # event_bus.emit("HRmax_target_updated", HRmax_target)
+
+            # Update config
+            session.config.update_from_udp(key, value)
 
         # Modèle adaptatif choisi
         elif data.startswith(b'SelectedModel:'):
@@ -225,7 +227,6 @@ class UDPDiscovery:
 
             event_bus.emit("session_updated", session)
 
-        
         # Ping de Unity
         elif data == b'ping_Unity':
             self.last_ping_time = time.time()
@@ -234,16 +235,6 @@ class UDPDiscovery:
             event_bus.emit("unity_ping_received", {
                 "timestamp": self.last_ping_time
             })
-
-        # # Image du stream
-        # elif data.startswith(b'IMG:'):
-        #     img_bytes = data[4:]
-        #     self.latest_img = img_bytes
-        #     self.last_img_time = time.time()  # ✅ Heure de reception du dernier message
-
-            # # Callback vers game_screen.py
-            # if self.on_img_received:
-            #     self.on_img_received()
 
     def _check_unity_connection(self):
         """Vérifie si Unity est toujours connecté (timeout ping)"""

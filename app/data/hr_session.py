@@ -12,7 +12,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 class HRSession:
-    """Gestionnaire centralisé des données de fréquence cardiaque"""
+    """Gestionnaire des données physiologiques"""
     
     def __init__(self, max_points: int = 3600):
         """

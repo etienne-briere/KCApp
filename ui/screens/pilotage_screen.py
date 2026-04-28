@@ -39,27 +39,31 @@ class PilotageScreen(MDScreen):
         self.udp_controller = app.udp_controller
         self.udp_discovery = app.udp_discovery
         self.hr_session = app.hr_session
-
-        # S'abonner pour écouter les eventbus
-        event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
-        event_bus.subscribe("HRmax_target_updated", self.handle_HRmax_target)
+        self.session = app.session
 
         # Vérifier la connexion Unity (au cas où on arrive dans l'écran après la connexion)
         self.unity_connected = self.udp_discovery.is_unity_connected()
+        if self.unity_connected:
+            self.target_hr = self.session.config.target_hr_percent
+
+        # S'abonner pour écouter les eventbus
+        event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
+        event_bus.subscribe("session_updated", self.on_session_updated)
+        
     
     def on_leave(self):
         event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
-        event_bus.unsubscribe("HRmax_target_updated", self.handle_HRmax_target)
+        event_bus.unsubscribe("session_updated", self.on_session_updated)
     
     # ========== CALLBACKS ==========
     
     def handle_unity_connection(self, data):
         connected = data["connected"]
         self.unity_connected = connected
-    
-    def handle_HRmax_target(self, data):
-        HRmax_target = int(data)
-        self.ids.target_hr_slider.value = HRmax_target
+
+    def on_session_updated(self, session):
+         # Mise à jour UI
+        self.target_hr = session.config.target_hr_percent
 
     # ========== OBSTACLES ==========
     
