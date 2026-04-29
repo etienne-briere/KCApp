@@ -137,11 +137,25 @@
                         anchor_x: "center"
                         anchor_y: "center"
 
-                        # Label
-                        MDLabel:
-                            text: root.hr_target
-                            font_style: "Body1"
-                            halign: "center"
+                        MDBoxLayout:
+                            orientation: "horizontal"
+                            spacing: dp(5)
+                            # size_hint_x: 1
+
+                            Widget:
+                            MDIcon:
+                                icon: "target"
+                                theme_text_color: "Custom"
+                                text_color: [1, 1, 1, 1]
+                                font_size: "30sp"
+                                pos_hint: {'center_y': 0.5}
+
+                            # Label
+                            MDLabel:
+                                text: root.hr_target
+                                font_style: "Body1"
+                                halign: "center"
+                            Widget:
                     
                     # ==== Séparateur ====
                     Widget:

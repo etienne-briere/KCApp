@@ -9,6 +9,6 @@ class SessionConfig:
         if key == "SelectedModel":
             self.model = value
         elif key == "userHRMTarget":
-            self.target_hr_percent = float(value)
+            self.target_hr_percent = int(value)
         elif key == "obs":
             self.obs_enabled = bool(value)

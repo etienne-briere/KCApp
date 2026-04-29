@@ -70,7 +70,7 @@ class HomeScreen(MDScreen):
          # Mise à jour UI
         self.selected_model = session.config.model
         self.age_user = str(session.user_profile.age)
-        self.hr_target = f"{session.config.target_hr_percent}"
+        self.hr_target = f"{session.config.target_hr_percent} %"
 
     # ===== Foncions reliées à l'UI =====
     def force_reconnect(self):
