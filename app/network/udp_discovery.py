@@ -213,6 +213,9 @@ class UDPDiscovery:
         
         elif key == "obs":
             session.config.update_from_udp(key, value)
+        
+        elif key == "brick_rate":
+            session.config.update_from_udp(key, value)
 
         elif key == "SelectedModel":
             model_map = {

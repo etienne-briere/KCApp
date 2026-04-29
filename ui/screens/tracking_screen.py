@@ -24,6 +24,7 @@ class TrackingScreen(MDScreen):
 
     # Properties pour l'UI
     heart_rate_label = StringProperty("--")
+    unity_connected = BooleanProperty(False)
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -61,9 +62,11 @@ class TrackingScreen(MDScreen):
         self.udp_discovery = app.udp_discovery
         self.udp_controller = app.udp_controller
         self.hr_session = app.hr_session
+        self.session = app.session
 
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC
         event_bus.subscribe("hr_data_updated", self.on_hr_updated)
+        event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
         
         # Charger toutes les data pré-existantes dans le graphique
         self.load_existing_data()
@@ -72,6 +75,18 @@ class TrackingScreen(MDScreen):
         """Appelé à la sortie de l'écran"""
         # Nettoyer les callbacks pour éviter les fuites de mémoire et les appels indésirables
         event_bus.unsubscribe("hr_data_updated", self.on_hr_updated)
+        event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
+
+    # ========== Callback ==========
+    def handle_unity_connection(self, data):
+        connected = data["connected"]
+        self.unity_connected = connected
+
+        # afficher / cacher axe 2
+        self.ax2.set_visible(connected)
+        self.line_cpm.set_visible(connected)
+
+        self.fig.canvas.draw_idle()
     
     # ========== GESTION DES DONNÉES EXISTANTES ==========
 
@@ -84,6 +99,10 @@ class TrackingScreen(MDScreen):
             
             # Mettre à jour le graphique
             self.line_hr.set_data(times, hr_percents)
+
+            self.line_cpm.set_data(self.session.config.cpm_time, self.session.config.cpm_history)
+            self.ax2.set_visible(True)
+            self.line_cpm.set_visible(True)
             
             # Redessiner
             self.fig.canvas.draw()
@@ -138,6 +157,20 @@ class TrackingScreen(MDScreen):
         self.line_hr, = self.ax1.plot([], [], 'r-', linewidth=2, label='HR (%)')
         # self.ax1.legend(loc='upper left', facecolor='#1e1e1e', edgecolor='white', labelcolor='white')
 
+        # Axe secondaire (CPM)
+        self.ax2 = self.ax1.twinx()
+        self.ax2.set_ylabel("Cubes / min", color="cyan")
+        self.ax2.tick_params(axis='y', colors='cyan')
+
+        # ligne CPM (vide au départ)
+        self.line_cpm, = self.ax2.plot([], [], 'cyan', linewidth=2, label='CPM')
+
+        self.ax2.set_ylim(0, 200) 
+
+        # cacher au départ
+        self.ax2.set_visible(False)
+        self.line_cpm.set_visible(False)
+
         # Ajouter la figure au widget
         self.ids.hr_graph_widget.figure = self.fig
     
@@ -163,6 +196,15 @@ class TrackingScreen(MDScreen):
             [p["t"] for p in self.hr_session.data],
             [p["percent"] or 0 for p in self.hr_session.data]
         )
+        
+        # CPM graph (si Unity connecté)
+        if self.unity_connected:
+            self.line_cpm.set_data(
+                self.session.config.cpm_time,
+                self.session.config.cpm_history
+            )
+        self.ax2.relim()
+        self.ax2.autoscale_view()
 
         self.fig.canvas.draw_idle()
     
@@ -170,30 +212,4 @@ class TrackingScreen(MDScreen):
         self.hr_session.reset()
         self.ax1.set_xlim(0, 600)
         self.fig.canvas.draw_idle()
-        
-    # def update_graph(self, dt):
-    #     """Met à jour le graphique toutes les secondes"""
-        
-    #     # Vérifier qu'un appareil est connecté
-    #     if not self.ble_manager or not self.ble_manager.is_connected:
-    #         # Afficher le texte indicatif
-    #         self.placeholder_text.set_visible(True)
-
-    #         # Forcer le redessinage
-    #         self.fig.canvas.draw()
-    #         self.fig.canvas.flush_events()
-    #         return
-        
-    #     # MAJ UI
-    #     self.ax1.set_ylabel("HRmax (%)", color="red", fontsize=12)
-        
-    #     # Supprimer le placeholder
-    #     if self.placeholder_text:
-    #         self.placeholder_text.set_visible(False)
-
-    #     # Forcer le redessinage
-    #     self.fig.canvas.draw()
-    #     self.fig.canvas.flush_events()
-
-    #     # Rafraîchir le widget
-    #     self.ids.hr_graph_widget.figure = self.fig    
+         
