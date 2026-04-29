@@ -77,51 +77,6 @@ class PilotageScreen(MDScreen):
         if self.udp_controller:
             self.udp_controller.set_obstacle("1" if is_active else "0")
     
-    # # ========== ADAPTIVE MODE ==========
-    
-    # def on_adaptive_mode_toggle(self, is_active):
-    #     """Toggle mode adaptatif ON/OFF"""
-    #     self.adaptive_mode_enabled = is_active
-    #     logger.info(f"❤️ Mode adaptatif: {'ON' if is_active else 'OFF'}")
-        
-    #     # Vérifier la connexion Unity
-    #     self.unity_connected = self.udp_discovery.is_unity_connected()
-        
-    #     if is_active == True :
-
-    #         # Vérifier qu'un appareil est connecté
-    #         if not self.ble_manager or not self.ble_manager.is_connected:
-    #             self.adaptive_mode_enabled = False
-    #             toast("Please connect to a HR sensor")
-    #             return
-            
-    #         # Vérifier que Unity est connecté
-    #         if not self.unity_connected :
-    #             self.adaptive_mode_enabled = False
-    #             toast("Please connect the game")
-    #             return
-            
-    #         # Activer le serveur WebSocket
-    #         asyncio.ensure_future(self._start_server())
-
-    #         # Notifier Unity du démarrage du serveur websocket
-    #         if self.udp_discovery:
-    #             self.udp_discovery.send_message("command_ws", "1")
-                
-    #             # Envoyer le %FCmax cible
-    #             self.send_target_hr()
-    #     else : 
-    #         # désactiver le serveur WebSocket
-    #         asyncio.ensure_future(self._stop_server())
-
-    #         # Notifier Unity de l'arrêt du serveur websocket
-    #         if self.udp_discovery:
-    #             self.udp_discovery.send_message("command_ws", "0")
-
-    #             # Envoyer la fréquence de cube
-    #             self.send_cube_frequency()
-        
-    
     # ========== CUBE FREQUENCY ==========
     
     def on_cube_frequency_change(self, value):
@@ -148,11 +103,11 @@ class PilotageScreen(MDScreen):
     def on_target_hr_change(self, value):
         """Slider target HR changé"""
         self.target_hr = value
-        logger.debug(f"🎯 Target HR: {value}%")
         
     def on_target_hr_touch_up(self):
         """Appelé quand l'utilisateur relâche le slider"""
         logger.debug(f"🎯 Slider relâché à {self.target_hr}")
+        self.session.config.target_hr_percent = self.target_hr
 
         self.send_target_hr()
     

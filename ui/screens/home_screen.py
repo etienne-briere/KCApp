@@ -16,8 +16,9 @@ class HomeScreen(MDScreen):
     
     unity_connected = BooleanProperty(False)
     status_icon_source = StringProperty("assets/loading.gif")
-    selected_model = StringProperty("PID")
-    age_user = StringProperty("")
+    selected_model = StringProperty("Unknown")
+    hr_target = StringProperty("Unknown")
+    age_user = StringProperty("Unknown")
     
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
@@ -33,6 +34,7 @@ class HomeScreen(MDScreen):
         if self.unity_connected :
             self.selected_model = self.session.config.model
             self.age_user = str(self.session.user_profile.age)
+            self.hr_target = f"{self.session.config.target_hr_percent} %"
 
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
@@ -68,9 +70,9 @@ class HomeScreen(MDScreen):
          # Mise à jour UI
         self.selected_model = session.config.model
         self.age_user = str(session.user_profile.age)
+        self.hr_target = f"{session.config.target_hr_percent}"
 
     # ===== Foncions reliées à l'UI =====
-
     def force_reconnect(self):
         """Bouton pour forcer la reconnexion"""
         app = App.get_running_app()

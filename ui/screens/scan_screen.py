@@ -146,7 +146,6 @@ class ScanScreen(MDScreen):
     
     def on_heart_rate_received(self, bpm):
         """Callback quand FC reçue"""
-        
         self.heart_rate_text = f"{bpm}"   
     
     def on_battery_received(self, level):

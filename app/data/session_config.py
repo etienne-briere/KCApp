@@ -1,7 +1,7 @@
 class SessionConfig:
     """Paramètres du jeu"""
     def __init__(self):
-        self.model = None
+        self.model = "Unknown"
         self.target_hr_percent = None
         self.obs_enabled = None
 
