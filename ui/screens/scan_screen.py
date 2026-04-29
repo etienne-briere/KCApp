@@ -73,8 +73,8 @@ class ScanScreen(MDScreen):
         # Déconnecter si déjà connecté
         if self.ble_manager.is_connected:
             self.update_button_state("disconnecting")
-            self.update_heart_rate("--")
-            self.update_battery("--")
+            self.heart_rate_text = "--"
+            self.battery_text = "-- %"
             await self.ble_manager.disconnect()
             self.update_button_state("scanning")
         
@@ -147,11 +147,11 @@ class ScanScreen(MDScreen):
     def on_heart_rate_received(self, bpm):
         """Callback quand FC reçue"""
         
-        self.ids.heart_rate_label.text = f"{bpm}"   
+        self.heart_rate_text = f"{bpm}"   
     
     def on_battery_received(self, level):
         """Callback batterie"""
-        self.ids.battery_label.text = f"{level} %"
+        self.battery_text = f"{level} %"
         if level != "--":
             self.update_battery_icon(level)
     

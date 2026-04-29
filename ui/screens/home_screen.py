@@ -16,7 +16,7 @@ class HomeScreen(MDScreen):
     
     unity_connected = BooleanProperty(False)
     status_icon_source = StringProperty("assets/loading.gif")
-    selected_model = StringProperty("")
+    selected_model = StringProperty("PID")
     age_user = StringProperty("")
     
     def on_enter(self):

@@ -1,7 +1,7 @@
 import asyncio
 from time import time
 
-from kivy.properties import BooleanProperty, StringProperty
+from kivy.properties import BooleanProperty, StringProperty, ListProperty
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.toast import toast
 
@@ -25,6 +25,8 @@ class StatusBar(MDBoxLayout):
     wifi_connected = BooleanProperty(False)
     hr_sensor_connected = BooleanProperty(False)
     unity_connected = BooleanProperty(False)
+    hr_data_sent = BooleanProperty(False)
+    hr_icon_color = ListProperty([1, 0, 0, 1])  # rouge par défaut
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -37,6 +39,7 @@ class StatusBar(MDBoxLayout):
         # Abonnement aux EventBus
         event_bus.subscribe("heart_rate_received", self.handle_hr_received)
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
+        event_bus.subscribe("hr_data_sent", self.handle_hr_sent)
     
     def on_parent(self, widget, parent):
         '''Appelé automatiquement si ajout/suppresion dans l'UI'''
@@ -44,6 +47,7 @@ class StatusBar(MDBoxLayout):
         if parent is None:
             event_bus.unsubscribe("heart_rate_received", self.handle_hr_received)
             event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
+            event_bus.unsubscribe("hr_data_sent", self.handle_hr_sent)
 
     def update_status(self, dt):
 
@@ -62,7 +66,7 @@ class StatusBar(MDBoxLayout):
         else:
             self.hr_sensor_connected = True
     
-    # ========== CALLBACKS UDP ==========
+    # ========== CALLBACKS ==========
     
     def handle_unity_connection(self, data):
         """Callback quand Unity se connecte ou se déconnecte"""
@@ -73,27 +77,44 @@ class StatusBar(MDBoxLayout):
             toast(f"Unity connected ({ip})")
         else :
             toast("Unity disconnected")
-    
-    # ========== CALLBACKS HR ==========
-    
+        
     def handle_hr_received(self, bpm):
         """Callback quand FC reçue"""
 
         # Mettre à jour le timestamp de la dernière FC reçue
         self.last_hr_received = time()
-
-    # ========== GESTION WEBSOCKET ==========
     
-    async def _start_server(self):
-        """Démarre le serveur WebSocket"""
-        success = await self.ws_server.start()
+    def handle_hr_sent (self, data):
+        self.hr_data_sent = data
 
-        if success:
-            toast("Adaptive mode ON")
-        else:
-            toast("Adaptive mode failed to start")
+    # # ========== GESTION WEBSOCKET ==========
+    
+    # async def _start_server(self):
+    #     """Démarre le serveur WebSocket"""
+    #     success = await self.ws_server.start()
+
+    #     if success:
+    #         toast("Adaptive mode ON")
+    #     else:
+    #         toast("Adaptive mode failed to start")
             
-    async def _stop_server(self):
-        """Arrête le serveur WebSocket"""
-        await self.ws_server.stop()
-        toast("Adaptive mode OFF")
+    # async def _stop_server(self):
+    #     """Arrête le serveur WebSocket"""
+    #     await self.ws_server.stop()
+    #     toast("Adaptive mode OFF")
+    
+
+    # === Gestion de l'icône HR ===
+    def on_hr_sensor_connected(self, *args):
+        self.update_hr_color()
+
+    def on_hr_data_sent(self, *args):
+        self.update_hr_color()
+
+    def update_hr_color(self):
+        if not self.hr_sensor_connected:
+            self.hr_icon_color = (1, 0, 0, 1) # rouge
+        elif self.hr_data_sent:
+            self.hr_icon_color = (0, 1, 0, 1) # vert
+        else:
+            self.hr_icon_color = (1, 1, 0, 1) # jaune

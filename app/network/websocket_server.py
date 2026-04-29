@@ -5,6 +5,8 @@ from functools import partial
 from typing import Set, Optional, Callable
 
 from utils.logger import get_logger
+from utils.event_bus import event_bus
+
 from config import WEBSOCKET_HOST, WEBSOCKET_PORT
 
 logger = get_logger(__name__)
@@ -80,7 +82,7 @@ class WebSocketServer:
             self.is_running = False
             
             logger.info("🛑 Serveur WebSocket arrêté")
-            
+            event_bus.emit("hr_data_sent", False)
                 
         except Exception as e:
             logger.error(f"❌ Erreur arrêt serveur : {e}")
@@ -117,6 +119,7 @@ class WebSocketServer:
                     
         except websockets.ConnectionClosed as e:
             logger.info(f"⚠️ Client déconnecté : {client_address} - {e}")
+            event_bus.emit("hr_data_sent", False)
             
         except Exception as e:
             logger.error(f"❌ Erreur WebSocket : {e}")
@@ -125,14 +128,12 @@ class WebSocketServer:
             # Retirer le client
             self.clients.discard(websocket)
             logger.info(f"🔌 Client retiré : {client_address}")
+            event_bus.emit("hr_data_sent", False)
             
             # Callback vers pilotage_screen
             if self.on_client_disconnected:
                 self.on_client_disconnected(websocket)
             
-            # # Callback vers tracking_screen
-            # if self.on_client_disconnected_tracking:
-            #     self.on_client_disconnected_tracking(websocket)
     
     async def send_data_to_clients(self, data: int) -> bool:
         """
@@ -144,6 +145,7 @@ class WebSocketServer:
         
         message = str(data)
         await asyncio.gather(*[client.send(message) for client in self.clients])
+        event_bus.emit("hr_data_sent", True)
         logger.info(f"❤️ FC envoyé : {message}")
         return True
     

@@ -94,6 +94,7 @@
                 size_hint: 1, None
                 height: self.minimum_height if root.unity_connected else 0
                 opacity: 1 if root.unity_connected else 0
+                disabled: 0 if root.unity_connected else 1
 
                 MDLabel:
                     text: "Session en cours"
