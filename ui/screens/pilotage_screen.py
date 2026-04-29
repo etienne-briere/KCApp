@@ -70,7 +70,8 @@ class PilotageScreen(MDScreen):
     
     def on_obstacles_toggle(self, is_active):
         """Toggle obstacles ON/OFF"""
-        self.obs_enabled = is_active
+        # self.obs_enabled = is_active
+        self.session.config.obs_enabled = is_active
         logger.info(f"🎮 Obstacles: {'ON' if is_active else 'OFF'}")
         
         # Envoyer via UDP
