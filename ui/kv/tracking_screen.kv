@@ -43,15 +43,15 @@
             # ==== Contenu du graphique de l'évolution de la FC ====
             MDBoxLayout:
                 id: graph_hr_content
-                orientation: "horizontal"
+                orientation: "vertical"
                 spacing: dp(10)
+                padding: dp(10)
                 size_hint: 1, None
                 height: dp(300)
                 
                 # --- Graphique ---
                 MatplotFigure:
                     id: hr_graph_widget
-                    size_hint: 0.9, 1
             
            # Boutons d'action
             MDBoxLayout:

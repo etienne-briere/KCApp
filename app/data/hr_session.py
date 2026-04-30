@@ -1,5 +1,7 @@
 from datetime import datetime
 import time
+from kivy.app import App
+
 
 from typing import List, Optional, Tuple, Callable
 from collections import deque
@@ -19,6 +21,8 @@ class HRSession:
         Args:
             max_points: Nombre maximum de points à conserver (défaut: 1h à 1Hz)
         """
+        app = App.get_running_app()
+        self.session = app.session
         self.session_id = str(uuid.uuid4())
 
         # stockage des points (dict)
@@ -74,7 +78,7 @@ class HRSession:
         if bpm < 30 or bpm > 220:
             return
 
-        t = time.time() - self.start_time
+        t = time.time() - self.session.start_time
 
         percent = self._compute_percent(bpm)
 

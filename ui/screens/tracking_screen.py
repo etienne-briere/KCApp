@@ -24,7 +24,7 @@ class TrackingScreen(MDScreen):
 
     # Properties pour l'UI
     heart_rate_label = StringProperty("--")
-    unity_connected = BooleanProperty(False)
+    # unity_connected = BooleanProperty(False)
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -66,7 +66,7 @@ class TrackingScreen(MDScreen):
 
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC
         event_bus.subscribe("hr_data_updated", self.on_hr_updated)
-        event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
+        # event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
         
         # Charger toutes les data pré-existantes dans le graphique
         self.load_existing_data()
@@ -75,18 +75,18 @@ class TrackingScreen(MDScreen):
         """Appelé à la sortie de l'écran"""
         # Nettoyer les callbacks pour éviter les fuites de mémoire et les appels indésirables
         event_bus.unsubscribe("hr_data_updated", self.on_hr_updated)
-        event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
+        # event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
 
-    # ========== Callback ==========
-    def handle_unity_connection(self, data):
-        connected = data["connected"]
-        self.unity_connected = connected
+    # # ========== Callback ==========
+    # def handle_unity_connection(self, data):
+    #     connected = data["connected"]
+    #     self.unity_connected = connected
 
-        # afficher / cacher axe 2
-        self.ax2.set_visible(connected)
-        self.line_cpm.set_visible(connected)
+    #     # # afficher / cacher axe 2
+    #     # self.ax2.set_visible(connected)
+    #     # self.line_cpm.set_visible(connected)
 
-        self.fig.canvas.draw_idle()
+    #     self.fig.canvas.draw_idle()
     
     # ========== GESTION DES DONNÉES EXISTANTES ==========
 
@@ -100,9 +100,7 @@ class TrackingScreen(MDScreen):
             # Mettre à jour le graphique
             self.line_hr.set_data(times, hr_percents)
 
-            self.line_cpm.set_data(self.session.config.cpm_time, self.session.config.cpm_history)
-            self.ax2.set_visible(True)
-            self.line_cpm.set_visible(True)
+            self.line_cpm.set_data(self.session.metrics.cpm_time, self.session.metrics.cpm_history)
             
             # Redessiner
             self.fig.canvas.draw()
@@ -117,6 +115,9 @@ class TrackingScreen(MDScreen):
         
         # Créer la figure et les axes
         self.fig, self.ax1 = plt.subplots()
+
+        # Axe secondaire (CPM)
+        self.ax2 = self.ax1.twinx()
 
         # Style du graphique
         self.fig.patch.set_alpha(0.0) # Fond transparent
@@ -139,11 +140,13 @@ class TrackingScreen(MDScreen):
         
         # Labels des axes
         self.ax1.set_ylabel("HRmax (%)", color="grey")
+        self.ax2.set_ylabel("Cubes / min", color="grey")
         self.ax1.set_xlabel("Time (s)", color="grey")
 
         # Couleurs des axes
         self.ax1.tick_params(axis='x', colors='grey')  # temps
         self.ax1.tick_params(axis='y', colors='grey')  # %FCmax
+        self.ax2.tick_params(axis='y', colors='grey')  # CPM
 
         # Couleur du contour des axes
         for spine in self.ax1.spines.values():
@@ -154,22 +157,22 @@ class TrackingScreen(MDScreen):
         self.ax1.set_ylim(0, 100)  # 0-100 %FCmax
         
         # Créer la ligne HR (vide au départ)
-        self.line_hr, = self.ax1.plot([], [], 'r-', linewidth=2, label='HR (%)')
-        # self.ax1.legend(loc='upper left', facecolor='#1e1e1e', edgecolor='white', labelcolor='white')
+        self.line_hr, = self.ax1.plot([], [], 'r-', linewidth=2, label='HRmax (%)')
+        self.ax1.legend(loc='upper left', facecolor='#1e1e1e', edgecolor='white', labelcolor='white')
+        
 
-        # Axe secondaire (CPM)
-        self.ax2 = self.ax1.twinx()
-        self.ax2.set_ylabel("Cubes / min", color="cyan")
-        self.ax2.tick_params(axis='y', colors='cyan')
+        
+        
 
         # ligne CPM (vide au départ)
         self.line_cpm, = self.ax2.plot([], [], 'cyan', linewidth=2, label='CPM')
+        self.ax2.legend(loc='upper right', facecolor='#1e1e1e', edgecolor='white', labelcolor='white')
 
         self.ax2.set_ylim(0, 200) 
 
-        # cacher au départ
-        self.ax2.set_visible(False)
-        self.line_cpm.set_visible(False)
+        # # cacher au départ
+        # self.ax2.set_visible(False)
+        # self.line_cpm.set_visible(False)
 
         # Ajouter la figure au widget
         self.ids.hr_graph_widget.figure = self.fig
@@ -198,11 +201,11 @@ class TrackingScreen(MDScreen):
         )
         
         # CPM graph (si Unity connecté)
-        if self.unity_connected:
-            self.line_cpm.set_data(
-                self.session.config.cpm_time,
-                self.session.config.cpm_history
-            )
+        # if self.unity_connected:
+        self.line_cpm.set_data(
+            self.session.metrics.cpm_time,
+            self.session.metrics.cpm_history
+        )
         self.ax2.relim()
         self.ax2.autoscale_view()
 

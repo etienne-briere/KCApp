@@ -55,9 +55,10 @@ class KCApp(MDApp):
         self.ws_server = WebSocketServer() 
         self.udp_discovery = UDPDiscovery()
         self.udp_controller = UDPController(self.udp_discovery)
+        self.session = GameSession()
         self.hr_session = HRSession(max_points=3600) # 1h max à 1Hz
         self.adaptive_controller = AdaptiveController()
-        self.session = GameSession()
+        
 
         # Définir le thème de l'application
         self.theme_cls.theme_style = THEME_STYLE 
