@@ -14,3 +14,7 @@ class GameMetrics:
         
         self.cpm_history.append(value)
         self.cpm_time.append(t)
+    
+    def reset(self):
+        self.cpm_history.clear()
+        self.cpm_time.clear()

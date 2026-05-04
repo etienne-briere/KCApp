@@ -44,7 +44,8 @@ class ScanScreen(MDScreen):
         # Récupérer les managers de l'application
         app = App.get_running_app()
         self.ble_manager = app.ble_manager
-        self.hr_session = app.hr_session
+        self.session = app.session
+        # self.hr_session = app.hr_session
 
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC et batterie
         event_bus.subscribe("heart_rate_received", self.on_heart_rate_received) 
@@ -135,11 +136,11 @@ class ScanScreen(MDScreen):
         
         if is_connected:
             # Démarrer l'enregistrement des données FC
-            self.hr_session.start_recording()
+            self.session.hr_session.start_recording()
             self.update_button_state("connected", device.name)
         else:
             # Arrêter l'enregistrement des données FC
-            self.hr_session.stop_recording()
+            self.session.hr_session.stop_recording()
             self.update_button_state("disconnected")
     
     # ========== DATA ==========

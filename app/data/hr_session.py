@@ -1,10 +1,7 @@
 from datetime import datetime
 import time
-from kivy.app import App
-
 
 from typing import List, Optional, Tuple, Callable
-from collections import deque
 import json
 import uuid
 
@@ -16,25 +13,14 @@ logger = get_logger(__name__)
 class HRSession:
     """Gestionnaire des données physiologiques"""
     
-    def __init__(self, max_points: int = 3600):
-        """
-        Args:
-            max_points: Nombre maximum de points à conserver (défaut: 1h à 1Hz)
-        """
-        app = App.get_running_app()
-        self.session = app.session
+    def __init__(self, session):
+
+        self.session = session
         self.session_id = str(uuid.uuid4())
 
         # stockage des points (dict)
-        self.data: deque = deque(maxlen=max_points)
-
-        self.start_time: Optional[float] = None
+        self.data = []
         self.is_recording = False
-
-        # stats O(1)
-        self.sum_hr = 0
-        self.max_hr = 0
-        self.min_hr = 999
 
         logger.info(f"🆕 HRSession init ({self.session_id})")
 
@@ -47,7 +33,7 @@ class HRSession:
         if self.is_recording:
             return
         
-        self.start_time = time.time()
+        self.session.start_time = time.time()
         self.is_recording = True
 
         logger.info("▶️ HR recording started")
@@ -60,10 +46,6 @@ class HRSession:
     def reset(self):
         """Réinitialise la session"""
         self.data.clear()
-        self.sum_hr = 0
-        self.max_hr = 0
-        self.min_hr = 999
-        self.start_time = time.time()
 
     # =========================
     # INPUT (EVENT BUS)
@@ -89,11 +71,6 @@ class HRSession:
         }
 
         self.data.append(point)
-
-        # stats O(1)
-        self.sum_hr += bpm
-        self.max_hr = max(self.max_hr, bpm)
-        self.min_hr = min(self.min_hr, bpm)
 
         event_bus.emit("hr_data_updated", point)
 
@@ -130,20 +107,9 @@ class HRSession:
     # =========================
 
     def get_duration(self) -> float:
-        if not self.start_time:
+        if not self.session.start_time:
             return 0
-        return time.time() - self.start_time
-
-    def get_stats(self) -> dict:
-        n = len(self.data)
-
-        return {
-            "duration": self.get_duration(),
-            "points": n,
-            "max": self.max_hr if n else None,
-            "min": self.min_hr if n else None,
-            "avg": (self.sum_hr / n) if n else None
-        }
+        return time.time() - self.session.start_time
 
     # =========================
     # EXPORT

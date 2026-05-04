@@ -9,6 +9,7 @@ from kivy.clock import Clock
 
 # Custom modules
 import matplotlib.pyplot as plt
+import time
 
 # Standard library
 import asyncio
@@ -21,19 +22,11 @@ class TrackingScreen(MDScreen):
     '''
     ECRAN DE SUIVI DE LA FC
     '''
-
     # Properties pour l'UI
     heart_rate_label = StringProperty("--")
-    # unity_connected = BooleanProperty(False)
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-        # Session
-        self.hr_session = None
-        
-        # Initialisation du temps
-        # self.time = 0
         
         # Configuration Matplotlib
         self.fig = None
@@ -42,9 +35,6 @@ class TrackingScreen(MDScreen):
 
         # UDP Controller
         self.udp_controller = None
-
-        # # Debounce pour éviter trop d'envois UDP
-        # self.slider_update_event = None
     
     def on_kv_post(self, base_widget):
         """
@@ -61,12 +51,10 @@ class TrackingScreen(MDScreen):
         self.ble_manager = app.ble_manager
         self.udp_discovery = app.udp_discovery
         self.udp_controller = app.udp_controller
-        self.hr_session = app.hr_session
         self.session = app.session
 
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC
         event_bus.subscribe("hr_data_updated", self.on_hr_updated)
-        # event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
         
         # Charger toutes les data pré-existantes dans le graphique
         self.load_existing_data()
@@ -75,24 +63,13 @@ class TrackingScreen(MDScreen):
         """Appelé à la sortie de l'écran"""
         # Nettoyer les callbacks pour éviter les fuites de mémoire et les appels indésirables
         event_bus.unsubscribe("hr_data_updated", self.on_hr_updated)
-        # event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
 
-    # # ========== Callback ==========
-    # def handle_unity_connection(self, data):
-    #     connected = data["connected"]
-    #     self.unity_connected = connected
-
-    #     # # afficher / cacher axe 2
-    #     # self.ax2.set_visible(connected)
-    #     # self.line_cpm.set_visible(connected)
-
-    #     self.fig.canvas.draw_idle()
     
     # ========== GESTION DES DONNÉES EXISTANTES ==========
 
     def load_existing_data(self):
         """Charge toutes les données de la session dans le graphique"""
-        times, hr_percents = self.hr_session.get_graph_percent()
+        times, hr_percents = self.session.hr_session.get_graph_percent()
         
         if times and hr_percents:
             logger.info(f"📊 Chargement de {len(times)} points existants")
@@ -139,9 +116,9 @@ class TrackingScreen(MDScreen):
         )
         
         # Labels des axes
+        self.ax1.set_xlabel("Time (s)", color="grey")
         self.ax1.set_ylabel("HRmax (%)", color="grey")
         self.ax2.set_ylabel("Cubes / min", color="grey")
-        self.ax1.set_xlabel("Time (s)", color="grey")
 
         # Couleurs des axes
         self.ax1.tick_params(axis='x', colors='grey')  # temps
@@ -151,28 +128,19 @@ class TrackingScreen(MDScreen):
         # Couleur du contour des axes
         for spine in self.ax1.spines.values():
             spine.set_color('grey')
-
-        # Limites des axes
-        self.ax1.set_xlim(0, 600)  # 10 minutes
-        self.ax1.set_ylim(0, 100)  # 0-100 %FCmax
         
-        # Créer la ligne HR (vide au départ)
+        # ligne HR (vide au départ)
         self.line_hr, = self.ax1.plot([], [], 'r-', linewidth=2, label='HRmax (%)')
         self.ax1.legend(loc='upper left', facecolor='#1e1e1e', edgecolor='white', labelcolor='white')
-        
-
-        
-        
-
+    
         # ligne CPM (vide au départ)
         self.line_cpm, = self.ax2.plot([], [], 'cyan', linewidth=2, label='CPM')
         self.ax2.legend(loc='upper right', facecolor='#1e1e1e', edgecolor='white', labelcolor='white')
 
-        self.ax2.set_ylim(0, 200) 
-
-        # # cacher au départ
-        # self.ax2.set_visible(False)
-        # self.line_cpm.set_visible(False)
+        # Limites des axes
+        self.ax1.set_xlim(0, 600)  # 10 minutes
+        self.ax1.set_ylim(0, 100)  # 0-100 %FCmax
+        self.ax2.set_ylim(30, 200) # 30-200 CPM
 
         # Ajouter la figure au widget
         self.ids.hr_graph_widget.figure = self.fig
@@ -180,39 +148,44 @@ class TrackingScreen(MDScreen):
     #==== CALLBACK ====#
     
     def on_hr_updated(self, point):
-
         bpm = point["bpm"]
         t = point["t"]
 
         # UI label
         self.ids.heart_rate_label.text = str(bpm)
+        self.update_graph()
 
-        # MAJ UI
+    def update_graph(self):
+        '''Mettre à jour le graphique'''
+        # UI
         self.ax1.set_ylabel("HRmax (%)", color="red", fontsize=12)
+        self.ax2.set_ylabel("Cubes / min", color="skyblue", fontsize=12)
 
         # Supprimer le placeholder
         if self.placeholder_text:
             self.placeholder_text.set_visible(False)
 
-        # update graph
+        # ligne HR
         self.line_hr.set_data(
-            [p["t"] for p in self.hr_session.data],
-            [p["percent"] or 0 for p in self.hr_session.data]
+            [p["t"] for p in self.session.hr_session.data],
+            [p["percent"] or 0 for p in self.session.hr_session.data]
         )
         
-        # CPM graph (si Unity connecté)
-        # if self.unity_connected:
+        # ligne CPM
         self.line_cpm.set_data(
             self.session.metrics.cpm_time,
             self.session.metrics.cpm_history
         )
-        self.ax2.relim()
-        self.ax2.autoscale_view()
 
+        # Ajuster les limites de l'axe CPM en fonction des données
+        self.ax2.relim() 
+        self.ax2.autoscale_view() 
+
+        # Redessiner
         self.fig.canvas.draw_idle()
     
     def reset_graph(self):
-        self.hr_session.reset()
+        self.session.reset()
         self.ax1.set_xlim(0, 600)
         self.fig.canvas.draw_idle()
          
