@@ -23,7 +23,6 @@ class GameSession:
     def reset(self):
         """Réinitialise la session"""
         self.start_time = time.time()
-
         self.hr_session.reset()
         self.metrics.reset()
 

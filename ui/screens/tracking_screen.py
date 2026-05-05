@@ -54,7 +54,7 @@ class TrackingScreen(MDScreen):
         self.session = app.session
 
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC
-        event_bus.subscribe("hr_data_updated", self.on_hr_updated)
+        event_bus.subscribe("heart_rate_received", self.on_hr_received)
         
         # Charger toutes les data pré-existantes dans le graphique
         self.load_existing_data()
@@ -62,20 +62,20 @@ class TrackingScreen(MDScreen):
     def on_leave(self):
         """Appelé à la sortie de l'écran"""
         # Nettoyer les callbacks pour éviter les fuites de mémoire et les appels indésirables
-        event_bus.unsubscribe("hr_data_updated", self.on_hr_updated)
+        event_bus.unsubscribe("heart_rate_received", self.on_hr_received)
 
     
     # ========== GESTION DES DONNÉES EXISTANTES ==========
 
     def load_existing_data(self):
         """Charge toutes les données de la session dans le graphique"""
-        times, hr_percents = self.session.hr_session.get_graph_percent()
+        hr_times, hrmax_percents = self.session.hr_session.get_graph_percent()
         
-        if times and hr_percents:
-            logger.info(f"📊 Chargement de {len(times)} points existants")
+        if hr_times and hrmax_percents:
+            logger.info(f"📊 Chargement de {len(hr_times)} points existants")
             
             # Mettre à jour le graphique
-            self.line_hr.set_data(times, hr_percents)
+            self.line_hr.set_data(hr_times, hrmax_percents)
 
             self.line_cpm.set_data(self.session.metrics.cpm_time, self.session.metrics.cpm_history)
             
@@ -147,16 +147,16 @@ class TrackingScreen(MDScreen):
     
     #==== CALLBACK ====#
     
-    def on_hr_updated(self, point):
-        bpm = point["bpm"]
-        t = point["t"]
+    def on_hr_received(self, bpm):
 
         # UI label
         self.ids.heart_rate_label.text = str(bpm)
+        
         self.update_graph()
 
     def update_graph(self):
         '''Mettre à jour le graphique'''
+
         # UI
         self.ax1.set_ylabel("HRmax (%)", color="red", fontsize=12)
         self.ax2.set_ylabel("Cubes / min", color="skyblue", fontsize=12)
@@ -164,13 +164,12 @@ class TrackingScreen(MDScreen):
         # Supprimer le placeholder
         if self.placeholder_text:
             self.placeholder_text.set_visible(False)
+        
+        hr_times, hrmax_percents = self.session.hr_session.get_graph_percent()
 
         # ligne HR
-        self.line_hr.set_data(
-            [p["t"] for p in self.session.hr_session.data],
-            [p["percent"] or 0 for p in self.session.hr_session.data]
-        )
-        
+        self.line_hr.set_data(hr_times, hrmax_percents)
+
         # ligne CPM
         self.line_cpm.set_data(
             self.session.metrics.cpm_time,

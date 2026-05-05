@@ -1,3 +1,5 @@
+from kivy.app import App
+
 from datetime import datetime
 import time
 
@@ -16,14 +18,19 @@ class HRSession:
     def __init__(self, session):
 
         self.session = session
-        self.session_id = str(uuid.uuid4())
 
-        # stockage des points (dict)
-        self.data = []
+        # Historique des données de FC brute
+        self.hr_history = []
+        self.hr_time = []
+        # self.data = []
+
+        # Historique des données de %FCmax
+        self.hrmax_percent_history = []
+        
+        # Flag d'enregistrement actif
         self.is_recording = False
 
-        logger.info(f"🆕 HRSession init ({self.session_id})")
-
+        # S'abonner aux évenements
         event_bus.subscribe("heart_rate_received", self.on_hr_received)
     
     # ========== GESTION DE SESSION ==========
@@ -45,34 +52,42 @@ class HRSession:
 
     def reset(self):
         """Réinitialise la session"""
-        self.data.clear()
+        self.hr_history.clear()
+        self.hr_time.clear()
+        self.hrmax_percent_history.clear()
 
-    # =========================
-    # INPUT (EVENT BUS)
-    # =========================
+    # ============== CALLBACKS ==============
 
     def on_hr_received(self, bpm: int):
 
-        if not self.is_recording:
+        # ne pas enregistrer si la session n'est pas active
+        if not self.is_recording: # p-e mettre ça dans game session ?
             return
 
-        # éviter les fausses valeurs 
-        if bpm < 30 or bpm > 220:
-            return
+        # # éviter les fausses valeurs 
+        # if bpm < 30 or bpm > 220:
+        #     return
 
+        # Calcul du %FCmax
+        hrmax_percent = self._compute_percent(bpm)
+
+        # Calcul du temps relatif depuis le début de la session
         t = time.time() - self.session.start_time
 
-        percent = self._compute_percent(bpm)
+        # Enregistrer les données
+        self.hr_history.append(bpm)
+        self.hr_time.append(t)
+        self.hrmax_percent_history.append(hrmax_percent)
 
-        point = {
-            "t": t,
-            "bpm": bpm,
-            "percent": percent
-        }
+        # point = {
+        #     "t": t,
+        #     "bpm": bpm,
+        #     "percent": hrmax_percent
+        # }
 
-        self.data.append(point)
+        # self.data.append(point)
 
-        event_bus.emit("hr_data_updated", point)
+        # event_bus.emit("hr_data_updated", point)
 
     # =========================
     # CALCULS
@@ -80,8 +95,8 @@ class HRSession:
 
     def _compute_percent(self, bpm: int) -> Optional[float]:
         try:
-            from kivy.app import App
-            max_hr = App.get_running_app().user_profile.calculate_max_hr()
+            app = App.get_running_app()
+            max_hr = app.user_profile.calculate_max_hr()
             return (bpm / max_hr) * 100
         except:
             return None
@@ -90,17 +105,11 @@ class HRSession:
     # GRAPH DATA
     # =========================
 
-    def get_graph_data(self) -> Tuple[List[float], List[int]]:
-        return (
-            [p["t"] for p in self.data],
-            [p["bpm"] for p in self.data]
-        )
+    def get_graph_data(self):
+        return (self.hr_time, self.hr_history)
 
-    def get_graph_percent(self) -> Tuple[List[float], List[float]]:
-        return (
-            [p["t"] for p in self.data],
-            [p["percent"] or 0 for p in self.data]
-        )
+    def get_graph_percent(self):
+        return (self.hr_time, self.hrmax_percent_history)
 
     # =========================
     # STATS
@@ -115,30 +124,30 @@ class HRSession:
     # EXPORT
     # =========================
 
-    def save_json(self, path: str):
+    # def save_json(self, path: str):
 
-        payload = {
-            "session_id": self.session_id,
-            "duration": self.get_duration(),
-            "data": list(self.data)
-        }
+    #     payload = {
+    #         "session_id": self.session_id,
+    #         "duration": self.get_duration(),
+    #         "data": list(self.data)
+    #     }
 
-        with open(path, "w") as f:
-            json.dump(payload, f, indent=2)
+    #     with open(path, "w") as f:
+    #         json.dump(payload, f, indent=2)
 
-        logger.info(f"💾 JSON saved: {path}")
+    #     logger.info(f"💾 JSON saved: {path}")
 
-    def save_csv(self):
+    # def save_csv(self):
 
-        from datetime import datetime
-        path = f"sessions/session_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    #     from datetime import datetime
+    #     path = f"sessions/session_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
 
-        with open(path, "w") as f:
-            f.write("Time,FC,%FCmax\n")
+    #     with open(path, "w") as f:
+    #         f.write("Time,FC,%FCmax\n")
 
-            for p in self.data:
-                f.write(
-                    f"{p['t']},{p['bpm']},{p['percent']}\n"
-                )
+    #         for p in self.data:
+    #             f.write(
+    #                 f"{p['t']},{p['bpm']},{p['percent']}\n"
+    #             )
 
-        logger.info(f"💾 CSV saved: {path}")
+    #     logger.info(f"💾 CSV saved: {path}")

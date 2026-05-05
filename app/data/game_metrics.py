@@ -5,6 +5,7 @@ class GameMetrics:
     
     def __init__(self, session):
         self.session = session
+        
         # historique CPM
         self.cpm_history = []
         self.cpm_time = []

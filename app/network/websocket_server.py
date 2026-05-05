@@ -24,10 +24,6 @@ class WebSocketServer:
         self.on_client_connected: Optional[Callable] = None
         self.on_client_disconnected: Optional[Callable] = None
 
-        # # Callbacks vers tracking_screen
-        # self.on_client_connected_tracking: Optional[Callable] = None
-        # self.on_client_disconnected_tracking: Optional[Callable] = None
-    
     async def start(self, host: str = WEBSOCKET_HOST, port: int = WEBSOCKET_PORT) -> bool:
         """
         Démarre le serveur WebSocket
@@ -103,10 +99,6 @@ class WebSocketServer:
         # Callback vers pilotage_screen
         if self.on_client_connected:
             self.on_client_connected(websocket)
-
-        # # Callback vers tracking_screen
-        # if self.on_client_connected_tracking:
-        #     self.on_client_connected_tracking(websocket)
         
         try:
             # Écouter les messages du client (pas utilisé ?)
