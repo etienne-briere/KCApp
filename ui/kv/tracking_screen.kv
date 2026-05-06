@@ -61,6 +61,14 @@
                 height: self.minimum_height
 
                 Widget:  # pousse les boutons à droite
+
+                MDIconButton:
+                    icon: "image-filter-center-focus-weak"
+                    theme_text_color: "Custom"
+                    text_color: "grey"
+                    size_hint: None, None
+                    icon_size: "40sp"
+                    on_release: root.center_graph()
                 
                 MDIconButton:
                     icon: "restart"

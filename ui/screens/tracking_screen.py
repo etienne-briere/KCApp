@@ -140,18 +140,18 @@ class TrackingScreen(MDScreen):
         # Limites des axes
         self.ax1.set_xlim(0, 600)  # 10 minutes
         self.ax1.set_ylim(0, 100)  # 0-100 %FCmax
-        self.ax2.set_ylim(30, 200) # 30-200 CPM
+        self.ax2.set_ylim(20, 210) # CPM
 
         # Ajouter la figure au widget
         self.ids.hr_graph_widget.figure = self.fig
     
-    #==== CALLBACK ====#
+    #==== CALLBACK ==== #
     
     def on_hr_received(self, bpm):
 
         # UI label
         self.ids.heart_rate_label.text = str(bpm)
-        
+
         self.update_graph()
 
     def update_graph(self):
@@ -183,8 +183,22 @@ class TrackingScreen(MDScreen):
         # Redessiner
         self.fig.canvas.draw_idle()
     
+    def center_graph(self):
+        '''Recentrer le graphique à partir du début de la partie'''
+        
+        # Moment du slice du 1er cube
+        game_start_time = self.session.metrics.cpm_time[0] if self.session.metrics.cpm_time else 0
+        
+        # MAJ UI
+        self.ax1.set_xlim(game_start_time, game_start_time + 600)
+        self.ax1.set_ylim(0, 100)
+
+        # Redessiner graphe
+        self.fig.canvas.draw_idle()
+    
     def reset_graph(self):
         self.session.reset()
         self.ax1.set_xlim(0, 600)
+        self.ax1.set_ylim(0, 100)
         self.fig.canvas.draw_idle()
          

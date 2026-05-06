@@ -136,11 +136,11 @@ class ScanScreen(MDScreen):
         
         if is_connected:
             # Démarrer l'enregistrement des données FC
-            self.session.hr_session.start_recording()
+            self.session.start_recording()
             self.update_button_state("connected", device.name)
         else:
             # Arrêter l'enregistrement des données FC
-            # self.session.hr_session.stop_recording()
+            # self.session.stop_recording()
             self.update_button_state("disconnected")
     
     # ========== DATA ==========

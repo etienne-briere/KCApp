@@ -22,33 +22,12 @@ class HRSession:
         # Historique des données de FC brute
         self.hr_history = []
         self.hr_time = []
-        # self.data = []
 
         # Historique des données de %FCmax
         self.hrmax_percent_history = []
-        
-        # Flag d'enregistrement actif
-        self.is_recording = False
 
         # S'abonner aux évenements
         event_bus.subscribe("heart_rate_received", self.on_hr_received)
-    
-    # ========== GESTION DE SESSION ==========
-    
-    def start_recording(self):
-        """Démarre l'enregistrement de la session"""
-        if self.is_recording:
-            return
-        
-        self.session.start_time = time.time()
-        self.is_recording = True
-
-        logger.info("▶️ HR recording started")
-    
-    def stop_recording(self):
-        """Arrête l'enregistrement"""
-        self.is_recording = False
-        logger.info(f"⏹️ HR recording stopped ({self.get_duration():.1f}s)")
 
     def reset(self):
         """Réinitialise la session"""
@@ -60,14 +39,6 @@ class HRSession:
 
     def on_hr_received(self, bpm: int):
 
-        # ne pas enregistrer si la session n'est pas active
-        if not self.is_recording: # p-e mettre ça dans game session ?
-            return
-
-        # # éviter les fausses valeurs 
-        # if bpm < 30 or bpm > 220:
-        #     return
-
         # Calcul du %FCmax
         hrmax_percent = self._compute_percent(bpm)
 
@@ -78,16 +49,6 @@ class HRSession:
         self.hr_history.append(bpm)
         self.hr_time.append(t)
         self.hrmax_percent_history.append(hrmax_percent)
-
-        # point = {
-        #     "t": t,
-        #     "bpm": bpm,
-        #     "percent": hrmax_percent
-        # }
-
-        # self.data.append(point)
-
-        # event_bus.emit("hr_data_updated", point)
 
     # =========================
     # CALCULS
