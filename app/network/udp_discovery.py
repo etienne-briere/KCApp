@@ -9,8 +9,6 @@ from utils.event_bus import event_bus
 from kivy.app import App
 
 from config import UDP_PORT_SEND, UDP_PORT_RECEIVE, UDP_PING_TIMEOUT
-# from app.data.game_session import GameSession
-# from app.data.user_profile import UserProfile
 
 logger = get_logger(__name__)
 

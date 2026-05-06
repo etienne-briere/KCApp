@@ -108,7 +108,8 @@ class PilotageScreen(MDScreen):
     def on_target_hr_touch_up(self):
         """Appelé quand l'utilisateur relâche le slider"""
         logger.debug(f"🎯 Slider relâché à {self.target_hr}")
-        self.session.config.target_hr_percent = self.target_hr
+        # self.session.config.target_hr_percent = self.target_hr
+        self.session.config.update_target(self.target_hr)
 
         self.send_target_hr()
     

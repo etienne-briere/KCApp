@@ -10,9 +10,12 @@ from kivy.clock import Clock
 # Custom modules
 import matplotlib.pyplot as plt
 import time
+import numpy as np
 
 # Standard library
 import asyncio
+
+from pyparsing import line
 from utils.event_bus import event_bus
 from utils.logger import get_logger
 
@@ -32,6 +35,8 @@ class TrackingScreen(MDScreen):
         self.fig = None
         self.line_hr = None
         self.placeholder_text = None
+        self.target_zone = None
+        self.target_received = False
 
         # UDP Controller
         self.udp_controller = None
@@ -53,6 +58,9 @@ class TrackingScreen(MDScreen):
         self.udp_controller = app.udp_controller
         self.session = app.session
 
+        if self.session.config.target_hr_percent is not None:
+            self.target_received = True
+
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC
         event_bus.subscribe("heart_rate_received", self.on_hr_received)
         
@@ -63,7 +71,6 @@ class TrackingScreen(MDScreen):
         """Appelé à la sortie de l'écran"""
         # Nettoyer les callbacks pour éviter les fuites de mémoire et les appels indésirables
         event_bus.unsubscribe("heart_rate_received", self.on_hr_received)
-
     
     # ========== GESTION DES DONNÉES EXISTANTES ==========
 
@@ -128,34 +135,73 @@ class TrackingScreen(MDScreen):
         # Couleur du contour des axes
         for spine in self.ax1.spines.values():
             spine.set_color('grey')
+
+        # ligne %FCmax cible
+        self.line_target, = self.ax1.plot([], [], color='green', linestyle='--', linewidth=2, drawstyle='steps-post', label='Target %HRmax')
         
-        # ligne HR (vide au départ)
+        # ligne %FCmax (vide au départ)
         self.line_hr, = self.ax1.plot([], [], 'r-', linewidth=2, label='HRmax (%)')
-        self.ax1.legend(loc='upper left', facecolor='#1e1e1e', edgecolor='white', labelcolor='white')
     
         # ligne CPM (vide au départ)
         self.line_cpm, = self.ax2.plot([], [], 'cyan', linewidth=2, label='CPM')
-        self.ax2.legend(loc='upper right', facecolor='#1e1e1e', edgecolor='white', labelcolor='white')
+
+        self.plots = {
+            "hr": {"line": self.line_hr, "label": "HRmax (%)"},
+            "cpm": {"line": self.line_cpm, "label": "CPM"},
+            "target": {"line": self.line_target, "label": "Target %HRmax"},
+        }
 
         # Limites des axes
         self.ax1.set_xlim(0, 600)  # 10 minutes
         self.ax1.set_ylim(0, 100)  # 0-100 %FCmax
         self.ax2.set_ylim(20, 210) # CPM
 
+        self.update_legend()
+
         # Ajouter la figure au widget
         self.ids.hr_graph_widget.figure = self.fig
     
-    #==== CALLBACK ==== #
+    #==== CALLBACK =====#
     
     def on_hr_received(self, bpm):
 
         # UI label
         self.ids.heart_rate_label.text = str(bpm)
 
+        # forcer la mise à jour du graphique avec la cible actuelle
+        self.session.config.update_target(self.session.config.target_hr_percent) 
+
         self.update_graph()
+    
+    #==== GRAPHIQUE =====#
 
     def update_graph(self):
         '''Mettre à jour le graphique'''
+
+        # Données à afficher
+        hr_times, hrmax_percents = self.session.hr_session.get_graph_percent()
+        cpm_times, cpm_values = self.session.metrics.cpm_time, self.session.metrics.cpm_history
+        target_times, target_values = self.session.config.target_time or [], self.session.config.target_history or []
+
+        # supprimer ancienne zone
+        if self.target_zone:
+            self.target_zone.remove()
+            self.target_zone = None
+
+        if target_times and target_values:
+            # target_values = np.array(target_values)
+            target_values = np.array(target_values, dtype=float)
+
+            lower = target_values - 5
+            upper = target_values
+
+            self.target_zone = self.ax1.fill_between(
+                target_times,
+                lower,
+                upper,
+                color='green',
+                alpha=0.15
+            )
 
         # UI
         self.ax1.set_ylabel("HRmax (%)", color="red", fontsize=12)
@@ -164,17 +210,48 @@ class TrackingScreen(MDScreen):
         # Supprimer le placeholder
         if self.placeholder_text:
             self.placeholder_text.set_visible(False)
-        
-        hr_times, hrmax_percents = self.session.hr_session.get_graph_percent()
 
-        # ligne HR
+        # target = self.session.config.target_hr_percent
+
+        # if target is not None:
+        #     # créer ligne si elle n'existe pas encore
+        #     self.target_line = self.ax1.axhline(
+        #         y=target,
+        #         color='green',
+        #         linestyle='--',
+        #         linewidth=1,
+        #         label='Target %HRmax'
+        #     )
+        #     self.update_legend()
+
+        #     # gérer la zone
+        #     if self.target_zone:
+        #         self.target_zone.remove()
+        #         self.low_zone.remove()
+        #         self.high_zone.remove()
+        #         self.update_legend()
+
+        #     # zone cible
+        #     self.target_zone = self.ax1.axhspan(target - 5, target, color='green', alpha=0.1)
+        #     # trop bas
+        #     self.low_zone = self.ax1.axhspan(0, target - 5, color='blue', alpha=0.05)
+        #     # trop haut
+        #     self.high_zone = self.ax1.axhspan(target, 100, color='red', alpha=0.05)
+
+        # ligne %FCmax cible
+        self.line_target.set_data(target_times, target_values)
+        
+        # ligne %FCmax
         self.line_hr.set_data(hr_times, hrmax_percents)
 
         # ligne CPM
-        self.line_cpm.set_data(
-            self.session.metrics.cpm_time,
-            self.session.metrics.cpm_history
-        )
+        self.line_cpm.set_data(cpm_times, cpm_values)
+
+        self.update_legend()
+
+        # Ajuster les limites de l'axe HR en fonction des données
+        self.ax1.relim()
+        self.ax1.autoscale_view()
 
         # Ajuster les limites de l'axe CPM en fonction des données
         self.ax2.relim() 
@@ -183,6 +260,37 @@ class TrackingScreen(MDScreen):
         # Redessiner
         self.fig.canvas.draw_idle()
     
+    def is_line_valid(self, line):
+        return line is not None and len(line.get_xdata()) > 0
+    
+    def update_legend(self):
+
+        lines = []
+        labels = []
+
+        for plot in self.plots.values():
+            line = plot["line"]
+
+            if line is not None and len(line.get_xdata()) > 0:
+                lines.append(line)
+                labels.append(plot["label"])
+
+        # supprimer ancienne légende
+        if hasattr(self, "legend") and self.legend:
+            self.legend.remove()
+            self.legend = None
+
+        # 🔥 IMPORTANT : recréer même si vide plus tard
+        if lines:
+            self.legend = self.ax1.legend(
+                lines,
+                labels,
+                loc='upper left',
+                facecolor='#1e1e1e',
+                edgecolor='white',
+                labelcolor='white'
+            )
+
     def center_graph(self):
         '''Recentrer le graphique à partir du début de la partie'''
         

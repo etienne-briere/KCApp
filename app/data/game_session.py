@@ -13,7 +13,7 @@ class GameSession:
 
     def __init__(self, user_profile=None):
         self.user_profile = user_profile if user_profile else UserProfile()
-        self.config = SessionConfig()
+        self.config = SessionConfig(self)
         self.hr_session = HRSession(self)
         self.metrics = GameMetrics(self)
 
@@ -45,5 +45,6 @@ class GameSession:
         self.start_time = time.time()
         self.hr_session.reset()
         self.metrics.reset()
+        self.config.reset()
 
         
