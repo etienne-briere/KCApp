@@ -189,7 +189,6 @@ class TrackingScreen(MDScreen):
             self.target_zone = None
 
         if target_times and target_values:
-            # target_values = np.array(target_values)
             target_values = np.array(target_values, dtype=float)
 
             lower = target_values - 5

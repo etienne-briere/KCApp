@@ -12,7 +12,6 @@ class UserProfile:
         if key == "userAge":
             self.age = int(value)
     
-    
     def calculate_max_hr(self):
         """Calcule la FCmax basée sur l'âge"""
         return 211 - (self.age * 0.64)
