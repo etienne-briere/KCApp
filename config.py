@@ -11,7 +11,7 @@ ACCENT_PALETTE = "Amber"
 
 # Configuration BLE
 BLE_SCAN_TIMEOUT = 3
-BLE_TARGET_DEVICES = ["Forerunner", "Polar", "vívoactiv" , "Instinct"]  # Filtre pour les marques ciblées
+BLE_TARGET_DEVICES = ["Forerunner", "Polar", "Vantage","vívoactiv" , "Instinct"]  # Filtre pour les marques ciblées
 
 # Paramètres WebSocket
 WEBSOCKET_HOST = "0.0.0.0"

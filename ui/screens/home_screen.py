@@ -8,6 +8,8 @@ from kivy.clock import mainthread
 from utils.event_bus import event_bus
 from kivymd.toast import toast
 
+from utils.ressource_path import resource_path
+
 
 logger = get_logger(__name__)
 
@@ -15,7 +17,8 @@ class HomeScreen(MDScreen):
     """Écran d'accueil"""
     
     unity_connected = BooleanProperty(False)
-    status_icon_source = StringProperty("assets/loading.gif")
+    # status_icon_source = StringProperty("assets/loading.gif")
+    status_icon_source = StringProperty(resource_path("assets/loading.gif"))
     selected_model = StringProperty("Unknown")
     hr_target = StringProperty("Unknown")
     age_user = StringProperty("Unknown")

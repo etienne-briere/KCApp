@@ -23,6 +23,7 @@ from app.data.game_session import GameSession
 
 # Logger
 from utils.logger import get_logger
+from utils.ressource_path import resource_path
 
 logger = get_logger(__name__)
 
@@ -64,15 +65,23 @@ class KCApp(MDApp):
         self.theme_cls.accent_palette = ACCENT_PALETTE
 
         # Charger les fichiers .kv
-        Builder.load_file("ui/kv/status_bar.kv")
-        Builder.load_file("ui/kv/home_screen.kv")
-        Builder.load_file("ui/kv/scan_screen.kv")
-        Builder.load_file("ui/kv/pilotage_screen.kv")
-        Builder.load_file("ui/kv/profil_screen.kv")
-        Builder.load_file("ui/kv/tracking_screen.kv")
-        Builder.load_file("ui/kv/game_screen.kv")
+        # Builder.load_file("ui/kv/status_bar.kv")
+        # Builder.load_file("ui/kv/home_screen.kv")
+        # Builder.load_file("ui/kv/scan_screen.kv")
+        # Builder.load_file("ui/kv/pilotage_screen.kv")
+        # Builder.load_file("ui/kv/profil_screen.kv")
+        # Builder.load_file("ui/kv/tracking_screen.kv")
+        # Builder.load_file("ui/kv/game_screen.kv")
 
-        return Builder.load_file("ui/kv/main.kv")
+        Builder.load_file(resource_path("ui/kv/status_bar.kv"))
+        Builder.load_file(resource_path("ui/kv/home_screen.kv"))
+        Builder.load_file(resource_path("ui/kv/scan_screen.kv"))
+        Builder.load_file(resource_path("ui/kv/pilotage_screen.kv"))
+        Builder.load_file(resource_path("ui/kv/profil_screen.kv"))
+        Builder.load_file(resource_path("ui/kv/tracking_screen.kv"))
+        Builder.load_file(resource_path("ui/kv/game_screen.kv"))
+
+        return Builder.load_file(resource_path("ui/kv/main.kv"))
 
     def on_start(self):
         '''
