@@ -9,6 +9,8 @@ from kivy.clock import Clock
 from kivy.clock import mainthread
 from utils.event_bus import event_bus
 from kivymd.toast import toast
+from kivymd.uix.dialog import MDDialog
+from kivymd.uix.button import MDFlatButton
 
 from utils.ressource_path import resource_path
 
@@ -19,6 +21,7 @@ class HomeScreen(MDScreen):
     """Écran d'accueil"""
 
     unity_connected = BooleanProperty(False)
+    # status_icon_source = StringProperty("assets/loading.gif")
     status_icon_source = StringProperty(resource_path("assets/loading.gif"))
     selected_model = StringProperty("Unknown")
     hr_target = StringProperty("Unknown")
@@ -126,6 +129,46 @@ class HomeScreen(MDScreen):
             toast("Age invalide")
 
     # ========== CASQUE VR (QUEST) ==========
+
+    def afficher_info_casque(self):
+        """
+        Explique les prérequis côté casque pour que le pilotage ADB
+        fonctionne — voir quest_control/README.md pour le détail complet.
+        """
+        texte = (
+            "[b]Une fois par casque[/b]\n"
+            "Mode développeur activé (application mobile Meta Quest), puis "
+            "« Autoriser le débogage USB » accepté au premier branchement.\n\n"
+            "[b]Après chaque redémarrage complet du casque[/b]\n"
+            "Le débogage réseau ne survit pas à un redémarrage. Rebranchez "
+            "le casque en USB à un PC et lancez :\n"
+            "python quest_control/quest.py connecter\n"
+            "Tant que le casque reste allumé (veille comprise), pas besoin "
+            "de rebrancher.\n\n"
+            "[b]Réseau[/b]\n"
+            "La tablette et le casque doivent être sur le même réseau "
+            "Wi-Fi. Certains réseaux (hospitaliers, notamment) isolent les "
+            "appareils entre eux — le pilotage sans fil est alors "
+            "impossible, quel que soit le réglage.\n\n"
+            "[b]Symptôme « Casque introuvable » ou connexion refusée[/b]\n"
+            "C'est presque toujours l'un des deux points ci-dessus : casque "
+            "redémarré depuis la dernière connexion, ou réseau isolant les "
+            "appareils."
+        )
+
+        if not hasattr(self, "_dialog_info_casque") or self._dialog_info_casque is None:
+            self._dialog_info_casque = MDDialog(
+                title="Paramétrer le casque pour l'ADB",
+                text=texte,
+                size_hint=(0.85, None),
+                buttons=[
+                    MDFlatButton(
+                        text="COMPRIS",
+                        on_release=lambda *_: self._dialog_info_casque.dismiss(),
+                    ),
+                ],
+            )
+        self._dialog_info_casque.open()
 
     def on_casque_ip_change(self, value):
         """Champ IP du casque modifié"""

@@ -20,11 +20,24 @@
                 size_hint: 1, None
                 height: self.minimum_height
 
-                MDLabel:
-                    text: "VR Headset"
-                    font_style: "H5"
+                MDBoxLayout:
+                    orientation: "horizontal"
+                    spacing: dp(5)
                     size_hint_y: None
                     height: dp(40)
+
+                    MDLabel:
+                        text: "VR Headset"
+                        font_style: "H5"
+
+                    MDIconButton:
+                        icon: "information-outline"
+                        theme_text_color: "Custom"
+                        text_color: "grey"
+                        size_hint: None, None
+                        size: dp(40), dp(40)
+                        pos_hint: {"center_y": 0.5}
+                        on_release: root.afficher_info_casque()
 
                 MDCard:
                     orientation: "vertical"
