@@ -1,3 +1,5 @@
+import asyncio
+
 from kivymd.uix.screen import MDScreen
 from kivy.properties import StringProperty, BooleanProperty, NumericProperty
 from kivy.app import App
@@ -15,14 +17,19 @@ logger = get_logger(__name__)
 
 class HomeScreen(MDScreen):
     """Écran d'accueil"""
-    
+
     unity_connected = BooleanProperty(False)
-    # status_icon_source = StringProperty("assets/loading.gif")
     status_icon_source = StringProperty(resource_path("assets/loading.gif"))
     selected_model = StringProperty("Unknown")
     hr_target = StringProperty("Unknown")
     age_user = StringProperty("Unknown")
-    
+
+    # Casque VR (préparation avant séance)
+    casque_ip = StringProperty("")
+    casque_connecte = BooleanProperty(False)
+    casque_en_cours = BooleanProperty(False)
+    casque_statut = StringProperty("Casque non connecté")
+
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
         app = App.get_running_app()
@@ -31,6 +38,7 @@ class HomeScreen(MDScreen):
         self.udp_discovery = app.udp_discovery
         self.udp_controller = app.udp_controller
         self.session = app.session
+        self.quest_client = app.quest_client
 
         # Vérifier la connexion Unity (au cas où on arrive dans l'écran après la connexion)
         self.unity_connected = self.udp_discovery.is_unity_connected()
@@ -39,15 +47,27 @@ class HomeScreen(MDScreen):
             self.age_user = str(self.session.user_profile.age)
             self.hr_target = f"{self.session.config.target_hr_percent} %"
 
+        # Re-refléter l'état du casque si on revient sur l'écran après coup
+        self.casque_connecte = self.quest_client.connecte
+        if self.quest_client.ip:
+            self.casque_ip = self.quest_client.ip
+        self.casque_statut = "Casque prêt" if self.casque_connecte else "Casque non connecté"
+
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
         event_bus.subscribe("unity_ping_received", self.handle_ping_received)
         event_bus.subscribe("session_updated", self.on_session_updated)
-    
+        event_bus.subscribe("casque_connecte", self.handle_casque_connecte)
+        event_bus.subscribe("casque_erreur", self.handle_casque_erreur)
+        event_bus.subscribe("casque_prepare", self.handle_casque_prepare)
+
     def on_leave(self):
         event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
         event_bus.unsubscribe("unity_ping_received", self.handle_ping_received)
-        event_bus.subscribe("session_updated", self.on_session_updated)
+        event_bus.unsubscribe("session_updated", self.on_session_updated)
+        event_bus.unsubscribe("casque_connecte", self.handle_casque_connecte)
+        event_bus.unsubscribe("casque_erreur", self.handle_casque_erreur)
+        event_bus.unsubscribe("casque_prepare", self.handle_casque_prepare)
 
     # ========== CALLBACKS UDP ==========
 
@@ -104,3 +124,89 @@ class HomeScreen(MDScreen):
         except ValueError:
             print("Entrée âge invalide")
             toast("Age invalide")
+
+    # ========== CASQUE VR (QUEST) ==========
+
+    def on_casque_ip_change(self, value):
+        """Champ IP du casque modifié"""
+        self.casque_ip = value
+
+    def preparer_casque(self):
+        """
+        Bouton « Préparer le casque » : connexion ADB puis enchaînement
+        complet (réveil, capteur de proximité, veille, limite de jeu,
+        lancement) — même séquence que quest_control/quest.py preparer,
+        validée sur le vrai casque avant d'être branchée ici.
+        """
+        if self.casque_en_cours:
+            return
+
+        ip = self.casque_ip.strip()
+        if not ip:
+            toast("Renseignez l'adresse IP du casque")
+            return
+
+        if not self.quest_client:
+            toast("❌ Pilotage du casque indisponible")
+            return
+
+        self.casque_en_cours = True
+        self.casque_statut = f"Connexion à {ip}..."
+        asyncio.ensure_future(self._preparer_casque_async(ip))
+
+    async def _preparer_casque_async(self, ip):
+        try:
+            connecte = await self.quest_client.se_connecter(ip)
+            if not connecte:
+                # L'erreur détaillée est déjà remontée via l'event bus
+                # (voir handle_casque_erreur) — rien de plus à faire ici.
+                return
+
+            self.casque_statut = "Préparation en cours..."
+            await self.quest_client.preparer_seance()
+        finally:
+            self.casque_en_cours = False
+
+    def detecter_casque(self):
+        """
+        Bouton « Détecter » : cherche le casque automatiquement (dernière IP
+        connue, puis balayage réseau en secours — voir quest_discovery.py).
+        Remplit le champ IP et connecte si trouvé ; ne prépare pas le casque
+        automatiquement, ça reste une action explicite séparée.
+        """
+        if self.casque_en_cours:
+            return
+        if not self.quest_client:
+            toast("❌ Pilotage du casque indisponible")
+            return
+
+        self.casque_en_cours = True
+        self.casque_statut = "Recherche du casque sur le réseau..."
+        asyncio.ensure_future(self._detecter_casque_async())
+
+    async def _detecter_casque_async(self):
+        try:
+            await self.quest_client.se_connecter_auto()
+        finally:
+            self.casque_en_cours = False
+
+    def handle_casque_connecte(self, data):
+        self.casque_connecte = True
+        self.casque_ip = data["ip"]
+        logger.info(f"🥽 Casque connecté : {data['ip']}")
+
+    def handle_casque_erreur(self, data):
+        self.casque_connecte = False
+        self.casque_en_cours = False
+        self.casque_statut = f"Erreur : {data['message']}"
+        toast(f"❌ {data['message']}")
+
+    def handle_casque_prepare(self, data):
+        self.casque_en_cours = False
+        if data["reussi"]:
+            self.casque_statut = "Casque prêt"
+            toast("Casque prêt")
+        else:
+            echecs = ", ".join(e["etape"] for e in data["etapes"] if not e["ok"])
+            self.casque_statut = f"Étapes en échec : {echecs}"
+            toast("⚠️ Casque partiellement préparé — vérifiez avant la séance")

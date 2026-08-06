@@ -4,7 +4,6 @@ from kivy.clock import Clock
 from kivy.app import App
 from kivymd.toast import toast
 
-import asyncio
 from utils.event_bus import event_bus
 from utils.logger import get_logger
 
@@ -19,22 +18,22 @@ class PilotageScreen(MDScreen):
     adaptive_mode_enabled = BooleanProperty(True) # mode adaptatif
     cube_per_min = NumericProperty(60) # cubes/min
     target_hr = NumericProperty(50)  # % FCmax
-    
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         # Fréquence de cube
         self.cube_frequency = round(1/(self.cube_per_min/60), 2)
-        
+
         # Debounce pour les sliders
         self.cube_frequency_event = None
         self.target_hr_event = None
 
-    
+
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
         app = App.get_running_app()
-        
+
         # Managers
         self.udp_controller = app.udp_controller
         self.udp_discovery = app.udp_discovery
@@ -50,13 +49,13 @@ class PilotageScreen(MDScreen):
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
         event_bus.subscribe("session_updated", self.on_session_updated)
-        
+
     def on_leave(self):
         event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
         event_bus.unsubscribe("session_updated", self.on_session_updated)
-    
+
     # ========== CALLBACKS ==========
-    
+
     def handle_unity_connection(self, data):
         connected = data["connected"]
         self.unity_connected = connected
@@ -67,19 +66,19 @@ class PilotageScreen(MDScreen):
         self.obs_enabled = session.config.obs_enabled
 
     # ========== OBSTACLES ==========
-    
+
     def on_obstacles_toggle(self, is_active):
         """Toggle obstacles ON/OFF"""
         # self.obs_enabled = is_active
         self.session.config.obs_enabled = is_active
         logger.info(f"🎮 Obstacles: {'ON' if is_active else 'OFF'}")
-        
+
         # Envoyer via UDP
         if self.udp_controller:
             self.udp_controller.set_obstacle("1" if is_active else "0")
-    
+
     # ========== CUBE FREQUENCY ==========
-    
+
     def on_cube_frequency_change(self, value):
         """Slider cube frequency changé"""
         self.cube_per_min = value
@@ -91,20 +90,20 @@ class PilotageScreen(MDScreen):
         logger.debug(f"🎯 Slider relâché à {self.cube_per_min} cubes/min")
 
         self.send_cube_frequency()
-    
+
     def send_cube_frequency(self):
         """Envoie la fréquence des cubes à Unity"""
         if self.udp_controller:
             success = self.udp_controller.set_cube_rate(self.cube_frequency)
             if success:
                 logger.info(f"📤 Cube frequency envoyée: {self.cube_frequency}")
-    
+
     # ========== TARGET HR ==========
-    
+
     def on_target_hr_change(self, value):
         """Slider target HR changé"""
         self.target_hr = value
-        
+
     def on_target_hr_touch_up(self):
         """Appelé quand l'utilisateur relâche le slider"""
         logger.debug(f"🎯 Slider relâché à {self.target_hr}")
@@ -112,16 +111,16 @@ class PilotageScreen(MDScreen):
         self.session.config.update_target(self.target_hr)
 
         self.send_target_hr()
-    
+
     def send_target_hr(self):
         """Envoie la FC cible à Unity"""
         if self.udp_controller:
             success = self.udp_controller.set_target_hr(self.target_hr)
             if success:
                 logger.info(f"📤 Target HR envoyée: {self.target_hr}%")
-    
+
     # ========== GAME ACTIONS ==========
-    
+
     def pause_game(self):
         """Met le jeu en pause"""
         if self.udp_controller:
@@ -130,7 +129,7 @@ class PilotageScreen(MDScreen):
                 logger.info("⏸️ Jeu en pause")
             else:
                 toast("❌ Failed to pause")
-    
+
     def resume_game(self):
         """Reprend le jeu"""
         if self.udp_controller:
@@ -139,7 +138,7 @@ class PilotageScreen(MDScreen):
                 logger.info("▶️ Jeu repris")
             else:
                 toast("❌ Failed to resume")
-    
+
     def restart_game(self):
         """Redémarre le jeu"""
         if self.udp_controller:

@@ -15,6 +15,7 @@ from app.ble.ble_manager import BLEManager
 from app.network.websocket_server import WebSocketServer
 from app.network.udp_discovery import UDPDiscovery
 from app.network.udp_controller import UDPController
+from app.network.quest_client import QuestClient
 from app.data.user_profile import UserProfile
 from app.data.hr_session import HRSession
 from app.controllers.adaptive_controller import AdaptiveController
@@ -40,6 +41,7 @@ class KCApp(MDApp):
         self.udp_discovery = None
         self.udp_controller = None
         self.hr_session = None
+        self.quest_client = None
         # self.status_bar = None
 
         logger.info("Initialisation de l'application KCApp")
@@ -58,6 +60,7 @@ class KCApp(MDApp):
         self.udp_controller = UDPController(self.udp_discovery)
         self.session = GameSession()
         self.adaptive_controller = AdaptiveController()
+        self.quest_client = QuestClient()
 
         # Définir le thème de l'application
         self.theme_cls.theme_style = THEME_STYLE 

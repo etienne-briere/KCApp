@@ -13,6 +13,77 @@
             size_hint: 0.9, None
             height: self.minimum_height
 
+            # ==== VR HEADSET (QUEST) ====
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(10)
+                size_hint: 1, None
+                height: self.minimum_height
+
+                MDLabel:
+                    text: "VR Headset"
+                    font_style: "H5"
+                    size_hint_y: None
+                    height: dp(40)
+
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(15)
+                    spacing: dp(10)
+                    size_hint_y: None
+                    height: dp(140)
+                    elevation: 2
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(30)
+
+                        MDIcon:
+                            icon: "virtual-reality"
+                            theme_text_color: "Custom"
+                            text_color: [0, 1, 0, 1] if root.casque_connecte else [0.6, 0.6, 0.6, 1]
+                            font_size: "30sp"
+                            size_hint_x: None
+                            width: dp(30)
+
+                        MDLabel:
+                            text: root.casque_statut
+                            font_style: "Body1"
+                            halign: "left"
+                            valign: "center"
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(48)
+
+                        MDIconButton:
+                            icon: "magnify"
+                            theme_text_color: "Custom"
+                            text_color: "grey"
+                            size_hint: None, None
+                            size: dp(48), dp(48)
+                            disabled: root.casque_en_cours
+                            on_release: root.detecter_casque()
+
+                        MDTextField:
+                            id: casque_ip_field
+                            hint_text: "Adresse IP du casque"
+                            text: root.casque_ip
+                            on_text: root.on_casque_ip_change(self.text)
+                            size_hint_x: 0.45
+                            disabled: root.casque_en_cours
+
+                        MDRaisedButton:
+                            text: "Préparation..." if root.casque_en_cours else "Préparer le casque"
+                            disabled: root.casque_en_cours
+                            size_hint_x: 0.4
+                            pos_hint: {"center_y": 0.5}
+                            on_release: root.preparer_casque()
+
             # ---- ZONE STATUS ---
             MDBoxLayout:
                 orientation: "vertical"

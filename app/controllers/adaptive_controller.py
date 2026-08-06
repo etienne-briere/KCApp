@@ -17,6 +17,15 @@ class AdaptiveController:
 
         event_bus.subscribe("heart_rate_received", self.on_heart_rate)
         event_bus.subscribe("unity_connection_changed", self.on_unity_connection)
+        event_bus.subscribe("casque_connecte", self.on_casque_connecte)
+
+    def on_casque_connecte(self, data):
+        """
+        Le casque vient d'être localisé via le pilotage ADB (quest_client) :
+        on cible directement cette IP pour la recherche Unity au lieu de
+        broadcaster sur tout le sous-réseau (voir udp_discovery.py).
+        """
+        self.udp_discovery.definir_ip_casque(data["ip"])
 
     def on_unity_connection(self, data):
         self.unity_connected = data["connected"]

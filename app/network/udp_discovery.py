@@ -18,19 +18,39 @@ class UDPDiscovery:
     def __init__(self):
         self.ip_python: Optional[str] = None
         self.ip_unity: Optional[str] = None
-        
+
+        # IP du casque déjà localisée via le pilotage ADB (quest_client.py) :
+        # si connue, on cible directement cette adresse au lieu de
+        # broadcaster sur tout le sous-réseau. None = comportement d'origine
+        # (balayage complet), pour le cas où le jeu est lancé manuellement
+        # sans être passé par le pilotage ADB.
+        self.ip_casque_connu: Optional[str] = None
+
         # Threads
         self.send_thread: Optional[threading.Thread] = None
         self.receive_thread: Optional[threading.Thread] = None
-        
+
         # Flags de contrôle
         self.send_ip_running = False
         self.listen_udp = False
         self.auto_reconnect = True
-        
+
         # Dernière réception de ping
         self.last_ping_time = time.time()
         self.was_connected = False
+
+    def definir_ip_casque(self, ip: Optional[str]):
+        """
+        Restreint la recherche Unity à cette IP (le casque déjà localisé via
+        le pilotage ADB). Appeler avec None réactive le balayage complet du
+        sous-réseau — comportement d'origine, utilisé quand aucune IP n'est
+        encore connue.
+        """
+        self.ip_casque_connu = ip
+        if ip:
+            logger.info(f"🎯 Recherche Unity ciblée sur {ip} (casque déjà localisé)")
+        else:
+            logger.info("🔍 Recherche Unity élargie à tout le sous-réseau")
 
     # ========== DÉMARRAGE / ARRÊT ==========
     
@@ -87,35 +107,45 @@ class UDPDiscovery:
     
     # ========== ENVOI IP ==========
     
+    def _cibles_courantes(self, toutes_les_ips: list[str]) -> list[str]:
+        """
+        IP à cibler à cet instant : uniquement le casque s'il est déjà
+        localisé (voir definir_ip_casque), sinon tout le sous-réseau comme
+        avant. Isolée dans sa propre méthode pour rester testable sans
+        dépendre des threads/sockets.
+        """
+        return [self.ip_casque_connu] if self.ip_casque_connu else toutes_les_ips
+
     def _send_ip_loop(self):
         """Envoie l'IP locale en broadcast UDP jusqu'à réception de Unity"""
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-            
-            # Liste des IP possibles sur le réseau
+
+            # Liste de repli : tout le sous-réseau, utilisée seulement si
+            # aucune IP de casque n'est déjà connue (voir _cibles_courantes).
             possible_ips = self.get_possible_ips(self.ip_python)
-            
+
             logger.info(f"📡 Recherche Unity sur {len(possible_ips)} IPs possibles...")
-            
+
             while self.send_ip_running:
-                for ip_possible in possible_ips:
+                for ip_possible in self._cibles_courantes(possible_ips):
                     if not self.send_ip_running:
                         break
-                    
+
                     # Message : IP Unity testée + IP Python
                     message = f"IP_Unity:{ip_possible}/IP_Python:{self.ip_python}"
-                    
+
                     try:
                         # Envoyer le message
                         sock.sendto(message.encode(), (ip_possible, UDP_PORT_SEND))
                         # logger.debug(f"📤 Test IP: {ip_possible}")
                     except Exception as e:
                         logger.debug(f"⚠️ Erreur envoi vers {ip_possible}: {e}")
-                
+
                 # Pause entre chaque scan complet du réseau
                 time.sleep(0.1)
-            
+
             sock.close()
             logger.info("📡 Envoi IP arrêté")
             
