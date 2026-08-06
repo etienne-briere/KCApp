@@ -13,13 +13,20 @@ Trois façons de s'en servir : en ligne de commande, depuis un **téléphone**
 | | |
 |---|---|
 | Logique logicielle | **Testée** — 71 tests contre un casque simulé reproduisant les sorties réelles, cas d'échec compris |
-| Télécommande téléphone | **Testée** — jeton, actions, concurrence, casque absent |
-| Sur un vrai casque | **Non validé** — aucun Meta Quest n'a été utilisé pendant le développement |
+| Télécommande téléphone | **Testée** — jeton, actions, concurrence, casque absent (la page elle-même n'a pas été essayée sur un vrai casque) |
+| `quest.py` (poste PC, adb.exe) | **Validé sur un vrai Meta Quest** |
+| `transport_android.py` (QuestAndroid) | **Validé sur un vrai Meta Quest** |
+| Récupération des données (`recuperer`) | Non validée sur matériel réel |
 
-Cinq éléments ne peuvent être établis qu'avec le matériel : la présence d'ADB
-sur le poste, l'activation du mode développeur, l'identifiant exact du jeu,
-l'emplacement où il écrit ses CSV, et le comportement du capteur de proximité
-selon la version de firmware.
+Confirmé sur ce casque : l'identifiant du jeu (`com.m2s.apexexperiment`), la
+neutralisation du capteur de proximité, et la désactivation de la limite de
+jeu. Deux éléments restent à vérifier au cas par cas, casque par casque : la
+présence d'ADB sur le poste et l'activation du mode développeur sont des
+prérequis d'installation, pas des propriétés du logiciel — chaque nouveau
+poste ou casque doit repasser par le diagnostic ci-dessous. De même,
+l'emplacement des CSV et le comportement du capteur de proximité peuvent
+varier d'une version de firmware à l'autre : une validation sur un casque ne
+garantit pas le même comportement sur un autre.
 
 **Commencez par le diagnostic**, qui vérifie ces cinq points et indique quoi
 faire pour chacun :

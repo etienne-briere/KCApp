@@ -62,8 +62,7 @@ def _chemin_cle_par_defaut() -> Path:
     Emplacement de la clé ADB selon la plateforme.
 
     - Windows (poste de développement, ou build PC) : la clé déjà utilisée
-      par adb.exe pour ce casque, sous le profil utilisateur — c'est celle
-      qu'utilisent déjà `quest_control/essai_reel.py` et `essai_preparer.py`.
+      par adb.exe pour ce casque, sous le profil utilisateur.
     - Android : clé déposée dans le dossier privé de l'application par
       `quest_control/push_adb_key.py`. Le chemin exact dépend de la
       façon dont Buildozer expose `app_storage_path()` — à confirmer/ajuster
