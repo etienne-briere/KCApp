@@ -5,9 +5,8 @@ local de la tablette, pour éviter la saisie manuelle dans l'écran de
 pilotage.
 
 Le casque n'annonce rien lui-même (pas de service mDNS fiable en mode
-`adb tcpip` classique — ce n'est pas le même mécanisme que le débogage sans
-fil Android 11+, voir quest_android/README.md). La découverte se fait donc
-en deux passes, de la moins chère à la plus chère :
+`adb tcpip` classique). La découverte se fait donc en deux passes, de la
+moins chère à la plus chère :
 
   1. Réessayer la dernière IP connue (mémorisée par `Quest.connecter_wifi`
      dans quest_control/config.json) — cas le plus fréquent, puisque l'IP ne
@@ -26,7 +25,7 @@ en deux passes, de la moins chère à la plus chère :
 Hypothèse simplificatrice : sous-réseau en /24 (masque 255.255.255.0),
 courant sur un Wi-Fi domestique ou de laboratoire mais pas garanti sur tous
 les réseaux (voir la mise en garde sur l'isolation Wi-Fi hospitalière dans
-quest_android/README.md) — à ajuster si le réseau cible est structuré
+quest_control/README.md) — à ajuster si le réseau cible est structuré
 autrement.
 """
 

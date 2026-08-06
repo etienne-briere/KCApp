@@ -5,8 +5,8 @@ l'APK (Buildozer / python-for-android) plutôt que sur le poste Windows.
 
 Pourquoi ce fichier existe : `Quest._executer` (dans quest.py) invoque le
 binaire `adb` via `subprocess`. Il n'y a pas de binaire `adb` dans un APK.
-`adb-shell` réimplémente le protocole ADB en sockets purs — c'est l'équivalent
-Python de ce que fait Kadb côté Kotlin dans quest_android/.
+`adb-shell` réimplémente le protocole ADB en sockets purs, sans dépendre d'un
+binaire externe.
 
 Toute la logique métier de quest.py (preparer, limite_definir,
 maintenir_eveille, lancer, recuperer, diagnostic, ...) continue de fonctionner
@@ -26,10 +26,9 @@ Le variant "pythonrsa" est important : il utilise les paquets purs Python
 demandent une recette python-for-android). Avec pythonrsa, aucune recette p4a
 supplémentaire n'est nécessaire.
 
-Clé ADB : réutilisez le fichier produit par
-`quest_android/outils/preparer_cle.py` (même format de clé qu'attend adb-shell
-— un fichier privé, et son `.pub` à côté). Embarquez-le comme asset de l'appli
-et ne le versionnez jamais (voir la mise en garde du README quest_android).
+Clé ADB : réutilisez le fichier produit par `push_adb_key.py` (même dossier)
+— un fichier privé, et son `.pub` à côté, même format que celui qu'attend
+adb-shell. Déposée dans le dossier privé de l'application, jamais versionnée.
 """
 
 from __future__ import annotations
@@ -48,10 +47,10 @@ def _charger_signataire(chemin_cle_privee: Path) -> PythonRSASigner:
     """
     Charge la paire de clés ADB.
 
-    `chemin_cle_privee` pointe vers la clé privée (ex. celle déposée par
-    preparer_cle.py sous `app/src/main/assets/adbkey` côté Kotlin — même
-    format ici). La clé publique associée est attendue au même endroit avec
-    un `.pub` en plus, ce que produit déjà preparer_cle.py.
+    `chemin_cle_privee` pointe vers la clé privée (celle déposée par
+    `quest_control/push_adb_key.py` dans le dossier privé de l'application).
+    La clé publique associée est attendue au même endroit avec un `.pub` en
+    plus, ce que produit déjà `push_adb_key.py`.
     """
     prive = chemin_cle_privee.read_text()
     publique = chemin_cle_privee.with_name(chemin_cle_privee.name + ".pub").read_text()
@@ -122,9 +121,9 @@ class QuestAndroid(Quest):
 
             if commande == "tcpip":
                 # Sans objet depuis l'appli : le casque doit déjà écouter en
-                # TCP (condition 1 documentée dans quest_android/README.md).
-                # Ce réglage se pose une fois, casque branché en USB — pas
-                # depuis un client qui n'est déjà qu'en Wi-Fi.
+                # TCP (voir quest_control/README.md, section "Passer en
+                # Wi-Fi"). Ce réglage se pose une fois, casque branché en
+                # USB — pas depuis un client qui n'est déjà qu'en Wi-Fi.
                 return Resultat(
                     0, "",
                     "tcpip : sans effet depuis QuestAndroid, "
@@ -148,8 +147,9 @@ class QuestAndroid(Quest):
             raise ErreurAdb(
                 f"Connexion à {self._ip}:{self._port} impossible. Vérifiez que "
                 "le casque écoute en Wi-Fi (adb tcpip côté casque, voir "
-                "quest_android/README.md) et que la clé embarquée dans "
-                "l'application est bien celle déjà autorisée par le casque."
+                "quest_control/README.md, section \"Passer en Wi-Fi\") et que "
+                "la clé embarquée dans l'application est bien celle déjà "
+                "autorisée par le casque."
             )
 
     def _est_connecte(self) -> bool:
@@ -179,7 +179,8 @@ class QuestAndroid(Quest):
         raise ErreurAdb(
             "Sans objet depuis l'application Android : le passage en mode "
             "TCP (adb tcpip) se fait une fois, depuis un poste branché en "
-            "USB au casque — voir quest_android/README.md, condition 1."
+            "USB au casque — voir quest_control/README.md, section "
+            "\"Passer en Wi-Fi\"."
         )
 
     def connecter_wifi(self, ip: str) -> str:

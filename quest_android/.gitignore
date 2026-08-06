@@ -1,5 +1,0 @@
-# La clé ADB donne un accès complet au casque sur le réseau.
-# Elle n'entre jamais dans un dépôt de code.
-outils/cle/
-**/adbkey
-**/adbkey.pub

@@ -64,11 +64,11 @@ def _chemin_cle_par_defaut() -> Path:
     - Windows (poste de développement, ou build PC) : la clé déjà utilisée
       par adb.exe pour ce casque, sous le profil utilisateur — c'est celle
       qu'utilisent déjà `quest_control/essai_reel.py` et `essai_preparer.py`.
-    - Android : clé embarquée comme asset de l'application, provisionnée par
-      `quest_android/outils/preparer_cle.py` (voir son README). Le chemin
-      exact dépend de la façon dont l'asset est packagé côté Buildozer — à
-      confirmer/ajuster une fois cette étape traitée, ce chemin est une
-      hypothèse raisonnable, pas une valeur vérifiée sur APK réel.
+    - Android : clé déposée dans le dossier privé de l'application par
+      `quest_control/push_adb_key.py`. Le chemin exact dépend de la
+      façon dont Buildozer expose `app_storage_path()` — à confirmer/ajuster
+      une fois cette étape traitée, ce chemin est une hypothèse
+      raisonnable, pas une valeur vérifiée sur APK réel.
     """
     if platform == "android":
         from android.storage import app_storage_path  # type: ignore
@@ -180,8 +180,8 @@ class QuestClient:
         `quest_control/quest.py preparer` (voir `cmd_preparer`).
 
         Chaque étape rapporte son issue indépendamment des autres : un échec
-        n'interrompt pas la suite (voir quest_android/README.md, "un échec
-        n'interrompt pas la suite" — mieux vaut un casque partiellement
+        n'interrompt pas la suite (voir quest_control/README.md, "Préparer
+        une séance, en une commande" — mieux vaut un casque partiellement
         préparé avec un message clair qu'un arrêt au premier obstacle).
         """
         if not self.connecte or self._quest is None:

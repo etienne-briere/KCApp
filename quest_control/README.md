@@ -92,13 +92,10 @@ fois, pour autoriser le débogage. Ensuite, `connecter` bascule la liaison en
 Wi-Fi et le câble devient inutile tant que le casque reste allumé sur le même
 réseau.
 
-**Une application Android qui piloterait le casque directement ?** Techniquement
-possible, mais coûteux pour un bénéfice nul ici. Il faudrait embarquer un client
-ADB complet — authentification RSA, protocole binaire, gestion des transports —
-puis distribuer et maintenir cette application en parallèle du script Python. Et
-le casque devrait de toute façon avoir été appairé par câble au préalable.
-
-**La solution retenue : une page web servie par le poste.**
+**La solution retenue pour le pilotage depuis un téléphone : une page web
+servie par le poste.** Pas d'application à distribuer ni à maintenir en
+parallèle du script Python — voir plus bas pour la voie retenue quand on veut
+se passer du poste entièrement.
 
 ```bash
 python quest_control/telecommande.py
@@ -122,23 +119,26 @@ recueil, déjà présente dans la chambre, fait aussi bien qu'un téléphone.
 
 ## Et depuis une tablette, sans ordinateur ?
 
-C'est possible, et le nécessaire est dans **`quest_android/`** : un client ADB
-en Kotlin qui parle directement au casque, les mêmes commandes que celles de ce
-dossier, un écran d'exemple, et un guide d'intégration destiné au développeur
-de l'application qui transmet déjà la fréquence cardiaque au jeu.
+La voie retenue : faire tourner KCApp lui-même en APK sur la tablette
+(Buildozer / python-for-android), plutôt que de développer et maintenir un
+second client dans un autre langage. `quest.py` n'invoque jamais le binaire
+`adb` directement — seulement `self.shell(...)` et `self._executer(...)` — ce
+qui permet à `transport_android.py` de remplacer uniquement la couche
+transport (ADB en sockets purs, via `adb-shell`) sans toucher à la logique
+métier de préparation de séance, de limite de jeu ou de récupération des
+données.
 
 Le point qui rend la chose praticable : le casque n'autorise pas un appareil
-mais une **clé**, et celle de ce poste est déjà autorisée. La recopier dans
-l'application Android lui transmet l'autorisation — plus personne n'a à mettre
-le casque pour valider quoi que ce soit.
+mais une **clé**, et celle de ce poste est déjà autorisée. La recopier dans le
+dossier privé de l'application sur la tablette lui transmet l'autorisation —
+plus personne n'a à mettre le casque pour valider quoi que ce soit.
 
 ```bash
-python quest_android/outils/preparer_cle.py
+python quest_control/push_adb_key.py
 ```
 
-Une suite de tests vérifie que les deux implémentations envoient bien les mêmes
-commandes : un incident survenu sur la tablette doit rester reproductible
-depuis l'ordinateur.
+Voir `quest_control/transport_android.py` pour le détail de cette couche
+transport et ses dépendances (`adb-shell[pythonrsa]`).
 
 ---
 
