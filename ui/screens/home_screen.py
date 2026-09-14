@@ -32,6 +32,12 @@ class HomeScreen(MDScreen):
     casque_connecte = BooleanProperty(False)
     casque_en_cours = BooleanProperty(False)
     casque_statut = StringProperty("Casque non connecté")
+    # Limite de zone (Guardian) : active par défaut. Les patients sont amenés
+    # à être debout pendant la séance et doivent être alertés (grille) s'ils
+    # sortent de la zone tracée, pour éviter de percuter un objet. À
+    # désactiver seulement en connaissance de cause (voir quest_control/
+    # quest.py, limite_definir).
+    casque_limite_active = BooleanProperty(True)
 
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
@@ -174,12 +180,22 @@ class HomeScreen(MDScreen):
         """Champ IP du casque modifié"""
         self.casque_ip = value
 
+    def on_toggle_limite(self, active):
+        """
+        Interrupteur « Alerte de zone » : active par défaut, car les
+        patients sont amenés à être debout pendant la séance et doivent
+        être alertés s'ils sortent de la zone tracée. Le désactiver est une
+        dérogation explicite de l'investigateur, pas le comportement
+        attendu du protocole.
+        """
+        self.casque_limite_active = active
+
     def preparer_casque(self):
         """
         Bouton « Préparer le casque » : connexion ADB puis enchaînement
-        complet (réveil, capteur de proximité, veille, limite de jeu,
-        lancement) — même séquence que quest_control/quest.py preparer,
-        validée sur le vrai casque avant d'être branchée ici.
+        complet (réveil, capteur de proximité, veille, limite de jeu selon
+        l'interrupteur, lancement) — même séquence que quest_control/quest.py
+        preparer, validée sur le vrai casque avant d'être branchée ici.
         """
         if self.casque_en_cours:
             return
@@ -206,7 +222,8 @@ class HomeScreen(MDScreen):
                 return
 
             self.casque_statut = "Préparation en cours..."
-            await self.quest_client.preparer_seance()
+            await self.quest_client.preparer_seance(
+                desactiver_limite=not self.casque_limite_active)
         finally:
             self.casque_en_cours = False
 

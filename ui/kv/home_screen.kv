@@ -44,7 +44,7 @@
                     padding: dp(15)
                     spacing: dp(10)
                     size_hint_y: None
-                    height: dp(140)
+                    height: dp(190)
                     elevation: 2
 
                     MDBoxLayout:
@@ -96,6 +96,27 @@
                             size_hint_x: 0.4
                             pos_hint: {"center_y": 0.5}
                             on_release: root.preparer_casque()
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(36)
+
+                        MDCheckbox:
+                            id: limite_switch
+                            active: root.casque_limite_active
+                            disabled: root.casque_en_cours
+                            on_active: root.on_toggle_limite(self.active)
+                            size_hint: None, None
+                            size: dp(36), dp(36)
+                            pos_hint: {"center_y": 0.5}
+
+                        MDLabel:
+                            text: "Alerte de zone activée (recommandé)" if root.casque_limite_active else "Alerte de zone désactivée — dérogation"
+                            font_style: "Caption"
+                            halign: "left"
+                            valign: "center"
 
             # ---- ZONE STATUS ---
             MDBoxLayout:
