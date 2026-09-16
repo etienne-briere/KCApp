@@ -19,11 +19,12 @@
                 # ==== STATUS CONNECTION UNITY ====
                 MDCard:
                     orientation: "horizontal"
-                    padding: dp(15)
+                    padding: dp(16)
+                    radius: [12]
                     spacing: dp(10)
                     size_hint_y: None
                     height: dp(70)
-                    elevation: 3
+                    elevation: 1
                     md_bg_color: [0, 0.5, 0, 0.3] if root.unity_connected else [0.5, 0, 0, 0.3]
                     
                     MDIcon:
@@ -52,11 +53,12 @@
                 # Ligne ON/OFF Obstacles
                 MDCard:
                     orientation: "horizontal"
-                    padding: dp(15), dp(15), dp(50), dp(15)
+                    padding: dp(16), dp(16), dp(50), dp(16)
+                    radius: [12]
                     spacing: dp(15)
                     size_hint_y: None
                     height: dp(70)
-                    elevation: 2
+                    elevation: 1
                     
                     # Icône
                     MDIcon:
@@ -125,13 +127,14 @@
                 # ==== SLIDER: CUBE FREQUENCY (visible si mode adaptatif OFF) ====
                 MDCard:
                     orientation: "vertical"
-                    padding: dp(20)
+                    padding: dp(16)
+                    radius: [12]
                     spacing: dp(15)
                     size_hint_y: None
                     height: dp(150) if not root.adaptive_mode_enabled else 0
                     opacity: 1 if not root.adaptive_mode_enabled else 0
                     disabled: root.adaptive_mode_enabled
-                    elevation: 2
+                    elevation: 1
                     
                     MDBoxLayout:
                         orientation: "horizontal"
@@ -173,13 +176,14 @@
                 # ==== SLIDER: TARGET HR (visible si mode adaptatif ON) ====
                 MDCard:
                     orientation: "vertical"
-                    padding: dp(20)
+                    padding: dp(16)
+                    radius: [12]
                     spacing: dp(15)
                     size_hint_y: None
                     height: dp(150) if root.adaptive_mode_enabled else 0
                     opacity: 1 if root.adaptive_mode_enabled else 0
                     disabled: not root.unity_connected
-                    elevation: 2
+                    elevation: 1
                     
                     MDBoxLayout:
                         orientation: "horizontal"

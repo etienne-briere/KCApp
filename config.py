@@ -5,8 +5,8 @@ APP_TITLE = 'BLE VR Data Bridge'
 DEBUG_MODE = os.getenv('DEBUG', 'True').lower() == 'true'
 
 # Configuration du thème
-THEME_STYLE = "Dark"  # "Light" ou "Dark"
-PRIMARY_PALETTE = "Blue"
+THEME_STYLE = "Light"  # "Light" ou "Dark" - Light retenu pour un usage clinique
+PRIMARY_PALETTE = "Teal"
 ACCENT_PALETTE = "Amber"
 
 # Configuration BLE

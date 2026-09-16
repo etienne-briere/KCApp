@@ -1,4 +1,6 @@
 #:import MDTopAppBar kivymd.uix.toolbar
+#:import Window kivy.core.window.Window
+#:import NoTransition kivy.uix.screenmanager.NoTransition
 
 #:import StatusBar ui.widgets.status_bar.StatusBar
 #:import HomeScreen ui.screens.home_screen.HomeScreen
@@ -15,7 +17,7 @@ BoxLayout:
     MDTopAppBar:
         id: top_bar
         title: "Accueil"
-        md_bg_color:(0.12, 0.12, 0.12, 1)
+        md_bg_color: app.theme_cls.primary_color
         left_action_items: [["account-circle", lambda x: print(x)]]
         right_action_items: [["", lambda x: print(x)]]
     
@@ -26,6 +28,7 @@ BoxLayout:
     # ---------- SCREEN MANAGER ----------
     ScreenManager:
         id: screen_manager
+        transition: NoTransition()
 
         HomeScreen: 
             name: "home"
@@ -47,8 +50,10 @@ BoxLayout:
 
     # ---------- BOTTOM NAVIGATION (FIXE) ----------
     MDBottomNavigation:
-		size_hint_y: None
-		height: dp(81)
+        size_hint_y: None
+        height: dp(81)
+        use_text: Window.width >= dp(600)
+        transition: NoTransition
 		
         MDBottomNavigationItem:
             name: "home_tab"

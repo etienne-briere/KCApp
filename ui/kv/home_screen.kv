@@ -1,16 +1,16 @@
 #:kivy 2.0
+#:import Window kivy.core.window.Window
 
 <HomeScreen>:
 
-    AnchorLayout:
-        anchor_x: "center"
-        anchor_y: "center"
+    ScrollView:
+        do_scroll_x: False
 
         MDBoxLayout:
             orientation: "vertical"
-            spacing: dp(40)
+            spacing: dp(30)
             padding: dp(20)
-            size_hint: 0.9, None
+            size_hint_y: None
             height: self.minimum_height
 
             # ==== VR HEADSET (QUEST) ====
@@ -41,11 +41,12 @@
 
                 MDCard:
                     orientation: "vertical"
-                    padding: dp(15)
+                    padding: dp(16)
+                    radius: [12]
                     spacing: dp(10)
                     size_hint_y: None
-                    height: dp(190)
-                    elevation: 2
+                    height: self.minimum_height
+                    elevation: 1
 
                     MDBoxLayout:
                         orientation: "horizontal"
@@ -68,10 +69,10 @@
                             valign: "center"
 
                     MDBoxLayout:
-                        orientation: "horizontal"
+                        orientation: "horizontal" if Window.width >= dp(600) else "vertical"
                         spacing: dp(10)
                         size_hint_y: None
-                        height: dp(48)
+                        height: dp(48) if Window.width >= dp(600) else self.minimum_height
 
                         MDIconButton:
                             icon: "magnify"
@@ -79,6 +80,7 @@
                             text_color: "grey"
                             size_hint: None, None
                             size: dp(48), dp(48)
+                            pos_hint: {"center_x": 0.5}
                             disabled: root.casque_en_cours
                             on_release: root.detecter_casque()
 
@@ -87,14 +89,16 @@
                             hint_text: "Adresse IP du casque"
                             text: root.casque_ip
                             on_text: root.on_casque_ip_change(self.text)
-                            size_hint_x: 0.45
+                            size_hint_x: 1 if Window.width < dp(600) else 0.45
                             disabled: root.casque_en_cours
 
                         MDRaisedButton:
                             text: "Préparation..." if root.casque_en_cours else "Préparer le casque"
                             disabled: root.casque_en_cours
-                            size_hint_x: 0.4
-                            pos_hint: {"center_y": 0.5}
+                            size_hint_x: 1 if Window.width < dp(600) else 0.4
+                            size_hint_y: None
+                            height: dp(48)
+                            pos_hint: {"center_x": 0.5, "center_y": 0.5}
                             on_release: root.preparer_casque()
 
                     MDBoxLayout:
@@ -151,12 +155,13 @@
                 # ==== Statut Unity ====
                 MDCard:
                     orientation: "horizontal"
-                    padding: dp(20)
+                    padding: dp(16)
+                    radius: [12]
                     spacing: dp(15)
-                    elevation: 4
+                    elevation: 1
                     size_hint_y: None
                     height: self.minimum_height
-                        
+
                     # GIF de chargement (visible uniquement si unity déconnecté)
                     AsyncImage:
                         source: root.status_icon_source
@@ -208,9 +213,10 @@
 
                 MDCard:
                     orientation: "horizontal"
-                    padding: dp(20)
+                    padding: dp(16)
+                    radius: [12]
                     spacing: dp(10)
-                    elevation: 4
+                    elevation: 1
                     size_hint_y: None
                     height: dp(100)
             
@@ -251,7 +257,7 @@
                             MDIcon:
                                 icon: "target"
                                 theme_text_color: "Custom"
-                                text_color: [1, 1, 1, 1]
+                                text_color: app.theme_cls.primary_color
                                 font_size: "30sp"
                                 pos_hint: {'center_y': 0.5}
 
@@ -293,16 +299,16 @@
                                 helper_text_mode: "on_focus"
                                 input_filter: "int"
                                 mode: "rectangle"
-                                text_color_focus: "white"
-                                hint_text_color_focus: "skyblue"
-                                line_color_focus: "skyblue"
-                                icon_left_color_focus: "skyblue"
-                                helper_text_color_focus: "skyblue"
-                            
+                                text_color_focus: app.theme_cls.primary_color
+                                hint_text_color_focus: app.theme_cls.primary_color
+                                line_color_focus: app.theme_cls.primary_color
+                                icon_left_color_focus: app.theme_cls.primary_color
+                                helper_text_color_focus: app.theme_cls.primary_color
+
                             MDIconButton:
                                 icon: "send-outline"
                                 theme_text_color: "Custom"
-                                text_color: "skyblue"
+                                text_color: app.theme_cls.primary_color
                                 size_hint: None, None
                                 icon_size: "30sp"
                                 on_release: root.send_new_age()

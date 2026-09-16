@@ -1,18 +1,17 @@
 #:import dp kivy.metrics.dp
 #:import MatplotFigure kivy_matplotlib_widget.uix.graph_widget
 
-<TrackingScreen>: 
-    
-    AnchorLayout:
-        anchor_x: "center"
-        anchor_y: "center"
+<TrackingScreen>:
+
+    ScrollView:
+        do_scroll_x: False
 
         MDBoxLayout:
             id: tracking_content
             orientation: "vertical"
             spacing: dp(20)
             padding: dp(20)
-            size_hint: 1, None
+            size_hint_y: None
             height: self.minimum_height
 
             # ==== Contenu de la FC brute ====

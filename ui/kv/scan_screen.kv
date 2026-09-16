@@ -1,27 +1,27 @@
 
-<ScanScreen>: 
+<ScanScreen>:
 
-    AnchorLayout:
-        anchor_x: "center"
-        anchor_y: "center"
+    ScrollView:
+        do_scroll_x: False
 
         MDBoxLayout:
             id: scan_content
             orientation: "vertical"
-            spacing: dp(50)
-            padding: dp(50)
-            size_hint: 1, None
+            spacing: dp(30)
+            padding: dp(20)
+            size_hint_y: None
             height: self.minimum_height
 
             # ==== Card pour les données (FC + Batterie) ====
             MDCard:
                 id: data_device_card
                 orientation: "horizontal"
-                padding: dp(20)
+                padding: dp(16)
+                radius: [12]
                 spacing: dp(20)
                 size_hint_y: None
                 height: dp(100)
-                elevation: 4
+                elevation: 1
             
                 # ==== Affichage FC ====
                 AnchorLayout:
@@ -109,9 +109,9 @@
                 MDRectangleFlatIconButton:
                     id: devices_list_button
                     text:"..."
-                    text_color:"white"
+                    text_color: app.theme_cls.primary_color
                     font_size: dp(20)
-                    line_color:"white"
+                    line_color: app.theme_cls.primary_color
                     line_width:1
                     pos_hint:{"center_x": 0.5}
                     size_hint: 0.8, None
