@@ -1,5 +1,12 @@
 #:import platform kivy.utils.platform
 
+#:set GREEN_BG (0.906, 0.961, 0.914, 1)
+#:set GREEN_FG (0.176, 0.490, 0.196, 1)
+#:set RED_BG (0.988, 0.910, 0.906, 1)
+#:set RED_FG (0.776, 0.157, 0.157, 1)
+#:set AMBER_BG (1, 0.976, 0.882, 1)
+#:set AMBER_FG (0.780, 0.518, 0.047, 1)
+
 <StatusBar>:
     orientation: "horizontal"
     padding: [0, dp(50), dp(20), dp(50)]
@@ -13,7 +20,7 @@
         id: ble_icon
         icon: "bluetooth" if root.ble_connected else "bluetooth-off"
         theme_text_color: "Custom"
-        text_color: (0, 1, 0, 1)  if root.ble_connected else (1, 0, 0, 1)
+        text_color: GREEN_FG if root.ble_connected else (1, 0, 0, 1)
         opacity: 0 if platform == "win" else 1
         disabled: True if platform == "win" else False
 
@@ -21,7 +28,7 @@
         id: wifi_icon
         icon: "wifi" if root.wifi_connected else "wifi-off"
         theme_text_color: "Custom"
-        text_color: (0, 1, 0, 1) if root.wifi_connected else (1, 0, 0, 1)
+        text_color: GREEN_FG if root.wifi_connected else (1, 0, 0, 1)
 
     MDIcon:
         id: hr_icon
@@ -31,6 +38,6 @@
     
     MDIcon:
         id: unity_icon
-        icon: "unity" 
+        icon: "unity" if root.unity_connected else "lan-disconnect"
         theme_text_color: "Custom"
-        text_color: (0, 1, 0, 1) if root.unity_connected else (1, 0, 0, 1)
+        text_color: GREEN_FG if root.unity_connected else (1, 0, 0, 1)

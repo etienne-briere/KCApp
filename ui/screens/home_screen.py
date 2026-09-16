@@ -4,7 +4,6 @@ from kivymd.uix.screen import MDScreen
 from kivy.properties import StringProperty, BooleanProperty, NumericProperty
 from kivy.app import App
 from utils.logger import get_logger
-from kivy.uix.image import AsyncImage
 from kivy.clock import Clock
 from kivy.clock import mainthread
 from utils.event_bus import event_bus
@@ -12,7 +11,7 @@ from kivymd.toast import toast
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDFlatButton
 
-from utils.ressource_path import resource_path
+from app.network.connectivity import is_wifi_enabled, get_wifi_ssid
 
 
 logger = get_logger(__name__)
@@ -21,8 +20,10 @@ class HomeScreen(MDScreen):
     """Écran d'accueil"""
 
     unity_connected = BooleanProperty(False)
-    # status_icon_source = StringProperty("assets/loading.gif")
-    status_icon_source = StringProperty(resource_path("assets/loading.gif"))
+    wifi_connected = BooleanProperty(False)
+    wifi_ssid = StringProperty("")
+    hr_sensor_connected = BooleanProperty(False)
+    hr_data_sent = BooleanProperty(False)
     selected_model = StringProperty("Unknown")
     hr_target = StringProperty("Unknown")
     age_user = StringProperty("Unknown")
@@ -51,6 +52,25 @@ class HomeScreen(MDScreen):
 
         # Vérifier la connexion Unity (au cas où on arrive dans l'écran après la connexion)
         self.unity_connected = self.udp_discovery.is_unity_connected()
+
+        # Refléter l'état Wi-Fi courant (mis à jour ensuite via l'event bus)
+        self.wifi_connected = is_wifi_enabled()
+        self.wifi_ssid = (get_wifi_ssid() or "") if self.wifi_connected else ""
+
+        # Refléter l'état FC courant : StatusBar tourne en permanence (quel
+        # que soit l'écran affiché) et est la seule source à connaître le
+        # délai depuis la dernière trame FC reçue — on se resynchronise sur
+        # elle ici, sinon la bannière resterait figée sur sa dernière valeur
+        # si le capteur s'est (dé)connecté pendant qu'on était sur un autre
+        # écran (ex. Sensor, où se fait l'appairage BLE).
+        # `app.root` n'existe pas encore au tout premier `on_enter` (déclenché
+        # pendant la construction du kv, avant l'affectation de app.root) —
+        # sans conséquence puisqu'à ce stade le capteur n'est de toute façon
+        # pas connecté.
+        if app.root:
+            status_bar = app.root.ids.status_bar
+            self.hr_sensor_connected = status_bar.hr_sensor_connected
+            self.hr_data_sent = status_bar.hr_data_sent
         if self.unity_connected :
             self.selected_model = self.session.config.model
             self.age_user = str(self.session.user_profile.age)
@@ -64,19 +84,21 @@ class HomeScreen(MDScreen):
 
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
-        event_bus.subscribe("unity_ping_received", self.handle_ping_received)
         event_bus.subscribe("session_updated", self.on_session_updated)
         event_bus.subscribe("casque_connecte", self.handle_casque_connecte)
         event_bus.subscribe("casque_erreur", self.handle_casque_erreur)
         event_bus.subscribe("casque_prepare", self.handle_casque_prepare)
+        event_bus.subscribe("wifi_status_changed", self.handle_wifi_status)
+        event_bus.subscribe("hr_sensor_status_changed", self.handle_hr_sensor_status)
 
     def on_leave(self):
         event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
-        event_bus.unsubscribe("unity_ping_received", self.handle_ping_received)
         event_bus.unsubscribe("session_updated", self.on_session_updated)
         event_bus.unsubscribe("casque_connecte", self.handle_casque_connecte)
         event_bus.unsubscribe("casque_erreur", self.handle_casque_erreur)
         event_bus.unsubscribe("casque_prepare", self.handle_casque_prepare)
+        event_bus.unsubscribe("wifi_status_changed", self.handle_wifi_status)
+        event_bus.unsubscribe("hr_sensor_status_changed", self.handle_hr_sensor_status)
 
     # ========== CALLBACKS UDP ==========
 
@@ -85,19 +107,16 @@ class HomeScreen(MDScreen):
         connected = data["connected"]
         self.unity_connected = connected
     
-    def handle_ping_received(self, data):
-        """Callback quand un ping Unity est reçu"""
-        # Optionnel : afficher un indicateur visuel
-        if hasattr(self.ids, 'ping_indicator'):
-            # Animation de pulsation
-            from kivy.animation import Animation
-            anim = (
-                Animation(opacity=1, duration=0.1) +
-                Animation(opacity=0.3, duration=0.3)
-            )
-            anim.start(self.ids.ping_indicator)
-    
-    
+    @mainthread
+    def handle_wifi_status(self, data):
+        self.wifi_connected = data["connected"]
+        self.wifi_ssid = data["ssid"]
+
+    @mainthread
+    def handle_hr_sensor_status(self, data):
+        self.hr_sensor_connected = data["connected"]
+        self.hr_data_sent = data["data_sent"]
+
     def on_session_updated(self, session):
          # Mise à jour UI
         self.selected_model = session.config.model

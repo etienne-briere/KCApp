@@ -13,6 +13,119 @@
             size_hint_y: None
             height: self.minimum_height
 
+            # ==== ALERTES DE CONNEXION ====
+            MDCard:
+                orientation: "horizontal"
+                padding: dp(16)
+                radius: [12]
+                spacing: dp(10)
+                size_hint_y: None
+                height: dp(70)
+                elevation: 1
+                md_bg_color: GREEN_BG if root.wifi_connected else RED_BG
+
+                MDIcon:
+                    icon: "wifi" if root.wifi_connected else "wifi-off"
+                    theme_text_color: "Custom"
+                    text_color: GREEN_FG if root.wifi_connected else RED_FG
+                    font_size: "40sp"
+                    size_hint_x: None
+                    width: dp(50)
+
+                MDLabel:
+                    text:
+                        ("Wi-Fi connecté : " + root.wifi_ssid) \
+                        if root.wifi_connected and root.wifi_ssid else \
+                        ("Wi-Fi connecté" if root.wifi_connected else "Wi-Fi désactivé")
+                    font_style: "H6"
+                    theme_text_color: "Custom"
+                    text_color: GREEN_FG if root.wifi_connected else RED_FG
+                    halign: "left"
+                    valign: "center"
+
+            MDCard:
+                orientation: "horizontal"
+                padding: dp(16)
+                radius: [12]
+                spacing: dp(10)
+                size_hint_y: None
+                height: dp(70)
+                elevation: 1
+                md_bg_color:
+                    RED_BG if not root.hr_sensor_connected else \
+                    (GREEN_BG if root.hr_data_sent else AMBER_BG)
+
+                MDIcon:
+                    icon: "heart" if root.hr_sensor_connected else "heart-off"
+                    theme_text_color: "Custom"
+                    text_color:
+                        RED_FG if not root.hr_sensor_connected else \
+                        (GREEN_FG if root.hr_data_sent else AMBER_FG)
+                    font_size: "40sp"
+                    size_hint_x: None
+                    width: dp(50)
+
+                MDLabel:
+                    text:
+                        "Capteur FC déconnecté" if not root.hr_sensor_connected else \
+                        ("Capteur FC connecté" if root.hr_data_sent else "Capteur FC connecté (en attente du jeu)")
+                    font_style: "H6"
+                    theme_text_color: "Custom"
+                    text_color:
+                        RED_FG if not root.hr_sensor_connected else \
+                        (GREEN_FG if root.hr_data_sent else AMBER_FG)
+                    halign: "left"
+                    valign: "center"
+
+                MDIconButton:
+                    icon: "bluetooth-connect"
+                    theme_text_color: "Custom"
+                    text_color: RED_FG
+                    size_hint: None, None
+                    icon_size: "30sp"
+                    pos_hint: {"center_y": 0.5}
+                    opacity: 0 if root.hr_sensor_connected else 1
+                    disabled: root.hr_sensor_connected
+                    on_release:
+                        app.root.ids.bottom_nav.ids.tab_manager.get_screen("scan_tab").dispatch("on_tab_press")
+
+            MDCard:
+                orientation: "horizontal"
+                padding: dp(16)
+                radius: [12]
+                spacing: dp(10)
+                size_hint_y: None
+                height: dp(70)
+                elevation: 1
+                md_bg_color: GREEN_BG if root.unity_connected else RED_BG
+
+                MDIcon:
+                    icon: "unity" if root.unity_connected else "lan-disconnect"
+                    theme_text_color: "Custom"
+                    text_color: GREEN_FG if root.unity_connected else RED_FG
+                    font_size: "40sp"
+                    size_hint_x: None
+                    width: dp(50)
+
+                MDLabel:
+                    text: "Jeu connecté" if root.unity_connected else "Jeu déconnecté"
+                    font_style: "H6"
+                    theme_text_color: "Custom"
+                    text_color: GREEN_FG if root.unity_connected else RED_FG
+                    halign: "left"
+                    valign: "center"
+
+                MDIconButton:
+                    icon: "refresh"
+                    theme_text_color: "Custom"
+                    text_color: RED_FG
+                    size_hint: None, None
+                    icon_size: "30sp"
+                    pos_hint: {"center_y": 0.5}
+                    opacity: 0 if root.unity_connected else 1
+                    disabled: root.unity_connected
+                    on_release: root.force_reconnect()
+
             # ==== VR HEADSET (QUEST) ====
             MDBoxLayout:
                 orientation: "vertical"
@@ -122,82 +235,6 @@
                             halign: "left"
                             valign: "center"
 
-            # ---- ZONE STATUS ---
-            MDBoxLayout:
-                orientation: "vertical"
-                spacing: dp(10)
-                size_hint: 1, None
-                height: self.minimum_height
-
-                MDBoxLayout:
-                    orientation: "horizontal"
-                    spacing: dp(5)
-                    size_hint: 1, None
-                    height: self.minimum_height
-
-                    # Indicateur de ping (pulsation)
-                    MDIcon:
-                        id: ping_indicator
-                        icon: "unity"
-                        theme_text_color: "Custom"
-                        text_color: "grey"
-                        font_size: "30sp"
-                        size_hint_y: 1
-                        halign: "center"
-                        valign: "center"
-                        opacity: 0.3 if not root.unity_connected else 1
-
-                    MDLabel:
-                        text: "Unity Status"
-                        font_style: "H5"
-                        halign: "left"
-                
-                # ==== Statut Unity ====
-                MDCard:
-                    orientation: "horizontal"
-                    padding: dp(16)
-                    radius: [12]
-                    spacing: dp(15)
-                    elevation: 1
-                    size_hint_y: None
-                    height: self.minimum_height
-
-                    # GIF de chargement (visible uniquement si unity déconnecté)
-                    AsyncImage:
-                        source: root.status_icon_source
-                        size_hint: None, None
-                        height: dp(40) if not root.unity_connected else dp(0)
-                        width: dp(40) if not root.unity_connected else dp(0)
-                        anim_delay: 0.02  # Vitesse d'animation (50ms par frame)
-                        opacity: 1 if not root.unity_connected else 0
-
-                    # Icône de succès (visible uniquement si unity connecté)
-                    MDIcon:
-                        id: status_icon
-                        icon: "check-circle-outline"
-                        theme_text_color: "Custom"
-                        text_color: [0, 1, 0, 1]
-                        font_size: "50sp"
-                        size_hint_x: None
-                        width: dp(0) if not root.unity_connected else dp(50)
-                        opacity: 0 if not root.unity_connected else 1
-                    
-                    MDLabel:
-                        id: status_label
-                        text: "Connected" if root.unity_connected else "Waiting for Unity..."
-                        font_style: "Body1"
-                        halign: "left"
-                        valign: "center"
-                
-                    MDIconButton:
-                        icon: "refresh"
-                        theme_text_color: "Custom"
-                        text_color: "grey"
-                        size_hint: None, None
-                        icon_size: "30sp"
-                        opacity: 1 if not root.unity_connected else 0
-                        on_release: root.force_reconnect()
-                            
             MDBoxLayout:
                 orientation: "vertical"
                 spacing: dp(20)

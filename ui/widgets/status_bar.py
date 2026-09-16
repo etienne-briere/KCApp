@@ -5,7 +5,7 @@ from kivy.properties import BooleanProperty, StringProperty, ListProperty
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.toast import toast
 
-from app.network.connectivity import is_bluetooth_enabled, is_wifi_enabled
+from app.network.connectivity import is_bluetooth_enabled, is_wifi_enabled, get_wifi_ssid
 from kivy.clock import Clock
 from kivy.app import App
 from kivy.animation import Animation
@@ -23,6 +23,7 @@ class StatusBar(MDBoxLayout):
     """
     ble_connected = BooleanProperty(False)
     wifi_connected = BooleanProperty(False)
+    wifi_ssid = StringProperty("")
     hr_sensor_connected = BooleanProperty(False)
     unity_connected = BooleanProperty(False)
     hr_data_sent = BooleanProperty(False)
@@ -59,6 +60,11 @@ class StatusBar(MDBoxLayout):
         # Vérifier les connexions BLE et Wi-Fi
         self.ble_connected = is_bluetooth_enabled()
         self.wifi_connected = is_wifi_enabled()
+        self.wifi_ssid = (get_wifi_ssid() or "") if self.wifi_connected else ""
+        event_bus.emit("wifi_status_changed", {
+            "connected": self.wifi_connected,
+            "ssid": self.wifi_ssid,
+        })
 
          # Si pas de FC depuis 5 secondes → capteur considéré inactif
         if time() - self.last_hr_received > 3:
@@ -115,6 +121,11 @@ class StatusBar(MDBoxLayout):
         if not self.hr_sensor_connected:
             self.hr_icon_color = (1, 0, 0, 1) # rouge
         elif self.hr_data_sent:
-            self.hr_icon_color = (0, 1, 0, 1) # vert
+            self.hr_icon_color = (0.176, 0.490, 0.196, 1) # vert (identique aux bannières)
         else:
             self.hr_icon_color = (1, 1, 0, 1) # jaune
+
+        event_bus.emit("hr_sensor_status_changed", {
+            "connected": self.hr_sensor_connected,
+            "data_sent": self.hr_data_sent,
+        })
