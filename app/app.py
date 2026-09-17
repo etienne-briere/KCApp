@@ -63,7 +63,7 @@ class KCApp(MDApp):
         self.quest_client = QuestClient()
 
         # Définir le thème de l'application
-        self.theme_cls.theme_style = THEME_STYLE 
+        self.theme_cls.theme_style = THEME_STYLE
         self.theme_cls.primary_palette = PRIMARY_PALETTE
         self.theme_cls.accent_palette = ACCENT_PALETTE
 

@@ -13,6 +13,13 @@
 BoxLayout:
     orientation: "vertical"
 
+    canvas.before:
+        Color:
+            rgba: (0.941, 0.941, 0.953, 1)
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
     # ---------- TOP BAR ----------
     MDTopAppBar:
         id: top_bar

@@ -21,7 +21,7 @@
                 spacing: dp(10)
                 size_hint_y: None
                 height: dp(70)
-                elevation: 1
+                elevation: 0
                 md_bg_color: GREEN_BG if root.wifi_connected else RED_BG
 
                 MDIcon:
@@ -50,7 +50,7 @@
                 spacing: dp(10)
                 size_hint_y: None
                 height: dp(70)
-                elevation: 1
+                elevation: 0
                 md_bg_color:
                     RED_BG if not root.hr_sensor_connected else \
                     (GREEN_BG if root.hr_data_sent else AMBER_BG)
@@ -96,7 +96,7 @@
                 spacing: dp(10)
                 size_hint_y: None
                 height: dp(70)
-                elevation: 1
+                elevation: 0
                 md_bg_color: GREEN_BG if root.unity_connected else RED_BG
 
                 MDIcon:
@@ -159,7 +159,7 @@
                     spacing: dp(10)
                     size_hint_y: None
                     height: self.minimum_height
-                    elevation: 1
+                    elevation: 0
 
                     MDBoxLayout:
                         orientation: "horizontal"
@@ -253,7 +253,7 @@
                     padding: dp(16)
                     radius: [12]
                     spacing: dp(10)
-                    elevation: 1
+                    elevation: 0
                     size_hint_y: None
                     height: dp(100)
             

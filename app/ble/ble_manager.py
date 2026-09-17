@@ -81,27 +81,29 @@ class BLEManager:
             
             self.connected_device = device
             self.is_connected = True
-            
+
             logger.info(f"✅ Connecté à {device.name}")
-            
-            # Émettre un événement global pour que les autres composants puissent réagir à la nouvelle connexion
-            event_bus.emit("connection_changed", {
-                "is_connected": True,
-                "device": device
-            })
-            
+
             # Lire le niveau de batterie initial
             await self._read_initial_battery()
-            
+
             # Démarrer les notifications de fréquence cardiaque
-            if self._has_heart_rate_service():
+            has_heart_rate = self._has_heart_rate_service()
+            if has_heart_rate:
                 await self._start_heart_rate_notifications()
-                
+
                 # Maintenir la connexion active
                 asyncio.create_task(self._keep_alive())
             else:
                 logger.warning("⚠️ Service de fréquence cardiaque non disponible")
-            
+
+            # Émettre un événement global pour que les autres composants puissent réagir à la nouvelle connexion
+            event_bus.emit("connection_changed", {
+                "is_connected": True,
+                "device": device,
+                "has_heart_rate": has_heart_rate,
+            })
+
             return True
             
         except bleak.exc.BleakError as e:
