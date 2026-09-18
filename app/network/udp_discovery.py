@@ -243,7 +243,9 @@ class UDPDiscovery:
             session.config.update_from_udp(key, value)
         
         elif key == "cpm":
-            session.metrics.add_cpm(float(value))
+            cpm_value = float(value)
+            session.metrics.add_cpm(cpm_value)
+            event_bus.emit("cpm_received", cpm_value)
         
         elif key == "game_state":
             session.game_state = value

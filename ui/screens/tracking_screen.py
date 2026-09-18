@@ -27,6 +27,11 @@ class TrackingScreen(MDScreen):
     '''
     # Properties pour l'UI
     heart_rate_label = StringProperty("--")
+    cpm_label = StringProperty("--")
+
+    # Affichage du graphique (activé par défaut)
+    show_target = BooleanProperty(True)
+    show_cpm = BooleanProperty(True)
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -61,31 +66,42 @@ class TrackingScreen(MDScreen):
         if self.session.config.target_hr_percent is not None:
             self.target_received = True
 
-        # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC
+        # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC et de CPM
         event_bus.subscribe("heart_rate_received", self.on_hr_received)
-        
+        event_bus.subscribe("cpm_received", self.on_cpm_received)
+
         # Charger toutes les data pré-existantes dans le graphique
         self.load_existing_data()
-            
+
     def on_leave(self):
         """Appelé à la sortie de l'écran"""
         # Nettoyer les callbacks pour éviter les fuites de mémoire et les appels indésirables
         event_bus.unsubscribe("heart_rate_received", self.on_hr_received)
+        event_bus.unsubscribe("cpm_received", self.on_cpm_received)
     
     # ========== GESTION DES DONNÉES EXISTANTES ==========
 
     def load_existing_data(self):
         """Charge toutes les données de la session dans le graphique"""
         hr_times, hrmax_percents = self.session.hr_session.get_graph_percent()
-        
+
+        # Réafficher la dernière valeur connue de chaque métrique
+        if self.session.hr_session.hr_history:
+            self.heart_rate_label = str(self.session.hr_session.hr_history[-1])
+        if self.session.metrics.cpm_history:
+            self.cpm_label = str(int(self.session.metrics.cpm_history[-1]))
+
         if hr_times and hrmax_percents:
             logger.info(f"📊 Chargement de {len(hr_times)} points existants")
-            
+
             # Mettre à jour le graphique
             self.line_hr.set_data(hr_times, hrmax_percents)
 
             self.line_cpm.set_data(self.session.metrics.cpm_time, self.session.metrics.cpm_history)
-            
+
+            self.line_target.set_visible(self.show_target)
+            self.line_cpm.set_visible(self.show_cpm)
+
             # Redessiner
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()
@@ -114,41 +130,41 @@ class TrackingScreen(MDScreen):
         self.placeholder_text = self.ax1.text(
             0.5,
             0.5,
-            "Connect your sensor to start tracking",
+            "Connectez votre capteur pour démarrer le suivi",
             ha="center",
             va="center",
             transform=self.ax1.transAxes,
-            color="grey",
+            color="#9e9e9e",
             fontsize=14,
         )
-        
-        # Labels des axes
-        self.ax1.set_xlabel("Time (s)", color="grey")
-        self.ax1.set_ylabel("HRmax (%)", color="grey")
-        self.ax2.set_ylabel("Cubes / min", color="grey")
+
+        # Labels des axes (gris foncé, cohérent avec le thème clair de l'app)
+        self.ax1.set_xlabel("Temps (s)", color="#616161")
+        self.ax1.set_ylabel("FCmax (%)", color="#616161")
+        self.ax2.set_ylabel("Cubes / min", color="#616161")
 
         # Couleurs des axes
-        self.ax1.tick_params(axis='x', colors='grey')  # temps
-        self.ax1.tick_params(axis='y', colors='grey')  # %FCmax
-        self.ax2.tick_params(axis='y', colors='grey')  # CPM
+        self.ax1.tick_params(axis='x', colors='#616161')  # temps
+        self.ax1.tick_params(axis='y', colors='#616161')  # %FCmax
+        self.ax2.tick_params(axis='y', colors='#616161')  # CPM
 
         # Couleur du contour des axes
         for spine in self.ax1.spines.values():
-            spine.set_color('grey')
+            spine.set_color('#bdbdbd')
 
         # ligne %FCmax cible
-        self.line_target, = self.ax1.plot([], [], color='green', linestyle='--', linewidth=2, drawstyle='steps-post', label='Target %HRmax')
-        
+        self.line_target, = self.ax1.plot([], [], color='#2D7D32', linestyle='--', linewidth=2, drawstyle='steps-post', label='FCmax cible (%)')
+
         # ligne %FCmax (vide au départ)
-        self.line_hr, = self.ax1.plot([], [], 'r-', linewidth=2, label='HRmax (%)')
-    
-        # ligne CPM (vide au départ)
-        self.line_cpm, = self.ax2.plot([], [], 'cyan', linewidth=2, label='CPM')
+        self.line_hr, = self.ax1.plot([], [], color='#C62828', linewidth=2, label='FCmax (%)')
+
+        # ligne CPM (vide au départ) — couleur primaire de l'app (Teal)
+        self.line_cpm, = self.ax2.plot([], [], color='#009688', linewidth=2, label='Cubes/min')
 
         self.plots = {
-            "hr": {"line": self.line_hr, "label": "HRmax (%)"},
-            "cpm": {"line": self.line_cpm, "label": "CPM"},
-            "target": {"line": self.line_target, "label": "Target %HRmax"},
+            "hr": {"line": self.line_hr, "label": "FCmax (%)"},
+            "cpm": {"line": self.line_cpm, "label": "Cubes/min"},
+            "target": {"line": self.line_target, "label": "FCmax cible (%)"},
         }
 
         # Limites des axes
@@ -166,13 +182,30 @@ class TrackingScreen(MDScreen):
     def on_hr_received(self, bpm):
 
         # UI label
-        self.ids.heart_rate_label.text = str(bpm)
+        self.heart_rate_label = str(bpm)
 
         # forcer la mise à jour du graphique avec la cible actuelle
-        self.session.config.update_target(self.session.config.target_hr_percent) 
+        self.session.config.update_target(self.session.config.target_hr_percent)
 
         self.update_graph()
-    
+
+    def on_cpm_received(self, value):
+
+        # UI label
+        self.cpm_label = str(int(value))
+
+        self.update_graph()
+
+    def on_toggle_target(self, active):
+        """Afficher/masquer la %FC cible sur le graphique"""
+        self.show_target = active
+        self.update_graph()
+
+    def on_toggle_cpm(self, active):
+        """Afficher/masquer les cubes/min sur le graphique"""
+        self.show_cpm = active
+        self.update_graph()
+
     #==== GRAPHIQUE =====#
 
     def update_graph(self):
@@ -188,7 +221,7 @@ class TrackingScreen(MDScreen):
             self.target_zone.remove()
             self.target_zone = None
 
-        if target_times and target_values:
+        if self.show_target and target_times and target_values:
             target_values = np.array(target_values, dtype=float)
 
             lower = target_values - 5
@@ -198,13 +231,13 @@ class TrackingScreen(MDScreen):
                 target_times,
                 lower,
                 upper,
-                color='green',
+                color='#2D7D32',
                 alpha=0.15
             )
 
         # UI
-        self.ax1.set_ylabel("HRmax (%)", color="red", fontsize=12)
-        self.ax2.set_ylabel("Cubes / min", color="skyblue", fontsize=12)
+        self.ax1.set_ylabel("FCmax (%)", color="#C62828", fontsize=12)
+        self.ax2.set_ylabel("Cubes / min", color="#009688", fontsize=12)
 
         # Supprimer le placeholder
         if self.placeholder_text:
@@ -239,12 +272,18 @@ class TrackingScreen(MDScreen):
 
         # ligne %FCmax cible
         self.line_target.set_data(target_times, target_values)
-        
+        self.line_target.set_visible(self.show_target)
+
         # ligne %FCmax
         self.line_hr.set_data(hr_times, hrmax_percents)
 
         # ligne CPM
         self.line_cpm.set_data(cpm_times, cpm_values)
+        self.line_cpm.set_visible(self.show_cpm)
+
+        # Axe de droite (Cubes/min) masqué avec sa ligne
+        self.ax2.get_yaxis().set_visible(self.show_cpm)
+        self.ax2.spines['right'].set_visible(self.show_cpm)
 
         self.update_legend()
 
@@ -270,7 +309,7 @@ class TrackingScreen(MDScreen):
         for plot in self.plots.values():
             line = plot["line"]
 
-            if line is not None and len(line.get_xdata()) > 0:
+            if line is not None and len(line.get_xdata()) > 0 and line.get_visible():
                 lines.append(line)
                 labels.append(plot["label"])
 
@@ -285,9 +324,9 @@ class TrackingScreen(MDScreen):
                 lines,
                 labels,
                 loc='upper left',
-                facecolor='#1e1e1e',
-                edgecolor='white',
-                labelcolor='white'
+                facecolor='#ffffff',
+                edgecolor='#bdbdbd',
+                labelcolor='#424242'
             )
 
     def center_graph(self):

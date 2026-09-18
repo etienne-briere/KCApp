@@ -1,4 +1,5 @@
 #:import dp kivy.metrics.dp
+#:import Window kivy.core.window.Window
 #:import MatplotFigure kivy_matplotlib_widget.uix.graph_widget
 
 <TrackingScreen>:
@@ -14,86 +15,212 @@
             size_hint_y: None
             height: self.minimum_height
 
-            # ==== Contenu de la FC brute ====
+            # ==== Valeurs en direct (FC + Cubes/min) ====
             MDBoxLayout:
-                id: hr_content
-                orientation: "horizontal"
-                spacing: dp(10)
-                size_hint: None, None
-                width: self.minimum_width
-                height: dp(100)
-                pos_hint:{"center_x": 0.5}
-
-                MDIcon:
-                    id: heart_icon
-                    icon: "heart"
-                    theme_text_color: "Custom"
-                    text_color: "red"
-                    font_size: "40sp"
-                        
-                MDLabel:
-                    id: heart_rate_label
-                    text: root.heart_rate_label
-                    font_style: "H5"
-                    theme_text_color: "Primary"
-                    size_hint_x: None
-                    text_size: None, None
-            
-            # ==== Contenu du graphique de l'évolution de la FC ====
-            MDBoxLayout:
-                id: graph_hr_content
-                orientation: "vertical"
-                spacing: dp(10)
-                padding: dp(10)
-                size_hint: 1, None
-                height: dp(300)
-                
-                # --- Graphique ---
-                MatplotFigure:
-                    id: hr_graph_widget
-            
-           # Boutons d'action
-            MDBoxLayout:
-                orientation: "horizontal"
+                orientation: "horizontal" if Window.width >= dp(600) else "vertical"
                 spacing: dp(15)
+                size_hint_y: None
+                height: dp(70) if Window.width >= dp(600) else dp(155)
+
+                MDCard:
+                    orientation: "horizontal"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(15)
+                    size_hint: (0.5, 1) if Window.width >= dp(600) else (1, 0.5)
+                    elevation: 0
+
+                    MDIcon:
+                        icon: "heart"
+                        theme_text_color: "Custom"
+                        text_color: "red"
+                        font_size: "30sp"
+                        size_hint_x: None
+                        width: dp(30)
+
+                    MDLabel:
+                        text: "Fréquence cardiaque"
+                        font_style: "Body1"
+                        halign: "left"
+                        valign: "middle"
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(4)
+                        size_hint_x: None
+                        width: self.minimum_width
+                        pos_hint: {"center_y": 0.5}
+
+                        MDLabel:
+                            id: heart_rate_label
+                            text: root.heart_rate_label
+                            font_style: "H5"
+                            theme_text_color: "Primary"
+                            adaptive_size: True
+                            pos_hint: {"center_y": 0.5}
+
+                        MDLabel:
+                            text: "bpm"
+                            font_style: "Caption"
+                            theme_text_color: "Secondary"
+                            adaptive_size: True
+                            pos_hint: {"center_y": 0.4}
+
+                MDCard:
+                    orientation: "horizontal"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(15)
+                    size_hint: (0.5, 1) if Window.width >= dp(600) else (1, 0.5)
+                    elevation: 0
+
+                    MDIcon:
+                        icon: "cube-outline"
+                        theme_text_color: "Custom"
+                        text_color: app.theme_cls.primary_color
+                        font_size: "30sp"
+                        size_hint_x: None
+                        width: dp(30)
+
+                    MDLabel:
+                        text: "Cubes par minute"
+                        font_style: "Body1"
+                        halign: "left"
+                        valign: "middle"
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(4)
+                        size_hint_x: None
+                        width: self.minimum_width
+                        pos_hint: {"center_y": 0.5}
+
+                        MDLabel:
+                            id: cpm_label
+                            text: root.cpm_label
+                            font_style: "H5"
+                            theme_text_color: "Primary"
+                            adaptive_size: True
+                            pos_hint: {"center_y": 0.5}
+
+                        MDLabel:
+                            text: "cpm"
+                            font_style: "Caption"
+                            theme_text_color: "Secondary"
+                            adaptive_size: True
+                            pos_hint: {"center_y": 0.4}
+
+            # ==== Graphique de l'évolution de la séance (titre + actions + card) ====
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(8)
                 size_hint_y: None
                 height: self.minimum_height
 
-                Widget:  # pousse les boutons à droite
+                MDBoxLayout:
+                    orientation: "horizontal"
+                    size_hint_y: None
+                    height: dp(32)
 
-                MDIconButton:
-                    icon: "image-filter-center-focus-weak"
-                    theme_text_color: "Custom"
-                    text_color: "grey"
-                    size_hint: None, None
-                    icon_size: "40sp"
-                    on_release: root.center_graph()
-                
-                MDIconButton:
-                    icon: "restart"
-                    theme_text_color: "Custom"
-                    text_color: "grey"
-                    size_hint: None, None
-                    icon_size: "40sp"
-                    on_release: root.reset_graph()
-                
-                MDIconButton:
-                    icon: "download-circle-outline"
-                    theme_text_color: "Custom"
-                    text_color: "grey"
-                    size_hint: None, None
-                    icon_size: "40sp"
-                    # on_release: app.hr_session.save_csv()
-                
-                Widget:  # pousse les boutons à gauche
+                    MDLabel:
+                        text: "ÉVOLUTION DE LA SÉANCE"
+                        font_style: "Overline"
+                        theme_text_color: "Secondary"
+                        halign: "left"
+                        padding: dp(16), 0
+                        adaptive_size: True
+                        pos_hint: {"center_y": 0.5}
 
-    
+                    Widget:  # pousse les boutons à droite
 
+                    MDIconButton:
+                        icon: "image-filter-center-focus-weak"
+                        theme_text_color: "Custom"
+                        text_color: "grey"
+                        size_hint: None, None
+                        size: dp(32), dp(32)
+                        icon_size: "20sp"
+                        pos_hint: {"center_y": 0.5}
+                        on_release: root.center_graph()
 
+                    MDIconButton:
+                        icon: "restart"
+                        theme_text_color: "Custom"
+                        text_color: "grey"
+                        size_hint: None, None
+                        size: dp(32), dp(32)
+                        icon_size: "20sp"
+                        pos_hint: {"center_y": 0.5}
+                        on_release: root.reset_graph()
 
+                    MDIconButton:
+                        icon: "download-circle-outline"
+                        theme_text_color: "Custom"
+                        text_color: "grey"
+                        size_hint: None, None
+                        size: dp(32), dp(32)
+                        icon_size: "20sp"
+                        pos_hint: {"center_y": 0.5}
 
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(10)
+                    spacing: dp(8)
+                    radius: [12]
+                    size_hint_y: None
+                    height: dp(320) + dp(44)
+                    elevation: 0
 
+                    MatplotFigure:
+                        id: hr_graph_widget
 
+                    # ==== Options d'affichage du graphique ====
+                    AnchorLayout:
+                        anchor_x: "center"
+                        anchor_y: "center"
+                        size_hint_y: None
+                        height: dp(36) if Window.width >= dp(500) else dp(72)
 
+                        MDBoxLayout:
+                            orientation: "horizontal" if Window.width >= dp(500) else "vertical"
+                            spacing: dp(20)
+                            size_hint: None, None
+                            size: self.minimum_size
 
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: dp(8)
+                                size_hint_x: None
+                                width: self.minimum_width
 
+                                MDCheckbox:
+                                    active: root.show_target
+                                    on_active: root.on_toggle_target(self.active)
+                                    size_hint: None, None
+                                    size: dp(30), dp(30)
+                                    pos_hint: {"center_y": 0.5}
+
+                                MDLabel:
+                                    text: "%FC cible"
+                                    font_style: "Caption"
+                                    adaptive_size: True
+                                    pos_hint: {"center_y": 0.5}
+
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: dp(8)
+                                size_hint_x: None
+                                width: self.minimum_width
+
+                                MDCheckbox:
+                                    active: root.show_cpm
+                                    on_active: root.on_toggle_cpm(self.active)
+                                    size_hint: None, None
+                                    size: dp(30), dp(30)
+                                    pos_hint: {"center_y": 0.5}
+
+                                MDLabel:
+                                    text: "Cubes/min"
+                                    font_style: "Caption"
+                                    adaptive_size: True
+                                    pos_hint: {"center_y": 0.5}
