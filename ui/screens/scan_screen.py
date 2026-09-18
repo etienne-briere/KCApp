@@ -32,8 +32,6 @@ class ScanScreen(MDScreen):
     # Properties pour la mise à jour dynamique de l'UI (reconnu dans .kv avec root)
     heart_rate_text = StringProperty("--")
     battery_text = StringProperty("-- %")
-    battery_icon = StringProperty("battery-high")
-    battery_color = ListProperty([0, 1, 0, 1])  # Vert par défaut
 
     # État du scan/de la connexion BLE
     is_busy = BooleanProperty(False)
@@ -42,6 +40,7 @@ class ScanScreen(MDScreen):
     connecting_address = StringProperty("")
     connected_address = StringProperty("")
     connected_has_heart_rate = BooleanProperty(True)
+    connected_has_battery = BooleanProperty(True)
     # Propriété réactive (et non un simple attribut) pour que le kv puisse
     # afficher/masquer la card des résultats selon qu'elle est vide ou non.
     devices_found = ListProperty([])
@@ -52,6 +51,11 @@ class ScanScreen(MDScreen):
         # Ligne de la liste de chaque appareil, par adresse (pour mettre à
         # jour son texte de statut en 2e ligne)
         self.device_status_items = {}
+
+        # Indique qu'une déconnexion est déclenchée par un nouveau scan (et
+        # non par un échec/une perte de connexion) : on évite alors d'afficher
+        # "Déconnecté", le statut de recherche restant affiché à la place.
+        self._rescan_disconnect = False
 
     def on_enter(self):
         '''
@@ -86,17 +90,18 @@ class ScanScreen(MDScreen):
         self._set_scan_status("Recherche d'appareils…", GREY, busy=True)
         self.ids.devices_list.clear_widgets()
         self.device_status_items = {}
+        self.devices_found = []
         asyncio.ensure_future(self._scan())
 
     async def _scan(self):
         """Lance le scan BLE"""
-        # Déconnecter si déjà connecté
+        # Déconnecter si déjà connecté (sans afficher de statut intermédiaire :
+        # "Recherche d'appareils…" reste affiché pendant toute l'opération)
         if self.ble_manager.is_connected:
-            self._set_scan_status("Déconnexion en cours…", GREY, busy=True)
+            self._rescan_disconnect = True
             self.heart_rate_text = "--"
             self.battery_text = "-- %"
             await self.ble_manager.disconnect()
-            self._set_scan_status("Recherche d'appareils…", GREY, busy=True)
 
         # Lancer le scan
         await self.ble_manager.scan_devices()
@@ -162,6 +167,7 @@ class ScanScreen(MDScreen):
             self.is_busy = False
             self.connected_address = device.address
             self.connected_has_heart_rate = data.get("has_heart_rate", True)
+            self.connected_has_battery = data.get("has_battery", True)
             # Démarrer l'enregistrement des données FC
             self.session.start_recording()
             # Déjà visible sur la ligne de l'appareil (vert, ou rouge si
@@ -175,7 +181,13 @@ class ScanScreen(MDScreen):
             # intermédiaire, pas un vrai échec — ne pas interrompre le
             # badge "Connexion en cours..." du nouvel appareil.
             is_switch_intermediate = device is None and self.connecting_address
-            if not is_switch_intermediate:
+            # Flag consommé ici (et non juste après le await disconnect() côté
+            # _scan) car event_bus.emit différète le callback via
+            # Clock.schedule_once : le remettre à False trop tôt côté
+            # appelant créerait une course où ce handler s'exécute après.
+            is_rescan_disconnect = self._rescan_disconnect
+            self._rescan_disconnect = False
+            if not is_switch_intermediate and not is_rescan_disconnect:
                 self.connecting_address = ""
                 self.is_busy = False
                 # Pas d'état "échec"/"déconnecté" dédié sur la ligne : on
@@ -193,8 +205,7 @@ class ScanScreen(MDScreen):
     def on_battery_received(self, level):
         """Callback batterie"""
         self.battery_text = f"{level} %"
-        if level != "--":
-            self.update_battery_icon(level)
+        self._refresh_device_status_labels()
     
     # ========== UI HELPERS ==========
     
@@ -209,7 +220,10 @@ class ScanScreen(MDScreen):
         for address, item in self.device_status_items.items():
             if address == self.connected_address:
                 if self.connected_has_heart_rate:
-                    item.secondary_text = "Connecté"
+                    if self.connected_has_battery:
+                        item.secondary_text = f"Connecté — {self.battery_text}"
+                    else:
+                        item.secondary_text = "Connecté"
                     item.secondary_text_color = GREEN_FG
                 else:
                     item.secondary_text = "Connecté — pas de service FC"
@@ -220,18 +234,3 @@ class ScanScreen(MDScreen):
             else:
                 item.secondary_text = "Appareil détecté"
                 item.secondary_text_color = GREY
-    
-    def update_battery_icon(self, level):
-        """Met à jour l'icône batterie"""
-        icon = self.ids.battery_icon
-        
-        if level >= 70:
-            icon.icon, icon.text_color = "battery-high", [0, 1, 0, 1]
-        elif 30 <= level < 70:
-            icon.icon, icon.text_color = "battery-medium", [0.5, 1, 0, 1]
-        elif 10 <= level < 30:
-            icon.icon, icon.text_color = "battery-low", [1, 0.65, 0, 1]
-        else:
-            icon.icon, icon.text_color = "battery-alert", [1, 0, 0, 1]
-    
-        

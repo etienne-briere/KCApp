@@ -102,6 +102,7 @@ class BLEManager:
                 "is_connected": True,
                 "device": device,
                 "has_heart_rate": has_heart_rate,
+                "has_battery": self._has_battery_service(),
             })
 
             return True
@@ -167,7 +168,7 @@ class BLEManager:
         """Lit le niveau de batterie initial"""
         if not self._has_battery_service():
             return
-        
+
         try:
             battery_data = await self.client.read_gatt_char(CHAR_BATTERY_LEVEL)
             battery_level = battery_data[0]
@@ -175,7 +176,7 @@ class BLEManager:
 
             # Émettre un événement global pour que les autres composants puissent réagir à la nouvelle donnée de batterie
             event_bus.emit("battery_received", battery_level)
-                
+
         except Exception as e:
             logger.error(f"Erreur lecture batterie : {e}")
     
