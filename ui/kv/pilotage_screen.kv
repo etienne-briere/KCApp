@@ -51,14 +51,94 @@
                         halign: "left"
                         valign: "center"
 
-                    MDSwitch:
-                        id: obstacles_switch
+                    MDCheckbox:
+                        id: obstacles_checkbox
                         active: root.obs_enabled
                         pos_hint: {"center_y": 0.5}
-                        size_hint_x: None
-                        width: dp(60)
+                        size_hint: None, None
+                        size: dp(36), dp(36)
                         on_active: root.on_obstacles_toggle(self.active)
                         disabled: not root.unity_connected
+
+            # ==== MAINS ACTIVES ====
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(8)
+                size_hint_y: None
+                height: self.minimum_height
+
+                MDLabel:
+                    text: "MAINS ACTIVES"
+                    font_style: "Overline"
+                    theme_text_color: "Secondary"
+                    halign: "left"
+                    padding: dp(16), 0
+                    adaptive_size: True
+
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(10)
+                    size_hint_y: None
+                    height: dp(114)
+                    elevation: 0
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(15)
+                        size_hint_y: None
+                        height: dp(36)
+
+                        MDIcon:
+                            icon: "hand-back-left"
+                            theme_text_color: "Custom"
+                            text_color: app.theme_cls.primary_color
+                            font_size: "26sp"
+                            size_hint_x: None
+                            width: dp(30)
+
+                        MDLabel:
+                            text: "Main gauche"
+                            font_style: "Body1"
+                            halign: "left"
+                            valign: "center"
+
+                        MDCheckbox:
+                            active: root.left_hand_enabled
+                            pos_hint: {"center_y": 0.5}
+                            size_hint: None, None
+                            size: dp(36), dp(36)
+                            on_active: root.on_left_hand_toggle(self.active)
+                            disabled: not root.unity_connected
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(15)
+                        size_hint_y: None
+                        height: dp(36)
+
+                        MDIcon:
+                            icon: "hand-back-right"
+                            theme_text_color: "Custom"
+                            text_color: app.theme_cls.primary_color
+                            font_size: "26sp"
+                            size_hint_x: None
+                            width: dp(30)
+
+                        MDLabel:
+                            text: "Main droite"
+                            font_style: "Body1"
+                            halign: "left"
+                            valign: "center"
+
+                        MDCheckbox:
+                            active: root.right_hand_enabled
+                            pos_hint: {"center_y": 0.5}
+                            size_hint: None, None
+                            size: dp(36), dp(36)
+                            on_active: root.on_right_hand_toggle(self.active)
+                            disabled: not root.unity_connected
 
             # ==== CUBES PAR MINUTE ====
             MDBoxLayout:

@@ -14,6 +14,8 @@ class PilotageScreen(MDScreen):
     # Properties pour l'UI
     unity_connected = BooleanProperty(False) # connexion Unity
     obs_enabled = BooleanProperty(False) # obtacles
+    left_hand_enabled = BooleanProperty(True) # main gauche
+    right_hand_enabled = BooleanProperty(True) # main droite
     cube_per_min = NumericProperty(60) # cubes/min
     target_hr = NumericProperty(50)  # % FCmax
 
@@ -34,6 +36,10 @@ class PilotageScreen(MDScreen):
                 self.target_hr = self.session.config.target_hr_percent
             if self.session.config.obs_enabled is not None:
                 self.obs_enabled = self.session.config.obs_enabled
+            if self.session.config.left_hand_enabled is not None:
+                self.left_hand_enabled = self.session.config.left_hand_enabled
+            if self.session.config.right_hand_enabled is not None:
+                self.right_hand_enabled = self.session.config.right_hand_enabled
 
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
@@ -55,6 +61,10 @@ class PilotageScreen(MDScreen):
             self.target_hr = session.config.target_hr_percent
         if session.config.obs_enabled is not None:
             self.obs_enabled = session.config.obs_enabled
+        if session.config.left_hand_enabled is not None:
+            self.left_hand_enabled = session.config.left_hand_enabled
+        if session.config.right_hand_enabled is not None:
+            self.right_hand_enabled = session.config.right_hand_enabled
 
     # ========== OBSTACLES ==========
 
@@ -66,6 +76,24 @@ class PilotageScreen(MDScreen):
         # Envoyer via UDP
         if self.udp_controller:
             self.udp_controller.set_obstacle("1" if is_active else "0")
+
+    # ========== MAINS ==========
+
+    def on_left_hand_toggle(self, is_active):
+        """Active/désactive l'interaction avec la main gauche"""
+        self.session.config.left_hand_enabled = is_active
+        logger.info(f"🖐️ Main gauche: {'ON' if is_active else 'OFF'}")
+
+        if self.udp_controller:
+            self.udp_controller.set_left_hand(is_active)
+
+    def on_right_hand_toggle(self, is_active):
+        """Active/désactive l'interaction avec la main droite"""
+        self.session.config.right_hand_enabled = is_active
+        logger.info(f"🖐️ Main droite: {'ON' if is_active else 'OFF'}")
+
+        if self.udp_controller:
+            self.udp_controller.set_right_hand(is_active)
 
     # ========== CUBE FREQUENCY ==========
 

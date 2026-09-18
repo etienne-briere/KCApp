@@ -57,6 +57,14 @@ class UDPController:
     def set_cube_rate(self, cube_rate: int)-> bool:
         """Paramètre le nombre de cubes par minute"""
         return self.send_command("fixedCpm", str(cube_rate))
+
+    def set_left_hand(self, enabled: bool) -> bool:
+        """Active/Désactive l'interaction avec la main gauche"""
+        return self.send_command("leftHand", str(enabled))
+
+    def set_right_hand(self, enabled: bool) -> bool:
+        """Active/Désactive l'interaction avec la main droite"""
+        return self.send_command("rightHand", str(enabled))
     
     def set_stream_game(self, command: str)-> bool:
         """Activation/Désactivation du stream de l'écran du jeux"""

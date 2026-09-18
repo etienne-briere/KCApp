@@ -9,6 +9,8 @@ class SessionConfig:
         self.model = "Unknown"
         self.target_hr_percent = None
         self.obs_enabled = None
+        self.left_hand_enabled = None
+        self.right_hand_enabled = None
 
         self.target_time = []
         self.target_history = []
@@ -19,15 +21,21 @@ class SessionConfig:
 
         elif key == "userHRMTarget":
             self.target_hr_percent = int(value)
-            self.session.start_recording() 
+            self.session.start_recording()
 
             # stocker dans l'historique
             t = time.time() - self.session.start_time
             self.target_time.append(t)
             self.target_history.append(self.target_hr_percent)
-        
+
         elif key == "obs":
-            self.obs_enabled = bool(value)
+            self.obs_enabled = value.strip().lower() == "true"
+
+        elif key == "leftHand":
+            self.left_hand_enabled = value.strip().lower() == "true"
+
+        elif key == "rightHand":
+            self.right_hand_enabled = value.strip().lower() == "true"
     
     def update_target(self, target_percent):
         """Met à jour la cible de FC et stocke dans l'historique"""
