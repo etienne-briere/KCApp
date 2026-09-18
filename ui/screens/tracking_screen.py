@@ -7,6 +7,7 @@ from kivymd.toast import toast
 from kivy.properties import StringProperty, NumericProperty, BooleanProperty, ListProperty, ObjectProperty
 from kivy.app import App
 from kivy.clock import Clock
+from kivy.uix.scrollview import ScrollView
 
 # Custom modules
 import matplotlib.pyplot as plt
@@ -21,6 +22,36 @@ from utils.event_bus import event_bus
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+
+class GraphAwareScrollView(ScrollView):
+    '''
+    ScrollView qui laisse la molette de la souris atteindre un widget
+    enfant qui gère lui-même le scroll (ici, le zoom du graphique
+    matplotlib) au lieu de systématiquement faire défiler la page.
+
+    Sans ça, ScrollView.on_scroll_start intercepte toute molette sur son
+    contenu (sauf tout en haut/bas de page) avant même qu'elle puisse
+    atteindre un enfant plus bas dans l'arbre — le graphique ne recevait
+    donc jamais l'événement nécessaire à son zoom.
+    '''
+    no_scroll_widget = ObjectProperty(None, allownone=True)
+
+    def on_touch_down(self, touch):
+        if (
+            self.no_scroll_widget is not None
+            and 'button' in touch.profile
+            and touch.button.startswith('scroll')
+        ):
+            touch.push()
+            touch.apply_transform_2d(self.to_local)
+            collides = self.no_scroll_widget.collide_point(*touch.pos)
+            touch.pop()
+            if collides:
+                # Contourne la gestion de molette de ScrollView et
+                # redispatche normalement aux enfants (dont le graphique).
+                return self.simulate_touch_down(touch)
+        return super().on_touch_down(touch)
 
 
 class SessionRow(MDBoxLayout):

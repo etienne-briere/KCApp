@@ -1,6 +1,7 @@
 #:import dp kivy.metrics.dp
 #:import Window kivy.core.window.Window
 #:import MatplotFigure kivy_matplotlib_widget.uix.graph_widget
+#:import GraphAwareScrollView ui.screens.tracking_screen.GraphAwareScrollView
 
 <SessionRow>:
     orientation: "horizontal"
@@ -37,8 +38,9 @@
 
 <TrackingScreen>:
 
-    ScrollView:
+    GraphAwareScrollView:
         do_scroll_x: False
+        no_scroll_widget: hr_graph_widget
 
         MDBoxLayout:
             id: tracking_content
