@@ -1,0 +1,143 @@
+#:kivy 2.0
+#:import dp kivy.metrics.dp
+#:import Window kivy.core.window.Window
+
+<HeadsetScreen>:
+
+    ScrollView:
+        do_scroll_x: False
+
+        MDBoxLayout:
+            orientation: "vertical"
+            spacing: dp(20)
+            padding: dp(20)
+            size_hint_y: None
+            height: self.minimum_height
+
+            # ==== STATUT DU CASQUE ====
+            MDCard:
+                orientation: "horizontal"
+                padding: dp(16)
+                radius: [12]
+                spacing: dp(10)
+                size_hint_y: None
+                height: dp(70)
+                elevation: 0
+                canvas.after:
+                    Color:
+                        rgba: GREEN_FG if root.casque_connecte else RED_FG
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: dp(4), self.height
+                        radius: [dp(12), 0, 0, dp(12)]
+
+                MDIcon:
+                    icon: "virtual-reality"
+                    theme_text_color: "Custom"
+                    text_color: GREEN_FG if root.casque_connecte else RED_FG
+                    font_size: "40sp"
+                    size_hint_x: None
+                    width: dp(50)
+
+                MDBoxLayout:
+                    orientation: "vertical"
+                    spacing: dp(2)
+
+                    MDLabel:
+                        text: root.casque_statut
+                        font_style: "H6"
+                        halign: "left"
+                        valign: "bottom"
+
+                    MDLabel:
+                        text: "Casque prêt pour la séance" if root.casque_connecte else "Détectez ou renseignez l'adresse IP du casque"
+                        font_style: "Caption"
+                        theme_text_color: "Secondary"
+                        halign: "left"
+                        valign: "top"
+
+                MDIconButton:
+                    icon: "information-outline"
+                    theme_text_color: "Custom"
+                    text_color: "grey"
+                    icon_size: "26sp"
+                    pos_hint: {"center_y": 0.5}
+                    on_release: root.afficher_info_casque()
+
+            # ==== CONNEXION ET PRÉPARATION ====
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(8)
+                size_hint_y: None
+                height: self.minimum_height
+
+                MDLabel:
+                    text: "CONNEXION ET PRÉPARATION"
+                    font_style: "Overline"
+                    theme_text_color: "Secondary"
+                    halign: "left"
+                    padding: dp(16), 0
+                    adaptive_size: True
+
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(15)
+                    size_hint_y: None
+                    height: self.minimum_height
+                    elevation: 0
+
+                    MDBoxLayout:
+                        orientation: "horizontal" if Window.width >= dp(600) else "vertical"
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(48) if Window.width >= dp(600) else self.minimum_height
+
+                        MDIconButton:
+                            icon: "magnify"
+                            theme_text_color: "Custom"
+                            text_color: "grey"
+                            size_hint: None, None
+                            size: dp(48), dp(48)
+                            pos_hint: {"center_x": 0.5}
+                            disabled: root.casque_en_cours
+                            on_release: root.detecter_casque()
+
+                        MDTextField:
+                            id: casque_ip_field
+                            hint_text: "Adresse IP du casque"
+                            text: root.casque_ip
+                            on_text: root.on_casque_ip_change(self.text)
+                            size_hint_x: 1 if Window.width < dp(600) else 0.45
+                            disabled: root.casque_en_cours
+
+                        MDRaisedButton:
+                            text: "Préparation..." if root.casque_en_cours else "Préparer le casque"
+                            disabled: root.casque_en_cours
+                            size_hint_x: 1 if Window.width < dp(600) else 0.4
+                            size_hint_y: None
+                            height: dp(48)
+                            pos_hint: {"center_x": 0.5, "center_y": 0.5}
+                            on_release: root.preparer_casque()
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(36)
+
+                        MDCheckbox:
+                            id: limite_switch
+                            active: root.casque_limite_active
+                            disabled: root.casque_en_cours
+                            on_active: root.on_toggle_limite(self.active)
+                            size_hint: None, None
+                            size: dp(36), dp(36)
+                            pos_hint: {"center_y": 0.5}
+
+                        MDLabel:
+                            text: "Alerte de zone activée (recommandé)" if root.casque_limite_active else "Alerte de zone désactivée — dérogation"
+                            font_style: "Caption"
+                            halign: "left"
+                            valign: "center"

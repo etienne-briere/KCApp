@@ -1,6 +1,5 @@
 from kivymd.uix.screen import MDScreen
 from kivy.properties import BooleanProperty, NumericProperty
-from kivy.clock import Clock
 from kivy.app import App
 from kivymd.toast import toast
 
@@ -15,20 +14,8 @@ class PilotageScreen(MDScreen):
     # Properties pour l'UI
     unity_connected = BooleanProperty(False) # connexion Unity
     obs_enabled = BooleanProperty(False) # obtacles
-    adaptive_mode_enabled = BooleanProperty(True) # mode adaptatif
     cube_per_min = NumericProperty(60) # cubes/min
     target_hr = NumericProperty(50)  # % FCmax
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        # Fréquence de cube
-        self.cube_frequency = round(1/(self.cube_per_min/60), 2)
-
-        # Debounce pour les sliders
-        self.cube_frequency_event = None
-        self.target_hr_event = None
-
 
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
@@ -43,8 +30,10 @@ class PilotageScreen(MDScreen):
         # Vérifier la connexion Unity (au cas où on arrive dans l'écran après la connexion)
         self.unity_connected = self.udp_discovery.is_unity_connected()
         if self.unity_connected:
-            self.target_hr = self.session.config.target_hr_percent
-            self.obs_enabled = self.session.config.obs_enabled
+            if self.session.config.target_hr_percent is not None:
+                self.target_hr = self.session.config.target_hr_percent
+            if self.session.config.obs_enabled is not None:
+                self.obs_enabled = self.session.config.obs_enabled
 
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
@@ -62,14 +51,15 @@ class PilotageScreen(MDScreen):
 
     def on_session_updated(self, session):
          # Mise à jour UI
-        self.target_hr = session.config.target_hr_percent
-        self.obs_enabled = session.config.obs_enabled
+        if session.config.target_hr_percent is not None:
+            self.target_hr = session.config.target_hr_percent
+        if session.config.obs_enabled is not None:
+            self.obs_enabled = session.config.obs_enabled
 
     # ========== OBSTACLES ==========
 
     def on_obstacles_toggle(self, is_active):
         """Toggle obstacles ON/OFF"""
-        # self.obs_enabled = is_active
         self.session.config.obs_enabled = is_active
         logger.info(f"🎮 Obstacles: {'ON' if is_active else 'OFF'}")
 
@@ -83,8 +73,6 @@ class PilotageScreen(MDScreen):
         """Slider cube frequency changé"""
         self.cube_per_min = value
 
-        self.cube_frequency = round(1/(self.cube_per_min/60), 2)
-
     def on_cube_frequency_touch_up(self):
         """Appelé quand l'utilisateur relâche le slider"""
         logger.debug(f"🎯 Slider relâché à {self.cube_per_min} cubes/min")
@@ -92,11 +80,11 @@ class PilotageScreen(MDScreen):
         self.send_cube_frequency()
 
     def send_cube_frequency(self):
-        """Envoie la fréquence des cubes à Unity"""
+        """Envoie le nombre de cubes/min à Unity"""
         if self.udp_controller:
-            success = self.udp_controller.set_cube_rate(self.cube_frequency)
+            success = self.udp_controller.set_cube_rate(int(self.cube_per_min))
             if success:
-                logger.info(f"📤 Cube frequency envoyée: {self.cube_frequency}")
+                logger.info(f"📤 Cubes/min envoyés: {int(self.cube_per_min)}")
 
     # ========== TARGET HR ==========
 
@@ -107,7 +95,6 @@ class PilotageScreen(MDScreen):
     def on_target_hr_touch_up(self):
         """Appelé quand l'utilisateur relâche le slider"""
         logger.debug(f"🎯 Slider relâché à {self.target_hr}")
-        # self.session.config.target_hr_percent = self.target_hr
         self.session.config.update_target(self.target_hr)
 
         self.send_target_hr()
@@ -128,7 +115,7 @@ class PilotageScreen(MDScreen):
             if success:
                 logger.info("⏸️ Jeu en pause")
             else:
-                toast("❌ Failed to pause")
+                toast("❌ Échec de la mise en pause")
 
     def resume_game(self):
         """Reprend le jeu"""
@@ -137,7 +124,7 @@ class PilotageScreen(MDScreen):
             if success:
                 logger.info("▶️ Jeu repris")
             else:
-                toast("❌ Failed to resume")
+                toast("❌ Échec de la reprise")
 
     def restart_game(self):
         """Redémarre le jeu"""
@@ -146,4 +133,4 @@ class PilotageScreen(MDScreen):
             if success:
                 logger.info("🔄 Jeu redémarré")
             else:
-                toast("❌ Failed to restart")
+                toast("❌ Échec du redémarrage")

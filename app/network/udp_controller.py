@@ -55,8 +55,8 @@ class UDPController:
         return self.send_command("obs", command)
     
     def set_cube_rate(self, cube_rate: int)-> bool:
-        """Paramètre la fréquence de cubes"""
-        return self.send_command("cube_rate", str(cube_rate))
+        """Paramètre le nombre de cubes par minute"""
+        return self.send_command("fixedCpm", str(cube_rate))
     
     def set_stream_game(self, command: str)-> bool:
         """Activation/Désactivation du stream de l'écran du jeux"""

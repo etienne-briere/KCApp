@@ -7,6 +7,8 @@
 #:import ScanScreen ui.screens.scan_screen.ScanScreen
 #:import TrackingScreen ui.screens.tracking_screen.TrackingScreen
 #:import ProfilScreen ui.screens.profil_screen.ProfilScreen
+#:import ControlMenuScreen ui.screens.control_menu_screen.ControlMenuScreen
+#:import HeadsetScreen ui.screens.headset_screen.HeadsetScreen
 #:import PilotageScreen ui.screens.pilotage_screen.PilotageScreen
 #:import GameScreen ui.screens.game_screen.GameScreen
 
@@ -48,10 +50,16 @@ BoxLayout:
         
         ProfilScreen:
             name: "profil"
-        
+
+        ControlMenuScreen:
+            name: "control_menu"
+
+        HeadsetScreen:
+            name: "headset"
+
         PilotageScreen:
             name: "pilotage"
-        
+
         # GameScreen:
         #     name: "game"
 
@@ -95,9 +103,7 @@ BoxLayout:
             text: "Control"
             icon: "microsoft-xbox-controller-menu"
             on_tab_press:
-                # screen_manager.current = "pilotage"
-                # top_bar.title = "Game control"
-                app.change_screen("pilotage", "Game Control")
+                app.change_screen("control_menu", "Contrôle")
         
         # MDBottomNavigationItem:
         #     name: "game_tab"

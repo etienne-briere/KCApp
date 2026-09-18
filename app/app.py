@@ -79,6 +79,8 @@ class KCApp(MDApp):
         Builder.load_file(resource_path("ui/kv/status_bar.kv"))
         Builder.load_file(resource_path("ui/kv/home_screen.kv"))
         Builder.load_file(resource_path("ui/kv/scan_screen.kv"))
+        Builder.load_file(resource_path("ui/kv/control_menu_screen.kv"))
+        Builder.load_file(resource_path("ui/kv/headset_screen.kv"))
         Builder.load_file(resource_path("ui/kv/pilotage_screen.kv"))
         Builder.load_file(resource_path("ui/kv/profil_screen.kv"))
         Builder.load_file(resource_path("ui/kv/tracking_screen.kv"))
@@ -121,12 +123,22 @@ class KCApp(MDApp):
         
         logger.info("Nettoyage terminé")
     
-    def change_screen(self, screen_name, title):
+    def change_screen(self, screen_name, title, show_back=False):
         """Change l'écran actif et met à jour le titre de la top bar
-        
+
         Args:
             screen_name: Nom de l'écran à afficher
             title: Nouveau titre pour la top bar
+            show_back: Si True, affiche une flèche retour vers le menu
+                Contrôle au lieu de l'icône par défaut (sous-écrans
+                Casque VR / Contrôle du jeu, voir control_menu_screen.kv)
         """
         self.root.ids.screen_manager.current = screen_name
         self.root.ids.top_bar.title = title
+
+        if show_back:
+            self.root.ids.top_bar.left_action_items = [
+                ["arrow-left", lambda x: self.change_screen("control_menu", "Contrôle")]
+            ]
+        else:
+            self.root.ids.top_bar.left_action_items = [["account-circle", lambda x: None]]
