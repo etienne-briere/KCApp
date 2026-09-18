@@ -120,10 +120,8 @@ class StatusBar(MDBoxLayout):
     def update_hr_color(self):
         if not self.hr_sensor_connected:
             self.hr_icon_color = (1, 0, 0, 1) # rouge
-        elif self.hr_data_sent:
-            self.hr_icon_color = (0.176, 0.490, 0.196, 1) # vert (identique aux bannières)
         else:
-            self.hr_icon_color = (1, 1, 0, 1) # jaune
+            self.hr_icon_color = (0.176, 0.490, 0.196, 1) # vert (identique aux bannières)
 
         event_bus.emit("hr_sensor_status_changed", {
             "connected": self.hr_sensor_connected,

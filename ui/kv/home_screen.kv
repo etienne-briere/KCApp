@@ -22,7 +22,13 @@
                 size_hint_y: None
                 height: dp(70)
                 elevation: 0
-                md_bg_color: GREEN_BG if root.wifi_connected else RED_BG
+                canvas.after:
+                    Color:
+                        rgba: GREEN_FG if root.wifi_connected else RED_FG
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: dp(4), self.height
+                        radius: [dp(12), 0, 0, dp(12)]
 
                 MDIcon:
                     icon: "wifi" if root.wifi_connected else "wifi-off"
@@ -32,16 +38,25 @@
                     size_hint_x: None
                     width: dp(50)
 
-                MDLabel:
-                    text:
-                        ("Wi-Fi connecté : " + root.wifi_ssid) \
-                        if root.wifi_connected and root.wifi_ssid else \
-                        ("Wi-Fi connecté" if root.wifi_connected else "Wi-Fi désactivé")
-                    font_style: "H6"
-                    theme_text_color: "Custom"
-                    text_color: GREEN_FG if root.wifi_connected else RED_FG
-                    halign: "left"
-                    valign: "center"
+                MDBoxLayout:
+                    orientation: "vertical"
+                    spacing: dp(2)
+
+                    MDLabel:
+                        text:
+                            ("Wi-Fi connecté : " + root.wifi_ssid) \
+                            if root.wifi_connected and root.wifi_ssid else \
+                            ("Wi-Fi connecté" if root.wifi_connected else "Wi-Fi désactivé")
+                        font_style: "H6"
+                        halign: "left"
+                        valign: "bottom"
+
+                    MDLabel:
+                        text: "Connectez-vous sur le même réseau que votre casque VR"
+                        font_style: "Caption"
+                        theme_text_color: "Secondary"
+                        halign: "left"
+                        valign: "top"
 
             MDCard:
                 orientation: "horizontal"
@@ -51,43 +66,79 @@
                 size_hint_y: None
                 height: dp(70)
                 elevation: 0
-                md_bg_color:
-                    RED_BG if not root.hr_sensor_connected else \
-                    (GREEN_BG if root.hr_data_sent else AMBER_BG)
+                canvas.after:
+                    Color:
+                        rgba: GREEN_FG if root.hr_sensor_connected else RED_FG
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: dp(4), self.height
+                        radius: [dp(12), 0, 0, dp(12)]
 
                 MDIcon:
                     icon: "heart" if root.hr_sensor_connected else "heart-off"
                     theme_text_color: "Custom"
-                    text_color:
-                        RED_FG if not root.hr_sensor_connected else \
-                        (GREEN_FG if root.hr_data_sent else AMBER_FG)
+                    text_color: GREEN_FG if root.hr_sensor_connected else RED_FG
                     font_size: "40sp"
                     size_hint_x: None
                     width: dp(50)
 
-                MDLabel:
-                    text:
-                        "Capteur FC déconnecté" if not root.hr_sensor_connected else \
-                        ("Capteur FC connecté" if root.hr_data_sent else "Capteur FC connecté (en attente du jeu)")
-                    font_style: "H6"
-                    theme_text_color: "Custom"
-                    text_color:
-                        RED_FG if not root.hr_sensor_connected else \
-                        (GREEN_FG if root.hr_data_sent else AMBER_FG)
-                    halign: "left"
-                    valign: "center"
+                MDBoxLayout:
+                    orientation: "vertical"
+                    spacing: dp(2)
 
-                MDIconButton:
-                    icon: "bluetooth-connect"
-                    theme_text_color: "Custom"
-                    text_color: RED_FG
-                    size_hint: None, None
-                    icon_size: "30sp"
-                    pos_hint: {"center_y": 0.5}
-                    opacity: 0 if root.hr_sensor_connected else 1
-                    disabled: root.hr_sensor_connected
-                    on_release:
-                        app.root.ids.bottom_nav.ids.tab_manager.get_screen("scan_tab").dispatch("on_tab_press")
+                    MDLabel:
+                        text: "Capteur FC connecté" if root.hr_sensor_connected else "Capteur FC déconnecté"
+                        font_style: "H6"
+                        halign: "left"
+                        valign: "bottom"
+
+                    MDLabel:
+                        text:
+                            ("Connecté à " + (root.hr_sensor_name or "votre capteur") + " — envoi en cours…") \
+                            if root.hr_data_sent else \
+                            ("En attente de connexion du jeu…" if root.hr_sensor_connected else "Connectez votre capteur FC")
+                        font_style: "Caption"
+                        theme_text_color: "Secondary"
+                        halign: "left"
+                        valign: "top"
+
+                AnchorLayout:
+                    anchor_x: "right"
+                    anchor_y: "center"
+                    size_hint_x: None
+                    width: bpm_box.minimum_width if root.hr_sensor_connected else dp(48)
+
+                    MDIconButton:
+                        icon: "bluetooth-connect"
+                        theme_text_color: "Custom"
+                        text_color: RED_FG
+                        icon_size: "30sp"
+                        opacity: 0 if root.hr_sensor_connected else 1
+                        disabled: root.hr_sensor_connected
+                        on_release:
+                            app.root.ids.bottom_nav.ids.tab_manager.get_screen("scan_tab").dispatch("on_tab_press")
+
+                    MDBoxLayout:
+                        id: bpm_box
+                        orientation: "horizontal"
+                        spacing: dp(4)
+                        size_hint_x: None
+                        width: self.minimum_width
+                        opacity: 1 if root.hr_sensor_connected else 0
+
+                        MDLabel:
+                            text: root.heart_rate_text
+                            font_style: "H5"
+                            theme_text_color: "Primary"
+                            adaptive_size: True
+                            pos_hint: {"center_y": 0.5}
+
+                        MDLabel:
+                            text: "bpm"
+                            font_style: "Caption"
+                            theme_text_color: "Secondary"
+                            adaptive_size: True
+                            pos_hint: {"center_y": 0.4}
 
             MDCard:
                 orientation: "horizontal"
@@ -97,7 +148,13 @@
                 size_hint_y: None
                 height: dp(70)
                 elevation: 0
-                md_bg_color: GREEN_BG if root.unity_connected else RED_BG
+                canvas.after:
+                    Color:
+                        rgba: GREEN_FG if root.unity_connected else RED_FG
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: dp(4), self.height
+                        radius: [dp(12), 0, 0, dp(12)]
 
                 MDIcon:
                     icon: "unity" if root.unity_connected else "lan-disconnect"
@@ -107,24 +164,49 @@
                     size_hint_x: None
                     width: dp(50)
 
-                MDLabel:
-                    text: "Jeu connecté" if root.unity_connected else "Jeu déconnecté"
-                    font_style: "H6"
-                    theme_text_color: "Custom"
-                    text_color: GREEN_FG if root.unity_connected else RED_FG
-                    halign: "left"
-                    valign: "center"
+                MDBoxLayout:
+                    orientation: "vertical"
+                    spacing: dp(2)
 
-                MDIconButton:
-                    icon: "refresh"
-                    theme_text_color: "Custom"
-                    text_color: RED_FG
-                    size_hint: None, None
-                    icon_size: "30sp"
-                    pos_hint: {"center_y": 0.5}
-                    opacity: 0 if root.unity_connected else 1
-                    disabled: root.unity_connected
-                    on_release: root.force_reconnect()
+                    MDLabel:
+                        text: "Jeu connecté" if root.unity_connected else "Jeu déconnecté"
+                        font_style: "H6"
+                        halign: "left"
+                        valign: "bottom"
+
+                    MDLabel:
+                        text:
+                            ("Connecté à " + root.unity_ip) if root.unity_connected else \
+                            "Appuyez sur le bouton pour relancer la recherche du casque"
+                        font_style: "Caption"
+                        theme_text_color: "Secondary"
+                        halign: "left"
+                        valign: "top"
+
+                AnchorLayout:
+                    anchor_x: "center"
+                    anchor_y: "center"
+                    size_hint_x: None
+                    width: dp(48)
+
+                    MDIconButton:
+                        icon: "refresh"
+                        theme_text_color: "Custom"
+                        text_color: RED_FG
+                        icon_size: "30sp"
+                        opacity: 0 if root.unity_connected else 1
+                        disabled: root.unity_connected
+                        on_release: root.force_reconnect()
+
+                    MDIconButton:
+                        icon: "microsoft-xbox-controller-menu"
+                        theme_text_color: "Custom"
+                        text_color: app.theme_cls.primary_color
+                        icon_size: "30sp"
+                        opacity: 1 if root.unity_connected else 0
+                        disabled: not root.unity_connected
+                        on_release:
+                            app.root.ids.bottom_nav.ids.tab_manager.get_screen("pilotage_tab").dispatch("on_tab_press")
 
             # ==== VR HEADSET (QUEST) ====
             MDBoxLayout:

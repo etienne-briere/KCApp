@@ -20,10 +20,13 @@ class HomeScreen(MDScreen):
     """Écran d'accueil"""
 
     unity_connected = BooleanProperty(False)
+    unity_ip = StringProperty("")
     wifi_connected = BooleanProperty(False)
     wifi_ssid = StringProperty("")
     hr_sensor_connected = BooleanProperty(False)
     hr_data_sent = BooleanProperty(False)
+    hr_sensor_name = StringProperty("")
+    heart_rate_text = StringProperty("--")
     selected_model = StringProperty("Unknown")
     hr_target = StringProperty("Unknown")
     age_user = StringProperty("Unknown")
@@ -52,6 +55,7 @@ class HomeScreen(MDScreen):
 
         # Vérifier la connexion Unity (au cas où on arrive dans l'écran après la connexion)
         self.unity_connected = self.udp_discovery.is_unity_connected()
+        self.unity_ip = self.udp_discovery.ip_unity or ""
 
         # Refléter l'état Wi-Fi courant (mis à jour ensuite via l'event bus)
         self.wifi_connected = is_wifi_enabled()
@@ -71,6 +75,8 @@ class HomeScreen(MDScreen):
             status_bar = app.root.ids.status_bar
             self.hr_sensor_connected = status_bar.hr_sensor_connected
             self.hr_data_sent = status_bar.hr_data_sent
+        connected_device = app.ble_manager.connected_device
+        self.hr_sensor_name = (connected_device.name or connected_device.address) if connected_device else ""
         if self.unity_connected :
             self.selected_model = self.session.config.model
             self.age_user = str(self.session.user_profile.age)
@@ -90,6 +96,8 @@ class HomeScreen(MDScreen):
         event_bus.subscribe("casque_prepare", self.handle_casque_prepare)
         event_bus.subscribe("wifi_status_changed", self.handle_wifi_status)
         event_bus.subscribe("hr_sensor_status_changed", self.handle_hr_sensor_status)
+        event_bus.subscribe("heart_rate_received", self.handle_heart_rate_received)
+        event_bus.subscribe("connection_changed", self.handle_connection_changed)
 
     def on_leave(self):
         event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
@@ -99,6 +107,8 @@ class HomeScreen(MDScreen):
         event_bus.unsubscribe("casque_prepare", self.handle_casque_prepare)
         event_bus.unsubscribe("wifi_status_changed", self.handle_wifi_status)
         event_bus.unsubscribe("hr_sensor_status_changed", self.handle_hr_sensor_status)
+        event_bus.unsubscribe("heart_rate_received", self.handle_heart_rate_received)
+        event_bus.unsubscribe("connection_changed", self.handle_connection_changed)
 
     # ========== CALLBACKS UDP ==========
 
@@ -106,6 +116,7 @@ class HomeScreen(MDScreen):
     def handle_unity_connection(self, data):
         connected = data["connected"]
         self.unity_connected = connected
+        self.unity_ip = data.get("ip") or ""
     
     @mainthread
     def handle_wifi_status(self, data):
@@ -116,6 +127,20 @@ class HomeScreen(MDScreen):
     def handle_hr_sensor_status(self, data):
         self.hr_sensor_connected = data["connected"]
         self.hr_data_sent = data["data_sent"]
+        if not self.hr_sensor_connected:
+            self.heart_rate_text = "--"
+
+    def handle_heart_rate_received(self, bpm):
+        """Callback quand une trame FC est reçue"""
+        self.heart_rate_text = f"{bpm}"
+
+    def handle_connection_changed(self, data):
+        """Callback de (dé)connexion BLE : garde le nom du capteur à jour"""
+        device = data["device"]
+        if data["is_connected"] and device:
+            self.hr_sensor_name = device.name or device.address
+        elif not data["is_connected"]:
+            self.hr_sensor_name = ""
 
     def on_session_updated(self, session):
          # Mise à jour UI
