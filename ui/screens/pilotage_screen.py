@@ -81,6 +81,13 @@ class PilotageScreen(MDScreen):
 
     def on_left_hand_toggle(self, is_active):
         """Active/désactive l'interaction avec la main gauche"""
+        if not is_active and not self.right_hand_enabled:
+            # Au moins une main doit rester active
+            toast("Au moins une main doit être active")
+            self.ids.left_hand_checkbox.active = True
+            return
+
+        self.left_hand_enabled = is_active
         self.session.config.left_hand_enabled = is_active
         logger.info(f"🖐️ Main gauche: {'ON' if is_active else 'OFF'}")
 
@@ -89,6 +96,13 @@ class PilotageScreen(MDScreen):
 
     def on_right_hand_toggle(self, is_active):
         """Active/désactive l'interaction avec la main droite"""
+        if not is_active and not self.left_hand_enabled:
+            # Au moins une main doit rester active
+            toast("Au moins une main doit être active")
+            self.ids.right_hand_checkbox.active = True
+            return
+
+        self.right_hand_enabled = is_active
         self.session.config.right_hand_enabled = is_active
         logger.info(f"🖐️ Main droite: {'ON' if is_active else 'OFF'}")
 

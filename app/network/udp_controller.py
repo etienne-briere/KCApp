@@ -60,11 +60,11 @@ class UDPController:
 
     def set_left_hand(self, enabled: bool) -> bool:
         """Active/Désactive l'interaction avec la main gauche"""
-        return self.send_command("leftHand", str(enabled))
+        return self.send_command("leftHand", "1" if enabled else "0")
 
     def set_right_hand(self, enabled: bool) -> bool:
         """Active/Désactive l'interaction avec la main droite"""
-        return self.send_command("rightHand", str(enabled))
+        return self.send_command("rightHand", "1" if enabled else "0")
     
     def set_stream_game(self, command: str)-> bool:
         """Activation/Désactivation du stream de l'écran du jeux"""
