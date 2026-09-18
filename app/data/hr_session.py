@@ -81,34 +81,3 @@ class HRSession:
             return 0
         return time.time() - self.session.start_time
 
-    # =========================
-    # EXPORT
-    # =========================
-
-    # def save_json(self, path: str):
-
-    #     payload = {
-    #         "session_id": self.session_id,
-    #         "duration": self.get_duration(),
-    #         "data": list(self.data)
-    #     }
-
-    #     with open(path, "w") as f:
-    #         json.dump(payload, f, indent=2)
-
-    #     logger.info(f"💾 JSON saved: {path}")
-
-    # def save_csv(self):
-
-    #     from datetime import datetime
-    #     path = f"sessions/session_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-
-    #     with open(path, "w") as f:
-    #         f.write("Time,FC,%FCmax\n")
-
-    #         for p in self.data:
-    #             f.write(
-    #                 f"{p['t']},{p['bpm']},{p['percent']}\n"
-    #             )
-
-    #     logger.info(f"💾 CSV saved: {path}")

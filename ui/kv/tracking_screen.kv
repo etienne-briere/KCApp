@@ -2,6 +2,39 @@
 #:import Window kivy.core.window.Window
 #:import MatplotFigure kivy_matplotlib_widget.uix.graph_widget
 
+<SessionRow>:
+    orientation: "horizontal"
+    spacing: dp(10)
+    size_hint_y: None
+    height: dp(56)
+    canvas.before:
+        Color:
+            rgba: app.theme_cls.divider_color
+        Rectangle:
+            pos: self.x, self.y
+            size: self.width, dp(1)
+
+    MDLabel:
+        text: root.record.filename if root.record else ""
+        halign: "left"
+        valign: "center"
+
+    MDIconButton:
+        icon: "trash-can-outline"
+        theme_text_color: "Custom"
+        text_color: 0.776, 0.157, 0.157, 1
+        icon_size: "22sp"
+        pos_hint: {"center_y": 0.5}
+        on_release: root.delete_callback(root)
+
+    MDIconButton:
+        icon: "download-circle-outline"
+        theme_text_color: "Custom"
+        text_color: app.theme_cls.primary_color
+        icon_size: "22sp"
+        pos_hint: {"center_y": 0.5}
+        on_release: root.export_callback(root)
+
 <TrackingScreen>:
 
     ScrollView:
@@ -161,6 +194,7 @@
                         size: dp(32), dp(32)
                         icon_size: "20sp"
                         pos_hint: {"center_y": 0.5}
+                        on_release: root.export_session()
 
                 MDCard:
                     orientation: "vertical"
@@ -224,3 +258,34 @@
                                     font_style: "Caption"
                                     adaptive_size: True
                                     pos_hint: {"center_y": 0.5}
+
+            # ==== Sessions passées en attente d'export ou de suppression ====
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(8)
+                size_hint_y: None
+                height: self.minimum_height if root.has_pending_sessions else 0
+                opacity: 1 if root.has_pending_sessions else 0
+                disabled: not root.has_pending_sessions
+
+                MDLabel:
+                    text: "SESSIONS À EXPORTER"
+                    font_style: "Overline"
+                    theme_text_color: "Secondary"
+                    halign: "left"
+                    padding: dp(16), 0
+                    adaptive_size: True
+
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(16), dp(1)
+                    radius: [12]
+                    size_hint_y: None
+                    height: self.minimum_height
+                    elevation: 0
+
+                    MDBoxLayout:
+                        id: pending_sessions_list
+                        orientation: "vertical"
+                        size_hint_y: None
+                        height: self.minimum_height

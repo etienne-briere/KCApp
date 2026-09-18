@@ -1,9 +1,10 @@
 # Class KivyMD
 from kivymd.uix.screen import MDScreen
+from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.toast import toast
 
 # Class Kivy
-from kivy.properties import StringProperty, NumericProperty, BooleanProperty, ListProperty
+from kivy.properties import StringProperty, NumericProperty, BooleanProperty, ListProperty, ObjectProperty
 from kivy.app import App
 from kivy.clock import Clock
 
@@ -21,6 +22,21 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+
+class SessionRow(MDBoxLayout):
+    '''
+    Ligne de la liste "Sessions à exporter" : nom de fichier + actions
+    supprimer/exporter. Le kv correspondant est défini dans
+    tracking_screen.kv (<SessionRow>:).
+    '''
+    record = ObjectProperty(None)
+    # Nommage volontairement sans préfixe "on_" : Kivy réserve ce préfixe
+    # pour ses hooks d'événements automatiques, un ObjectProperty nommé
+    # ainsi ne reçoit jamais la valeur passée au constructeur.
+    delete_callback = ObjectProperty(None)
+    export_callback = ObjectProperty(None)
+
+
 class TrackingScreen(MDScreen):
     '''
     ECRAN DE SUIVI DE LA FC
@@ -32,7 +48,10 @@ class TrackingScreen(MDScreen):
     # Affichage du graphique (activé par défaut)
     show_target = BooleanProperty(True)
     show_cpm = BooleanProperty(True)
-    
+
+    # Sessions passées en attente d'export ou de suppression
+    has_pending_sessions = BooleanProperty(False)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
@@ -72,6 +91,9 @@ class TrackingScreen(MDScreen):
 
         # Charger toutes les data pré-existantes dans le graphique
         self.load_existing_data()
+
+        # Reconstruire la liste des sessions en attente d'export/suppression
+        self._rebuild_pending_sessions_ui()
 
     def on_leave(self):
         """Appelé à la sortie de l'écran"""
@@ -343,8 +365,62 @@ class TrackingScreen(MDScreen):
         self.fig.canvas.draw_idle()
     
     def reset_graph(self):
-        self.session.reset()
+        # Archiver la session dans la liste "à exporter" (voir
+        # GameSession.reset()) plutôt que de forcer un export immédiat :
+        # l'utilisateur choisit ensuite de l'exporter ou de la supprimer.
+        record = self.session.reset()
+        if record:
+            self._add_session_row(record)
+
         self.ax1.set_xlim(0, 600)
         self.ax1.set_ylim(0, 100)
         self.fig.canvas.draw_idle()
-         
+
+    def export_session(self):
+        """Exporte la session en cours en CSV, sans la réinitialiser"""
+        path = self.session.export_csv(
+            include_target=self.show_target,
+            include_cpm=self.show_cpm,
+        )
+
+        if path:
+            toast(f"Session exportée : {path}")
+        else:
+            toast("Aucune donnée à exporter")
+
+    # ========== SESSIONS EN ATTENTE D'EXPORT/SUPPRESSION ==========
+
+    def _rebuild_pending_sessions_ui(self):
+        """Reconstruit la liste à partir de session.pending_sessions"""
+        self.ids.pending_sessions_list.clear_widgets()
+        for record in self.session.pending_sessions:
+            self._add_session_row(record)
+
+    def _add_session_row(self, record):
+        row = SessionRow(
+            record=record,
+            delete_callback=self._delete_pending_session,
+            export_callback=self._export_pending_session,
+        )
+        self.ids.pending_sessions_list.add_widget(row)
+        self.has_pending_sessions = True
+
+    def _remove_session_row(self, row):
+        if row.record in self.session.pending_sessions:
+            self.session.pending_sessions.remove(row.record)
+        self.ids.pending_sessions_list.remove_widget(row)
+        self.has_pending_sessions = bool(self.session.pending_sessions)
+
+    def _delete_pending_session(self, row):
+        """Supprime une session en attente sans jamais l'écrire sur disque"""
+        self._remove_session_row(row)
+        toast("Session supprimée")
+
+    def _export_pending_session(self, row):
+        """Exporte une session en attente en CSV, puis la retire de la liste"""
+        path = row.record.export_csv(
+            include_target=self.show_target,
+            include_cpm=self.show_cpm,
+        )
+        toast(f"Session exportée : {path}")
+        self._remove_session_row(row)
