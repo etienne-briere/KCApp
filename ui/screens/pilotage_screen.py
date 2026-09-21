@@ -1,7 +1,10 @@
 from kivymd.uix.screen import MDScreen
-from kivy.properties import BooleanProperty, NumericProperty
+from kivy.properties import BooleanProperty, NumericProperty, StringProperty
 from kivy.app import App
+from kivy.clock import Clock
+from kivy.core.window import Window
 from kivymd.toast import toast
+from kivymd.uix.menu import MDDropdownMenu
 
 from utils.event_bus import event_bus
 from utils.logger import get_logger
@@ -11,8 +14,19 @@ logger = get_logger(__name__)
 class PilotageScreen(MDScreen):
     """Écran de contrôle du jeu Unity"""
 
+    # Modes de jeu (index envoyé/reçu via la clé SelectedModel)
+    MODEL_ORDER = ["FIXE", "INCREMENTAL", "PID", "DRL"]
+    MODEL_LABELS = {
+        "FIXE": "Fixe",
+        "INCREMENTAL": "Incrémental",
+        "PID": "PID (adaptatif)",
+        "DRL": "DRL (adaptatif)",
+    }
+
     # Properties pour l'UI
     unity_connected = BooleanProperty(False) # connexion Unity
+    selected_model = StringProperty("FIXE") # mode de jeu appliqué (confirmé)
+    pending_model = StringProperty("FIXE") # mode sélectionné dans le menu (pas encore appliqué)
     session_duration_min = NumericProperty(10) # durée de session (min)
     obs_enabled = BooleanProperty(False) # obtacles
     obstacle_probability = NumericProperty(25) # % probabilité d'apparition
@@ -20,6 +34,11 @@ class PilotageScreen(MDScreen):
     right_hand_enabled = BooleanProperty(True) # main droite
     cube_per_min = NumericProperty(60) # cubes/min
     target_hr = NumericProperty(50)  # % FCmax
+    incremental_steps = NumericProperty(10) # mode incrémental : nombre de paliers
+    incremental_min_cpm = NumericProperty(30) # mode incrémental : cpm minimum
+    incremental_max_cpm = NumericProperty(200) # mode incrémental : cpm maximum
+    adaptive_min_cpm = NumericProperty(30) # modes PID/DRL : cpm minimum
+    adaptive_max_cpm = NumericProperty(200) # modes PID/DRL : cpm maximum
 
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
@@ -48,6 +67,17 @@ class PilotageScreen(MDScreen):
                 self.cube_per_min = self.session.config.cube_per_min
             if self.session.config.session_duration is not None:
                 self.session_duration_min = round(self.session.config.session_duration / 60)
+            self._sync_model_from_config(self.session.config.model)
+            if self.session.config.incremental_steps is not None:
+                self.incremental_steps = self.session.config.incremental_steps
+            if self.session.config.incremental_min_cpm is not None:
+                self.incremental_min_cpm = self.session.config.incremental_min_cpm
+            if self.session.config.incremental_max_cpm is not None:
+                self.incremental_max_cpm = self.session.config.incremental_max_cpm
+            if self.session.config.adaptive_min_cpm is not None:
+                self.adaptive_min_cpm = self.session.config.adaptive_min_cpm
+            if self.session.config.adaptive_max_cpm is not None:
+                self.adaptive_max_cpm = self.session.config.adaptive_max_cpm
 
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
@@ -56,12 +86,28 @@ class PilotageScreen(MDScreen):
     def on_leave(self):
         event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
         event_bus.unsubscribe("session_updated", self.on_session_updated)
+        self._close_model_menu()
 
     # ========== CALLBACKS ==========
 
     def handle_unity_connection(self, data):
         connected = data["connected"]
         self.unity_connected = connected
+
+    def _sync_model_from_config(self, config_model):
+        """
+        Resynchronise le mode de jeu depuis session.config, sans écraser une
+        sélection locale non confirmée dans le menu déroulant (pending_model
+        != selected_model) — sinon un message UDP quelconque (ex: cpm, très
+        fréquent en jeu) redéclenche session_updated et fait revenir le menu
+        à l'ancien mode avant même que l'utilisateur ait pu cliquer Appliquer.
+        """
+        if config_model not in self.MODEL_ORDER or config_model == self.selected_model:
+            return
+
+        if self.pending_model == self.selected_model:
+            self.pending_model = config_model
+        self.selected_model = config_model
 
     def on_session_updated(self, session):
          # Mise à jour UI
@@ -79,6 +125,96 @@ class PilotageScreen(MDScreen):
             self.cube_per_min = session.config.cube_per_min
         if session.config.session_duration is not None:
             self.session_duration_min = round(session.config.session_duration / 60)
+        self._sync_model_from_config(session.config.model)
+        if session.config.incremental_steps is not None:
+            self.incremental_steps = session.config.incremental_steps
+        if session.config.incremental_min_cpm is not None:
+            self.incremental_min_cpm = session.config.incremental_min_cpm
+        if session.config.incremental_max_cpm is not None:
+            self.incremental_max_cpm = session.config.incremental_max_cpm
+        if session.config.adaptive_min_cpm is not None:
+            self.adaptive_min_cpm = session.config.adaptive_min_cpm
+        if session.config.adaptive_max_cpm is not None:
+            self.adaptive_max_cpm = session.config.adaptive_max_cpm
+
+    def _submit_int_field(self, text, field_id, prop_name, config_attr,
+                           min_value, max_value, controller_method_name, label):
+        """Validation générique d'un champ numérique (paliers, cpm min/max, probabilité...)"""
+        try:
+            value = int(text)
+        except ValueError:
+            toast("Valeur invalide")
+            self.ids[field_id].text = str(int(getattr(self, prop_name)))
+            return
+
+        value = max(min_value, value)
+        if max_value is not None:
+            value = min(max_value, value)
+
+        setattr(self, prop_name, value)
+        self.ids[field_id].text = str(value)
+        setattr(self.session.config, config_attr, value)
+        logger.info(f"🔧 {label}: {value}")
+
+        if self.udp_controller:
+            send_fn = getattr(self.udp_controller, controller_method_name)
+            success = send_fn(value)
+            if success:
+                logger.info(f"📤 {label} envoyé: {value}")
+
+    # ========== MODE DE JEU ==========
+
+    def open_model_menu(self, caller):
+        """Ouvre le menu déroulant de sélection du mode de jeu"""
+        self._close_model_menu()
+
+        items = [
+            {
+                "text": self.MODEL_LABELS[name],
+                "on_release": lambda name=name: self.on_model_select(name),
+            }
+            for name in self.MODEL_ORDER
+        ]
+        self._model_menu = MDDropdownMenu(caller=caller, items=items, width_mult=4)
+        self._model_menu.open()
+
+    def _close_model_menu(self):
+        """
+        Retire le menu de la fenêtre, sans passer par l'animation de
+        dismiss() (dont le callback de nettoyage ne se déclenche pas
+        toujours dans cette version de KivyMD, laissant un widget invisible
+        qui intercepte indéfiniment les clics sur cet écran).
+
+        Le retrait est différé à la prochaine frame (Clock.schedule_once) :
+        appeler Window.remove_widget() de façon synchrone, alors qu'on est
+        encore au milieu du dispatch tactile de l'item de menu qui vient
+        d'être cliqué, laisse le système tactile de Kivy dans un état
+        incohérent et bloque le clic suivant sur l'écran.
+        """
+        menu = getattr(self, "_model_menu", None)
+        if menu is not None:
+            self._model_menu = None
+            Clock.schedule_once(lambda dt: Window.remove_widget(menu), 0)
+
+    def on_model_select(self, model_name):
+        """Sélection d'un mode dans le menu (pas encore envoyé à Unity)"""
+        self.pending_model = model_name
+        self._close_model_menu()
+
+    def apply_model_change(self):
+        """Bouton « Appliquer » : envoie le mode sélectionné à Unity"""
+        if self.pending_model == self.selected_model:
+            return
+
+        index = self.MODEL_ORDER.index(self.pending_model)
+        self.selected_model = self.pending_model
+        self.session.config.model = self.pending_model
+        logger.info(f"🎮 Mode de jeu: {self.pending_model}")
+
+        if self.udp_controller:
+            success = self.udp_controller.set_selected_model(index)
+            if success:
+                logger.info(f"📤 Mode de jeu envoyé: {self.pending_model} (index {index})")
 
     # ========== DURÉE DE SESSION ==========
 
@@ -115,23 +251,9 @@ class PilotageScreen(MDScreen):
 
     def on_obstacle_probability_submit(self, text):
         """Champ probabilité obstacles validé (Entrée ou perte de focus)"""
-        try:
-            value = int(text)
-        except ValueError:
-            toast("Probabilité invalide")
-            self.ids.obstacle_probability_field.text = str(int(self.obstacle_probability))
-            return
-
-        value = max(0, min(100, value))
-        self.obstacle_probability = value
-        self.ids.obstacle_probability_field.text = str(value)
-        self.session.config.obstacle_probability = value
-        logger.info(f"🎲 Probabilité obstacles: {value}%")
-
-        if self.udp_controller:
-            success = self.udp_controller.set_obstacle_probability(value)
-            if success:
-                logger.info(f"📤 Probabilité obstacles envoyée: {value}%")
+        self._submit_int_field(text, "obstacle_probability_field", "obstacle_probability",
+                                "obstacle_probability", 0, 100, "set_obstacle_probability",
+                                "Probabilité obstacles")
 
     # ========== MAINS ==========
 
@@ -167,35 +289,48 @@ class PilotageScreen(MDScreen):
 
     # ========== CUBE FREQUENCY ==========
 
-    def on_cube_frequency_change(self, value):
-        """Slider cube frequency changé"""
-        self.cube_per_min = value
+    def on_cube_frequency_submit(self, text):
+        """Champ cubes par minute validé"""
+        self._submit_int_field(text, "cube_frequency_field", "cube_per_min",
+                                "cube_per_min", 15, 120, "set_cube_rate",
+                                "Cubes par minute")
 
-    def on_cube_frequency_touch_up(self):
-        """Appelé quand l'utilisateur relâche le slider"""
-        logger.debug(f"🎯 Slider relâché à {self.cube_per_min} cubes/min")
+    # ========== MODE INCRÉMENTAL ==========
 
-        self.send_cube_frequency()
+    def on_incremental_steps_submit(self, text):
+        """Champ paliers incrémental validé"""
+        self._submit_int_field(text, "incremental_steps_field", "incremental_steps",
+                                "incremental_steps", 1, None, "set_incremental_steps",
+                                "Paliers incrémental")
 
-    def send_cube_frequency(self):
-        """Envoie le nombre de cubes/min à Unity"""
-        self.session.config.cube_per_min = int(self.cube_per_min)
+    def on_incremental_min_cpm_submit(self, text):
+        """Champ cpm minimum incrémental validé"""
+        self._submit_int_field(text, "incremental_min_cpm_field", "incremental_min_cpm",
+                                "incremental_min_cpm", 0, None, "set_incremental_min_cpm",
+                                "Cpm min incrémental")
 
-        if self.udp_controller:
-            success = self.udp_controller.set_cube_rate(int(self.cube_per_min))
-            if success:
-                logger.info(f"📤 Cubes/min envoyés: {int(self.cube_per_min)}")
+    def on_incremental_max_cpm_submit(self, text):
+        """Champ cpm maximum incrémental validé"""
+        self._submit_int_field(text, "incremental_max_cpm_field", "incremental_max_cpm",
+                                "incremental_max_cpm", 0, None, "set_incremental_max_cpm",
+                                "Cpm max incrémental")
 
     # ========== TARGET HR ==========
 
-    def on_target_hr_change(self, value):
-        """Slider target HR changé"""
-        self.target_hr = value
+    def on_target_hr_submit(self, text):
+        """Champ FC cible validé"""
+        try:
+            value = int(text)
+        except ValueError:
+            toast("Valeur invalide")
+            self.ids.target_hr_field.text = str(int(self.target_hr))
+            return
 
-    def on_target_hr_touch_up(self):
-        """Appelé quand l'utilisateur relâche le slider"""
-        logger.debug(f"🎯 Slider relâché à {self.target_hr}")
-        self.session.config.update_target(self.target_hr)
+        value = max(10, min(100, value))
+        self.target_hr = value
+        self.ids.target_hr_field.text = str(value)
+        self.session.config.update_target(value)
+        logger.info(f"🎯 FC cible: {value}%")
 
         self.send_target_hr()
 
@@ -205,6 +340,20 @@ class PilotageScreen(MDScreen):
             success = self.udp_controller.set_target_hr(self.target_hr)
             if success:
                 logger.info(f"📤 Target HR envoyée: {self.target_hr}%")
+
+    # ========== MODE ADAPTATIF (PID / DRL) ==========
+
+    def on_adaptive_min_cpm_submit(self, text):
+        """Champ cpm minimum adaptatif validé"""
+        self._submit_int_field(text, "adaptive_min_cpm_field", "adaptive_min_cpm",
+                                "adaptive_min_cpm", 0, None, "set_adaptive_min_cpm",
+                                "Cpm min adaptatif")
+
+    def on_adaptive_max_cpm_submit(self, text):
+        """Champ cpm maximum adaptatif validé"""
+        self._submit_int_field(text, "adaptive_max_cpm_field", "adaptive_max_cpm",
+                                "adaptive_max_cpm", 0, None, "set_adaptive_max_cpm",
+                                "Cpm max adaptatif")
 
     # ========== GAME ACTIONS ==========
 

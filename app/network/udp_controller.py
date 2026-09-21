@@ -73,7 +73,31 @@ class UDPController:
     def set_obstacle_probability(self, probability: int) -> bool:
         """Paramètre la probabilité d'apparition des obstacles (%)"""
         return self.send_command("obstacleProbability", str(probability))
-    
+
+    def set_selected_model(self, model_index: int) -> bool:
+        """Change le mode de jeu sélectionné (0=Fixe, 1=Incrémental, 2=PID, 3=DRL)"""
+        return self.send_command("SelectedModel", str(model_index))
+
+    def set_incremental_steps(self, steps: int) -> bool:
+        """Paramètre le nombre de paliers du mode incrémental"""
+        return self.send_command("incrementalSteps", str(steps))
+
+    def set_incremental_min_cpm(self, cpm: int) -> bool:
+        """Paramètre le cpm minimum du mode incrémental"""
+        return self.send_command("incrementalMinCpm", str(cpm))
+
+    def set_incremental_max_cpm(self, cpm: int) -> bool:
+        """Paramètre le cpm maximum du mode incrémental"""
+        return self.send_command("incrementalMaxCpm", str(cpm))
+
+    def set_adaptive_min_cpm(self, cpm: int) -> bool:
+        """Paramètre le cpm minimum des modes adaptatifs (PID/DRL)"""
+        return self.send_command("adaptiveMinCpm", str(cpm))
+
+    def set_adaptive_max_cpm(self, cpm: int) -> bool:
+        """Paramètre le cpm maximum des modes adaptatifs (PID/DRL)"""
+        return self.send_command("adaptiveMaxCpm", str(cpm))
+
     def set_stream_game(self, command: str)-> bool:
         """Activation/Désactivation du stream de l'écran du jeux"""
         return self.send_command("stream_game", command)

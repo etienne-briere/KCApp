@@ -13,6 +13,198 @@
             size_hint_y: None
             height: self.minimum_height
 
+            # ==== MODE DE JEU ====
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(8)
+                size_hint_y: None
+                height: self.minimum_height
+
+                MDLabel:
+                    text: "MODE DE JEU"
+                    font_style: "Overline"
+                    theme_text_color: "Secondary"
+                    halign: "left"
+                    padding: dp(16), 0
+                    adaptive_size: True
+
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(16)
+                    size_hint_y: None
+                    height: self.minimum_height
+                    elevation: 0
+                    disabled: not root.unity_connected
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(15)
+                        size_hint_y: None
+                        height: dp(30)
+
+                        MDIcon:
+                            icon: "cog-outline"
+                            theme_text_color: "Custom"
+                            text_color: app.theme_cls.primary_color
+                            font_size: "30sp"
+                            size_hint_x: None
+                            width: dp(30)
+
+                        MDLabel:
+                            text: "Mode de jeu"
+                            font_style: "Body1"
+                            halign: "left"
+                            valign: "center"
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(48)
+
+                        MDRaisedButton:
+                            id: model_selector_button
+                            text: root.MODEL_LABELS[root.pending_model]
+                            size_hint_x: 0.6
+                            size_hint_y: None
+                            height: dp(48)
+                            on_release: root.open_model_menu(self)
+
+                        MDRaisedButton:
+                            text: "Appliquer"
+                            size_hint_x: 0.4
+                            size_hint_y: None
+                            height: dp(48)
+                            disabled: root.pending_model == root.selected_model
+                            on_release: root.apply_model_change()
+
+                    # ---- Options du mode Fixe ----
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: self.minimum_height if root.pending_model == "FIXE" else 0
+                        opacity: 1 if root.pending_model == "FIXE" else 0
+                        disabled: root.pending_model != "FIXE"
+
+                        MDTextField:
+                            id: cube_frequency_field
+                            text: str(int(root.cube_per_min))
+                            hint_text: "Cubes par minute"
+                            icon_left: "speedometer"
+                            mode: "rectangle"
+                            input_filter: "int"
+                            text_color_focus: app.theme_cls.primary_color
+                            hint_text_color_focus: app.theme_cls.primary_color
+                            line_color_focus: app.theme_cls.primary_color
+                            icon_left_color_focus: app.theme_cls.primary_color
+                            on_text_validate: root.on_cube_frequency_submit(self.text)
+                            on_focus: root.on_cube_frequency_submit(self.text) if not self.focus else None
+
+                    # ---- Options du mode Incrémental ----
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        spacing: dp(14)
+                        size_hint_y: None
+                        height: self.minimum_height if root.pending_model == "INCREMENTAL" else 0
+                        opacity: 1 if root.pending_model == "INCREMENTAL" else 0
+                        disabled: root.pending_model != "INCREMENTAL"
+
+                        MDTextField:
+                            id: incremental_steps_field
+                            text: str(int(root.incremental_steps))
+                            hint_text: "Nombre de paliers"
+                            icon_left: "stairs"
+                            mode: "rectangle"
+                            input_filter: "int"
+                            text_color_focus: app.theme_cls.primary_color
+                            hint_text_color_focus: app.theme_cls.primary_color
+                            line_color_focus: app.theme_cls.primary_color
+                            icon_left_color_focus: app.theme_cls.primary_color
+                            on_text_validate: root.on_incremental_steps_submit(self.text)
+                            on_focus: root.on_incremental_steps_submit(self.text) if not self.focus else None
+
+                        MDTextField:
+                            id: incremental_min_cpm_field
+                            text: str(int(root.incremental_min_cpm))
+                            hint_text: "Cpm minimum"
+                            icon_left: "arrow-collapse-down"
+                            mode: "rectangle"
+                            input_filter: "int"
+                            text_color_focus: app.theme_cls.primary_color
+                            hint_text_color_focus: app.theme_cls.primary_color
+                            line_color_focus: app.theme_cls.primary_color
+                            icon_left_color_focus: app.theme_cls.primary_color
+                            on_text_validate: root.on_incremental_min_cpm_submit(self.text)
+                            on_focus: root.on_incremental_min_cpm_submit(self.text) if not self.focus else None
+
+                        MDTextField:
+                            id: incremental_max_cpm_field
+                            text: str(int(root.incremental_max_cpm))
+                            hint_text: "Cpm maximum"
+                            icon_left: "arrow-collapse-up"
+                            mode: "rectangle"
+                            input_filter: "int"
+                            text_color_focus: app.theme_cls.primary_color
+                            hint_text_color_focus: app.theme_cls.primary_color
+                            line_color_focus: app.theme_cls.primary_color
+                            icon_left_color_focus: app.theme_cls.primary_color
+                            on_text_validate: root.on_incremental_max_cpm_submit(self.text)
+                            on_focus: root.on_incremental_max_cpm_submit(self.text) if not self.focus else None
+
+                    # ---- Options des modes PID / DRL ----
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        spacing: dp(14)
+                        size_hint_y: None
+                        height: self.minimum_height if root.pending_model in ("PID", "DRL") else 0
+                        opacity: 1 if root.pending_model in ("PID", "DRL") else 0
+                        disabled: root.pending_model not in ("PID", "DRL")
+
+                        MDTextField:
+                            id: target_hr_field
+                            text: str(int(root.target_hr))
+                            hint_text: "FC cible (% FCmax)"
+                            icon_left: "target"
+                            mode: "rectangle"
+                            input_filter: "int"
+                            text_color_focus: app.theme_cls.primary_color
+                            hint_text_color_focus: app.theme_cls.primary_color
+                            line_color_focus: app.theme_cls.primary_color
+                            icon_left_color_focus: app.theme_cls.primary_color
+                            on_text_validate: root.on_target_hr_submit(self.text)
+                            on_focus: root.on_target_hr_submit(self.text) if not self.focus else None
+
+                        MDTextField:
+                            id: adaptive_min_cpm_field
+                            text: str(int(root.adaptive_min_cpm))
+                            hint_text: "Cpm minimum"
+                            icon_left: "arrow-collapse-down"
+                            mode: "rectangle"
+                            input_filter: "int"
+                            text_color_focus: app.theme_cls.primary_color
+                            hint_text_color_focus: app.theme_cls.primary_color
+                            line_color_focus: app.theme_cls.primary_color
+                            icon_left_color_focus: app.theme_cls.primary_color
+                            on_text_validate: root.on_adaptive_min_cpm_submit(self.text)
+                            on_focus: root.on_adaptive_min_cpm_submit(self.text) if not self.focus else None
+
+                        MDTextField:
+                            id: adaptive_max_cpm_field
+                            text: str(int(root.adaptive_max_cpm))
+                            hint_text: "Cpm maximum"
+                            icon_left: "arrow-collapse-up"
+                            mode: "rectangle"
+                            input_filter: "int"
+                            text_color_focus: app.theme_cls.primary_color
+                            hint_text_color_focus: app.theme_cls.primary_color
+                            line_color_focus: app.theme_cls.primary_color
+                            icon_left_color_focus: app.theme_cls.primary_color
+                            on_text_validate: root.on_adaptive_max_cpm_submit(self.text)
+                            on_focus: root.on_adaptive_max_cpm_submit(self.text) if not self.focus else None
+
             # ==== DURÉE DE SESSION ====
             MDBoxLayout:
                 orientation: "vertical"
@@ -229,130 +421,6 @@
                             size: dp(36), dp(36)
                             on_active: root.on_right_hand_toggle(self.active)
                             disabled: not root.unity_connected
-
-            # ==== CUBES PAR MINUTE ====
-            MDBoxLayout:
-                orientation: "vertical"
-                spacing: dp(8)
-                size_hint_y: None
-                height: self.minimum_height
-
-                MDLabel:
-                    text: "CUBES PAR MINUTE"
-                    font_style: "Overline"
-                    theme_text_color: "Secondary"
-                    halign: "left"
-                    padding: dp(16), 0
-                    adaptive_size: True
-
-                MDCard:
-                    orientation: "vertical"
-                    padding: dp(16)
-                    radius: [12]
-                    spacing: dp(10)
-                    size_hint_y: None
-                    height: dp(130)
-                    elevation: 0
-                    disabled: not root.unity_connected
-
-                    MDBoxLayout:
-                        orientation: "horizontal"
-                        spacing: dp(15)
-                        size_hint_y: None
-                        height: dp(30)
-
-                        MDIcon:
-                            icon: "speedometer"
-                            theme_text_color: "Custom"
-                            text_color: app.theme_cls.primary_color
-                            font_size: "30sp"
-                            size_hint_x: None
-                            width: dp(30)
-
-                        MDLabel:
-                            text: "Cubes par minute"
-                            font_style: "Body1"
-                            halign: "left"
-                            valign: "center"
-
-                        MDLabel:
-                            text: "{} /min".format(int(root.cube_per_min))
-                            font_style: "H6"
-                            theme_text_color: "Primary"
-                            halign: "right"
-
-                    MDSlider:
-                        id: cube_frequency_slider
-                        min: 15
-                        max: 120
-                        value: root.cube_per_min
-                        step: 1
-                        hint: True
-                        hint_text: "{} /min".format(int(self.value))
-                        on_value: root.on_cube_frequency_change(self.value)
-                        on_touch_up: root.on_cube_frequency_touch_up() if self.collide_point(*args[1].pos) else None
-
-            # ==== FC CIBLE ====
-            MDBoxLayout:
-                orientation: "vertical"
-                spacing: dp(8)
-                size_hint_y: None
-                height: self.minimum_height
-
-                MDLabel:
-                    text: "FC CIBLE"
-                    font_style: "Overline"
-                    theme_text_color: "Secondary"
-                    halign: "left"
-                    padding: dp(16), 0
-                    adaptive_size: True
-
-                MDCard:
-                    orientation: "vertical"
-                    padding: dp(16)
-                    radius: [12]
-                    spacing: dp(10)
-                    size_hint_y: None
-                    height: dp(130)
-                    elevation: 0
-                    disabled: not root.unity_connected
-
-                    MDBoxLayout:
-                        orientation: "horizontal"
-                        spacing: dp(15)
-                        size_hint_y: None
-                        height: dp(30)
-
-                        MDIcon:
-                            icon: "target"
-                            theme_text_color: "Custom"
-                            text_color: app.theme_cls.primary_color
-                            font_size: "30sp"
-                            size_hint_x: None
-                            width: dp(30)
-
-                        MDLabel:
-                            text: "FC cible"
-                            font_style: "Body1"
-                            halign: "left"
-                            valign: "center"
-
-                        MDLabel:
-                            text: "{} % FCmax".format(int(root.target_hr))
-                            font_style: "H6"
-                            theme_text_color: "Primary"
-                            halign: "right"
-
-                    MDSlider:
-                        id: target_hr_slider
-                        min: 10
-                        max: 100
-                        value: root.target_hr
-                        step: 1
-                        hint: True
-                        hint_text: "{}%".format(int(self.value))
-                        on_value: root.on_target_hr_change(self.value)
-                        on_touch_up: root.on_target_hr_touch_up() if self.collide_point(*args[1].pos) else None
 
             # ==== ACTIONS DU JEU ====
             MDBoxLayout:

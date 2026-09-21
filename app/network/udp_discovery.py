@@ -257,6 +257,21 @@ class UDPDiscovery:
         elif key == "obstacleProbability":
             session.config.update_from_udp(key, value)
 
+        elif key == "incrementalSteps":
+            session.config.update_from_udp(key, value)
+
+        elif key == "incrementalMinCpm":
+            session.config.update_from_udp(key, value)
+
+        elif key == "incrementalMaxCpm":
+            session.config.update_from_udp(key, value)
+
+        elif key == "adaptiveMinCpm":
+            session.config.update_from_udp(key, value)
+
+        elif key == "adaptiveMaxCpm":
+            session.config.update_from_udp(key, value)
+
         elif key == "cpm":
             cpm_value = float(value)
             session.metrics.add_cpm(cpm_value)
@@ -270,8 +285,7 @@ class UDPDiscovery:
                 0: "FIXE",
                 1: "INCREMENTAL",
                 2: "PID",
-                3: "LTI",
-                4: "DRL"
+                3: "DRL"
             }
 
             try:

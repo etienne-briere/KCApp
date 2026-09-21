@@ -14,6 +14,11 @@ class SessionConfig:
         self.cube_per_min = None
         self.session_duration = None  # secondes
         self.obstacle_probability = None  # %
+        self.incremental_steps = None
+        self.incremental_min_cpm = None
+        self.incremental_max_cpm = None
+        self.adaptive_min_cpm = None
+        self.adaptive_max_cpm = None
 
         self.target_time = []
         self.target_history = []
@@ -48,6 +53,21 @@ class SessionConfig:
 
         elif key == "obstacleProbability":
             self.obstacle_probability = int(value)
+
+        elif key == "incrementalSteps":
+            self.incremental_steps = int(value)
+
+        elif key == "incrementalMinCpm":
+            self.incremental_min_cpm = int(value)
+
+        elif key == "incrementalMaxCpm":
+            self.incremental_max_cpm = int(value)
+
+        elif key == "adaptiveMinCpm":
+            self.adaptive_min_cpm = int(value)
+
+        elif key == "adaptiveMaxCpm":
+            self.adaptive_max_cpm = int(value)
     
     def update_target(self, target_percent):
         """Met à jour la cible de FC et stocke dans l'historique"""
