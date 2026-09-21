@@ -4,6 +4,8 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivymd.toast import toast
+from kivymd.uix.button import MDFlatButton
+from kivymd.uix.dialog import MDDialog
 from kivymd.uix.menu import MDDropdownMenu
 
 from utils.event_bus import event_bus
@@ -202,9 +204,30 @@ class PilotageScreen(MDScreen):
         self._close_model_menu()
 
     def apply_model_change(self):
-        """Bouton « Appliquer » : envoie le mode sélectionné à Unity"""
+        """Bouton « Appliquer » : demande confirmation avant de changer de mode"""
         if self.pending_model == self.selected_model:
             return
+
+        if not hasattr(self, "_dialog_confirm_model") or self._dialog_confirm_model is None:
+            self._dialog_confirm_model = MDDialog(
+                title="Redémarrer la session ?",
+                text="Changer de mode de jeu va redémarrer la session en cours.",
+                buttons=[
+                    MDFlatButton(
+                        text="ANNULER",
+                        on_release=lambda *_: self._dialog_confirm_model.dismiss(),
+                    ),
+                    MDFlatButton(
+                        text="CONFIRMER",
+                        on_release=lambda *_: self._confirm_model_change(),
+                    ),
+                ],
+            )
+        self._dialog_confirm_model.open()
+
+    def _confirm_model_change(self):
+        """Envoie le mode sélectionné à Unity et redémarre la partie"""
+        self._dialog_confirm_model.dismiss()
 
         index = self.MODEL_ORDER.index(self.pending_model)
         self.selected_model = self.pending_model
@@ -215,6 +238,9 @@ class PilotageScreen(MDScreen):
             success = self.udp_controller.set_selected_model(index)
             if success:
                 logger.info(f"📤 Mode de jeu envoyé: {self.pending_model} (index {index})")
+
+            # Redémarre le jeu pour que le nouveau mode soit pris en compte
+            self.restart_game()
 
     # ========== DURÉE DE SESSION ==========
 

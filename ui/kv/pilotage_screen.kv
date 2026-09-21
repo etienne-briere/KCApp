@@ -13,6 +13,58 @@
             size_hint_y: None
             height: self.minimum_height
 
+            # ==== ACTIONS DU JEU ====
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(8)
+                size_hint_y: None
+                height: self.minimum_height
+
+                MDLabel:
+                    text: "ACTIONS DU JEU"
+                    font_style: "Overline"
+                    theme_text_color: "Secondary"
+                    halign: "left"
+                    padding: dp(16), 0
+                    adaptive_size: True
+
+                MDCard:
+                    orientation: "horizontal"
+                    padding: dp(16)
+                    radius: [12]
+                    size_hint_y: None
+                    height: dp(90)
+                    elevation: 0
+                    disabled: not root.unity_connected
+
+                    Widget:
+
+                    MDIconButton:
+                        icon: "pause-circle-outline"
+                        theme_text_color: "Custom"
+                        text_color: app.theme_cls.primary_color
+                        icon_size: "50sp"
+                        pos_hint: {"center_y": 0.5}
+                        on_release: root.pause_game()
+
+                    MDIconButton:
+                        icon: "play-circle-outline"
+                        theme_text_color: "Custom"
+                        text_color: app.theme_cls.primary_color
+                        icon_size: "50sp"
+                        pos_hint: {"center_y": 0.5}
+                        on_release: root.resume_game()
+
+                    MDIconButton:
+                        icon: "restart"
+                        theme_text_color: "Custom"
+                        text_color: app.theme_cls.primary_color
+                        icon_size: "50sp"
+                        pos_hint: {"center_y": 0.5}
+                        on_release: root.restart_game()
+
+                    Widget:
+
             # ==== MODE DE JEU ====
             MDBoxLayout:
                 orientation: "vertical"
@@ -421,55 +473,3 @@
                             size: dp(36), dp(36)
                             on_active: root.on_right_hand_toggle(self.active)
                             disabled: not root.unity_connected
-
-            # ==== ACTIONS DU JEU ====
-            MDBoxLayout:
-                orientation: "vertical"
-                spacing: dp(8)
-                size_hint_y: None
-                height: self.minimum_height
-
-                MDLabel:
-                    text: "ACTIONS DU JEU"
-                    font_style: "Overline"
-                    theme_text_color: "Secondary"
-                    halign: "left"
-                    padding: dp(16), 0
-                    adaptive_size: True
-
-                MDCard:
-                    orientation: "horizontal"
-                    padding: dp(16)
-                    radius: [12]
-                    size_hint_y: None
-                    height: dp(90)
-                    elevation: 0
-                    disabled: not root.unity_connected
-
-                    Widget:
-
-                    MDIconButton:
-                        icon: "pause-circle-outline"
-                        theme_text_color: "Custom"
-                        text_color: app.theme_cls.primary_color
-                        icon_size: "50sp"
-                        pos_hint: {"center_y": 0.5}
-                        on_release: root.pause_game()
-
-                    MDIconButton:
-                        icon: "play-circle-outline"
-                        theme_text_color: "Custom"
-                        text_color: app.theme_cls.primary_color
-                        icon_size: "50sp"
-                        pos_hint: {"center_y": 0.5}
-                        on_release: root.resume_game()
-
-                    MDIconButton:
-                        icon: "restart"
-                        theme_text_color: "Custom"
-                        text_color: app.theme_cls.primary_color
-                        icon_size: "50sp"
-                        pos_hint: {"center_y": 0.5}
-                        on_release: root.restart_game()
-
-                    Widget:
