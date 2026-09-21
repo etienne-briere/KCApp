@@ -272,6 +272,12 @@ class UDPDiscovery:
         elif key == "adaptiveMaxCpm":
             session.config.update_from_udp(key, value)
 
+        elif key == "warmupEnabled":
+            session.config.update_from_udp(key, value)
+
+        elif key == "warmupDuration":
+            session.config.update_from_udp(key, value)
+
         elif key == "cpm":
             cpm_value = float(value)
             session.metrics.add_cpm(cpm_value)

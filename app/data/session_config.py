@@ -19,6 +19,8 @@ class SessionConfig:
         self.incremental_max_cpm = None
         self.adaptive_min_cpm = None
         self.adaptive_max_cpm = None
+        self.warmup_enabled = None
+        self.warmup_duration = None  # secondes
 
         self.target_time = []
         self.target_history = []
@@ -68,6 +70,12 @@ class SessionConfig:
 
         elif key == "adaptiveMaxCpm":
             self.adaptive_max_cpm = int(value)
+
+        elif key == "warmupEnabled":
+            self.warmup_enabled = value.strip().lower() == "true"
+
+        elif key == "warmupDuration":
+            self.warmup_duration = int(value)
     
     def update_target(self, target_percent):
         """Met à jour la cible de FC et stocke dans l'historique"""

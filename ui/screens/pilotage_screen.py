@@ -41,6 +41,8 @@ class PilotageScreen(MDScreen):
     incremental_max_cpm = NumericProperty(200) # mode incrémental : cpm maximum
     adaptive_min_cpm = NumericProperty(30) # modes PID/DRL : cpm minimum
     adaptive_max_cpm = NumericProperty(200) # modes PID/DRL : cpm maximum
+    warmup_enabled = BooleanProperty(False) # modes PID/DRL : warmup
+    warmup_duration = NumericProperty(90) # modes PID/DRL : durée du warmup (s)
 
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
@@ -80,6 +82,10 @@ class PilotageScreen(MDScreen):
                 self.adaptive_min_cpm = self.session.config.adaptive_min_cpm
             if self.session.config.adaptive_max_cpm is not None:
                 self.adaptive_max_cpm = self.session.config.adaptive_max_cpm
+            if self.session.config.warmup_enabled is not None:
+                self.warmup_enabled = self.session.config.warmup_enabled
+            if self.session.config.warmup_duration is not None:
+                self.warmup_duration = self.session.config.warmup_duration
 
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
@@ -138,6 +144,10 @@ class PilotageScreen(MDScreen):
             self.adaptive_min_cpm = session.config.adaptive_min_cpm
         if session.config.adaptive_max_cpm is not None:
             self.adaptive_max_cpm = session.config.adaptive_max_cpm
+        if session.config.warmup_enabled is not None:
+            self.warmup_enabled = session.config.warmup_enabled
+        if session.config.warmup_duration is not None:
+            self.warmup_duration = session.config.warmup_duration
 
     def _submit_int_field(self, text, field_id, prop_name, config_attr,
                            min_value, max_value, controller_method_name, label):
@@ -268,6 +278,7 @@ class PilotageScreen(MDScreen):
 
     def on_obstacles_toggle(self, is_active):
         """Toggle obstacles ON/OFF"""
+        self.obs_enabled = is_active
         self.session.config.obs_enabled = is_active
         logger.info(f"🎮 Obstacles: {'ON' if is_active else 'OFF'}")
 
@@ -380,6 +391,21 @@ class PilotageScreen(MDScreen):
         self._submit_int_field(text, "adaptive_max_cpm_field", "adaptive_max_cpm",
                                 "adaptive_max_cpm", 0, None, "set_adaptive_max_cpm",
                                 "Cpm max adaptatif")
+
+    def on_warmup_toggle(self, is_active):
+        """Active/désactive le warmup (modes PID/DRL)"""
+        self.warmup_enabled = is_active
+        self.session.config.warmup_enabled = is_active
+        logger.info(f"🔥 Warmup: {'ON' if is_active else 'OFF'}")
+
+        if self.udp_controller:
+            self.udp_controller.set_warmup_enabled(is_active)
+
+    def on_warmup_duration_submit(self, text):
+        """Champ durée de warmup validé"""
+        self._submit_int_field(text, "warmup_duration_field", "warmup_duration",
+                                "warmup_duration", 0, None, "set_warmup_duration",
+                                "Durée warmup")
 
     # ========== GAME ACTIONS ==========
 

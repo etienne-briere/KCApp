@@ -257,6 +257,50 @@
                             on_text_validate: root.on_adaptive_max_cpm_submit(self.text)
                             on_focus: root.on_adaptive_max_cpm_submit(self.text) if not self.focus else None
 
+                        MDBoxLayout:
+                            orientation: "horizontal"
+                            spacing: dp(15)
+                            size_hint_y: None
+                            height: dp(36)
+
+                            MDIcon:
+                                icon: "timer-play-outline"
+                                theme_text_color: "Custom"
+                                text_color: app.theme_cls.primary_color
+                                font_size: "26sp"
+                                size_hint_x: None
+                                width: dp(30)
+
+                            MDLabel:
+                                text: "Warmup"
+                                font_style: "Body1"
+                                halign: "left"
+                                valign: "center"
+
+                            MDCheckbox:
+                                id: warmup_checkbox
+                                active: root.warmup_enabled
+                                pos_hint: {"center_y": 0.5}
+                                size_hint: None, None
+                                size: dp(36), dp(36)
+                                on_active: root.on_warmup_toggle(self.active)
+                                disabled: not root.unity_connected
+
+                        MDTextField:
+                            id: warmup_duration_field
+                            text: str(int(root.warmup_duration))
+                            hint_text: "Durée du warmup (s)"
+                            icon_left: "timer-sand"
+                            mode: "rectangle"
+                            input_filter: "int"
+                            text_color_focus: app.theme_cls.primary_color
+                            hint_text_color_focus: app.theme_cls.primary_color
+                            line_color_focus: app.theme_cls.primary_color
+                            icon_left_color_focus: app.theme_cls.primary_color
+                            disabled: not root.unity_connected or not root.warmup_enabled
+                            on_text_validate: root.on_warmup_duration_submit(self.text)
+                            on_focus: root.on_warmup_duration_submit(self.text) if not self.focus else None
+
             # ==== DURÉE DE SESSION ====
             MDBoxLayout:
                 orientation: "vertical"

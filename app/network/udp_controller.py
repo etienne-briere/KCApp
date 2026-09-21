@@ -98,6 +98,14 @@ class UDPController:
         """Paramètre le cpm maximum des modes adaptatifs (PID/DRL)"""
         return self.send_command("adaptiveMaxCpm", str(cpm))
 
+    def set_warmup_enabled(self, enabled: bool) -> bool:
+        """Active/Désactive la période de warmup (modes PID/DRL)"""
+        return self.send_command("warmupEnabled", "1" if enabled else "0")
+
+    def set_warmup_duration(self, duration_seconds: int) -> bool:
+        """Paramètre la durée du warmup (en secondes, modes PID/DRL)"""
+        return self.send_command("warmupDuration", str(duration_seconds))
+
     def set_stream_game(self, command: str)-> bool:
         """Activation/Désactivation du stream de l'écran du jeux"""
         return self.send_command("stream_game", command)
