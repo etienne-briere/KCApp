@@ -69,6 +69,10 @@ class UDPController:
     def set_session_duration(self, duration_seconds: int) -> bool:
         """Paramètre la durée de session (en secondes)"""
         return self.send_command("sessionDuration", str(duration_seconds))
+
+    def set_obstacle_probability(self, probability: int) -> bool:
+        """Paramètre la probabilité d'apparition des obstacles (%)"""
+        return self.send_command("obstacleProbability", str(probability))
     
     def set_stream_game(self, command: str)-> bool:
         """Activation/Désactivation du stream de l'écran du jeux"""

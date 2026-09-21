@@ -13,6 +13,7 @@ class SessionConfig:
         self.right_hand_enabled = None
         self.cube_per_min = None
         self.session_duration = None  # secondes
+        self.obstacle_probability = None  # %
 
         self.target_time = []
         self.target_history = []
@@ -44,6 +45,9 @@ class SessionConfig:
 
         elif key == "sessionDuration":
             self.session_duration = int(value)
+
+        elif key == "obstacleProbability":
+            self.obstacle_probability = int(value)
     
     def update_target(self, target_percent):
         """Met à jour la cible de FC et stocke dans l'historique"""

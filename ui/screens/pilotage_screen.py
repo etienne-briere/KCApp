@@ -15,6 +15,7 @@ class PilotageScreen(MDScreen):
     unity_connected = BooleanProperty(False) # connexion Unity
     session_duration_min = NumericProperty(10) # durée de session (min)
     obs_enabled = BooleanProperty(False) # obtacles
+    obstacle_probability = NumericProperty(25) # % probabilité d'apparition
     left_hand_enabled = BooleanProperty(True) # main gauche
     right_hand_enabled = BooleanProperty(True) # main droite
     cube_per_min = NumericProperty(60) # cubes/min
@@ -37,6 +38,8 @@ class PilotageScreen(MDScreen):
                 self.target_hr = self.session.config.target_hr_percent
             if self.session.config.obs_enabled is not None:
                 self.obs_enabled = self.session.config.obs_enabled
+            if self.session.config.obstacle_probability is not None:
+                self.obstacle_probability = self.session.config.obstacle_probability
             if self.session.config.left_hand_enabled is not None:
                 self.left_hand_enabled = self.session.config.left_hand_enabled
             if self.session.config.right_hand_enabled is not None:
@@ -66,6 +69,8 @@ class PilotageScreen(MDScreen):
             self.target_hr = session.config.target_hr_percent
         if session.config.obs_enabled is not None:
             self.obs_enabled = session.config.obs_enabled
+        if session.config.obstacle_probability is not None:
+            self.obstacle_probability = session.config.obstacle_probability
         if session.config.left_hand_enabled is not None:
             self.left_hand_enabled = session.config.left_hand_enabled
         if session.config.right_hand_enabled is not None:
@@ -107,6 +112,26 @@ class PilotageScreen(MDScreen):
         # Envoyer via UDP
         if self.udp_controller:
             self.udp_controller.set_obstacle("1" if is_active else "0")
+
+    def on_obstacle_probability_submit(self, text):
+        """Champ probabilité obstacles validé (Entrée ou perte de focus)"""
+        try:
+            value = int(text)
+        except ValueError:
+            toast("Probabilité invalide")
+            self.ids.obstacle_probability_field.text = str(int(self.obstacle_probability))
+            return
+
+        value = max(0, min(100, value))
+        self.obstacle_probability = value
+        self.ids.obstacle_probability_field.text = str(value)
+        self.session.config.obstacle_probability = value
+        logger.info(f"🎲 Probabilité obstacles: {value}%")
+
+        if self.udp_controller:
+            success = self.udp_controller.set_obstacle_probability(value)
+            if success:
+                logger.info(f"📤 Probabilité obstacles envoyée: {value}%")
 
     # ========== MAINS ==========
 

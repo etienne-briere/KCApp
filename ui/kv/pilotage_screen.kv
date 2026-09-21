@@ -91,36 +91,62 @@
                     adaptive_size: True
 
                 MDCard:
-                    orientation: "horizontal"
+                    orientation: "vertical"
                     padding: dp(16)
                     radius: [12]
-                    spacing: dp(15)
+                    spacing: dp(10)
                     size_hint_y: None
-                    height: dp(70)
+                    height: self.minimum_height
                     elevation: 0
 
-                    MDIcon:
-                        icon: "cube-outline"
-                        theme_text_color: "Custom"
-                        text_color: app.theme_cls.primary_color
-                        font_size: "30sp"
-                        size_hint_x: None
-                        width: dp(30)
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(15)
+                        size_hint_y: None
+                        height: dp(36)
 
-                    MDLabel:
-                        text: "Obstacles"
-                        font_style: "Body1"
-                        halign: "left"
-                        valign: "center"
+                        MDIcon:
+                            icon: "cube-outline"
+                            theme_text_color: "Custom"
+                            text_color: app.theme_cls.primary_color
+                            font_size: "30sp"
+                            size_hint_x: None
+                            width: dp(30)
 
-                    MDCheckbox:
-                        id: obstacles_checkbox
-                        active: root.obs_enabled
-                        pos_hint: {"center_y": 0.5}
-                        size_hint: None, None
-                        size: dp(36), dp(36)
-                        on_active: root.on_obstacles_toggle(self.active)
-                        disabled: not root.unity_connected
+                        MDLabel:
+                            text: "Obstacles"
+                            font_style: "Body1"
+                            halign: "left"
+                            valign: "center"
+
+                        MDCheckbox:
+                            id: obstacles_checkbox
+                            active: root.obs_enabled
+                            pos_hint: {"center_y": 0.5}
+                            size_hint: None, None
+                            size: dp(36), dp(36)
+                            on_active: root.on_obstacles_toggle(self.active)
+                            disabled: not root.unity_connected
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        size_hint_y: None
+                        height: self.minimum_height
+
+                        MDTextField:
+                            id: obstacle_probability_field
+                            text: str(int(root.obstacle_probability))
+                            hint_text: "Probabilité d'apparition"
+                            icon_left: "percent"
+                            mode: "rectangle"
+                            input_filter: "int"
+                            text_color_focus: app.theme_cls.primary_color
+                            hint_text_color_focus: app.theme_cls.primary_color
+                            line_color_focus: app.theme_cls.primary_color
+                            icon_left_color_focus: app.theme_cls.primary_color
+                            disabled: not root.unity_connected or not root.obs_enabled
+                            on_text_validate: root.on_obstacle_probability_submit(self.text)
+                            on_focus: root.on_obstacle_probability_submit(self.text) if not self.focus else None
 
             # ==== MAINS ACTIVES ====
             MDBoxLayout:
