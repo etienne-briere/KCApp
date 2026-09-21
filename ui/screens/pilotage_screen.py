@@ -292,7 +292,7 @@ class PilotageScreen(MDScreen):
     def on_cube_frequency_submit(self, text):
         """Champ cubes par minute validé"""
         self._submit_int_field(text, "cube_frequency_field", "cube_per_min",
-                                "cube_per_min", 15, 120, "set_cube_rate",
+                                "cube_per_min", 15, 200, "set_cube_rate",
                                 "Cubes par minute")
 
     # ========== MODE INCRÉMENTAL ==========
