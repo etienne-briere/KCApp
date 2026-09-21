@@ -278,6 +278,9 @@ class UDPDiscovery:
         elif key == "warmupDuration":
             session.config.update_from_udp(key, value)
 
+        elif key == "requireHRSignal":
+            session.config.update_from_udp(key, value)
+
         elif key == "cpm":
             cpm_value = float(value)
             session.metrics.add_cpm(cpm_value)

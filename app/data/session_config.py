@@ -21,6 +21,7 @@ class SessionConfig:
         self.adaptive_max_cpm = None
         self.warmup_enabled = None
         self.warmup_duration = None  # secondes
+        self.require_hr_signal = None
 
         self.target_time = []
         self.target_history = []
@@ -76,6 +77,9 @@ class SessionConfig:
 
         elif key == "warmupDuration":
             self.warmup_duration = int(value)
+
+        elif key == "requireHRSignal":
+            self.require_hr_signal = value.strip().lower() == "true"
     
     def update_target(self, target_percent):
         """Met à jour la cible de FC et stocke dans l'historique"""

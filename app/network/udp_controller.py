@@ -106,6 +106,10 @@ class UDPController:
         """Paramètre la durée du warmup (en secondes, modes PID/DRL)"""
         return self.send_command("warmupDuration", str(duration_seconds))
 
+    def set_require_hr_signal(self, enabled: bool) -> bool:
+        """Active/Désactive l'exigence du signal FC (modes Fixe/Incrémental)"""
+        return self.send_command("requireHRSignal", "1" if enabled else "0")
+
     def set_stream_game(self, command: str)-> bool:
         """Activation/Désactivation du stream de l'écran du jeux"""
         return self.send_command("stream_game", command)

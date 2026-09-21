@@ -43,6 +43,7 @@ class PilotageScreen(MDScreen):
     adaptive_max_cpm = NumericProperty(200) # modes PID/DRL : cpm maximum
     warmup_enabled = BooleanProperty(False) # modes PID/DRL : warmup
     warmup_duration = NumericProperty(90) # modes PID/DRL : durée du warmup (s)
+    require_hr_signal = BooleanProperty(False) # modes Fixe/Incrémental : signal FC requis
 
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
@@ -86,6 +87,8 @@ class PilotageScreen(MDScreen):
                 self.warmup_enabled = self.session.config.warmup_enabled
             if self.session.config.warmup_duration is not None:
                 self.warmup_duration = self.session.config.warmup_duration
+            if self.session.config.require_hr_signal is not None:
+                self.require_hr_signal = self.session.config.require_hr_signal
 
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
@@ -148,6 +151,8 @@ class PilotageScreen(MDScreen):
             self.warmup_enabled = session.config.warmup_enabled
         if session.config.warmup_duration is not None:
             self.warmup_duration = session.config.warmup_duration
+        if session.config.require_hr_signal is not None:
+            self.require_hr_signal = session.config.require_hr_signal
 
     def _submit_int_field(self, text, field_id, prop_name, config_attr,
                            min_value, max_value, controller_method_name, label):
@@ -406,6 +411,15 @@ class PilotageScreen(MDScreen):
         self._submit_int_field(text, "warmup_duration_field", "warmup_duration",
                                 "warmup_duration", 0, None, "set_warmup_duration",
                                 "Durée warmup")
+
+    def on_require_hr_signal_toggle(self, is_active):
+        """Active/désactive l'exigence du signal FC (modes Fixe/Incrémental)"""
+        self.require_hr_signal = is_active
+        self.session.config.require_hr_signal = is_active
+        logger.info(f"❤️ Signal FC requis: {'ON' if is_active else 'OFF'}")
+
+        if self.udp_controller:
+            self.udp_controller.set_require_hr_signal(is_active)
 
     # ========== GAME ACTIONS ==========
 
