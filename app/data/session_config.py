@@ -12,6 +12,7 @@ class SessionConfig:
         self.left_hand_enabled = None
         self.right_hand_enabled = None
         self.cube_per_min = None
+        self.session_duration = None  # secondes
 
         self.target_time = []
         self.target_history = []
@@ -40,6 +41,9 @@ class SessionConfig:
 
         elif key == "fixedCpm":
             self.cube_per_min = int(value)
+
+        elif key == "sessionDuration":
+            self.session_duration = int(value)
     
     def update_target(self, target_percent):
         """Met à jour la cible de FC et stocke dans l'historique"""

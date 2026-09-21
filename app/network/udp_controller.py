@@ -65,6 +65,10 @@ class UDPController:
     def set_right_hand(self, enabled: bool) -> bool:
         """Active/Désactive l'interaction avec la main droite"""
         return self.send_command("rightHand", "1" if enabled else "0")
+
+    def set_session_duration(self, duration_seconds: int) -> bool:
+        """Paramètre la durée de session (en secondes)"""
+        return self.send_command("sessionDuration", str(duration_seconds))
     
     def set_stream_game(self, command: str)-> bool:
         """Activation/Désactivation du stream de l'écran du jeux"""

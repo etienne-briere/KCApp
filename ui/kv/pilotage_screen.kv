@@ -13,6 +13,68 @@
             size_hint_y: None
             height: self.minimum_height
 
+            # ==== DURÉE DE SESSION ====
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(8)
+                size_hint_y: None
+                height: self.minimum_height
+
+                MDLabel:
+                    text: "DURÉE DE SESSION"
+                    font_style: "Overline"
+                    theme_text_color: "Secondary"
+                    halign: "left"
+                    padding: dp(16), 0
+                    adaptive_size: True
+
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(10)
+                    size_hint_y: None
+                    height: dp(130)
+                    elevation: 0
+                    disabled: not root.unity_connected
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(15)
+                        size_hint_y: None
+                        height: dp(30)
+
+                        MDIcon:
+                            icon: "timer-outline"
+                            theme_text_color: "Custom"
+                            text_color: app.theme_cls.primary_color
+                            font_size: "30sp"
+                            size_hint_x: None
+                            width: dp(30)
+
+                        MDLabel:
+                            text: "Durée de session"
+                            font_style: "Body1"
+                            halign: "left"
+                            valign: "center"
+
+                        MDLabel:
+                            text: "{} min".format(int(root.session_duration_min))
+                            font_style: "H6"
+                            theme_text_color: "Primary"
+                            halign: "right"
+
+                    MDSlider:
+                        id: session_duration_slider
+                        min: 1
+                        max: 20
+                        value: root.session_duration_min
+                        step: 1
+                        hint: True
+                        hint_text: "{} min".format(int(self.value))
+                        on_value: root.on_session_duration_change(self.value)
+                        on_touch_up: root.on_session_duration_touch_up() if self.collide_point(*args[1].pos) else None
+
             # ==== OBSTACLES ====
             MDBoxLayout:
                 orientation: "vertical"

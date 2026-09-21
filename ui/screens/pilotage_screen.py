@@ -13,6 +13,7 @@ class PilotageScreen(MDScreen):
 
     # Properties pour l'UI
     unity_connected = BooleanProperty(False) # connexion Unity
+    session_duration_min = NumericProperty(10) # durée de session (min)
     obs_enabled = BooleanProperty(False) # obtacles
     left_hand_enabled = BooleanProperty(True) # main gauche
     right_hand_enabled = BooleanProperty(True) # main droite
@@ -42,6 +43,8 @@ class PilotageScreen(MDScreen):
                 self.right_hand_enabled = self.session.config.right_hand_enabled
             if self.session.config.cube_per_min is not None:
                 self.cube_per_min = self.session.config.cube_per_min
+            if self.session.config.session_duration is not None:
+                self.session_duration_min = round(self.session.config.session_duration / 60)
 
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
@@ -69,6 +72,30 @@ class PilotageScreen(MDScreen):
             self.right_hand_enabled = session.config.right_hand_enabled
         if session.config.cube_per_min is not None:
             self.cube_per_min = session.config.cube_per_min
+        if session.config.session_duration is not None:
+            self.session_duration_min = round(session.config.session_duration / 60)
+
+    # ========== DURÉE DE SESSION ==========
+
+    def on_session_duration_change(self, value):
+        """Slider durée de session changé"""
+        self.session_duration_min = value
+
+    def on_session_duration_touch_up(self):
+        """Appelé quand l'utilisateur relâche le slider"""
+        logger.debug(f"🎯 Slider relâché à {self.session_duration_min} min")
+
+        self.send_session_duration()
+
+    def send_session_duration(self):
+        """Envoie la durée de session (en secondes) à Unity"""
+        duration_seconds = int(self.session_duration_min) * 60
+        self.session.config.session_duration = duration_seconds
+
+        if self.udp_controller:
+            success = self.udp_controller.set_session_duration(duration_seconds)
+            if success:
+                logger.info(f"📤 Durée de session envoyée: {duration_seconds}s")
 
     # ========== OBSTACLES ==========
 
@@ -127,6 +154,8 @@ class PilotageScreen(MDScreen):
 
     def send_cube_frequency(self):
         """Envoie le nombre de cubes/min à Unity"""
+        self.session.config.cube_per_min = int(self.cube_per_min)
+
         if self.udp_controller:
             success = self.udp_controller.set_cube_rate(int(self.cube_per_min))
             if success:
