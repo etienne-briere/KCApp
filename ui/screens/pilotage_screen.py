@@ -40,6 +40,8 @@ class PilotageScreen(MDScreen):
                 self.left_hand_enabled = self.session.config.left_hand_enabled
             if self.session.config.right_hand_enabled is not None:
                 self.right_hand_enabled = self.session.config.right_hand_enabled
+            if self.session.config.cube_per_min is not None:
+                self.cube_per_min = self.session.config.cube_per_min
 
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
@@ -65,6 +67,8 @@ class PilotageScreen(MDScreen):
             self.left_hand_enabled = session.config.left_hand_enabled
         if session.config.right_hand_enabled is not None:
             self.right_hand_enabled = session.config.right_hand_enabled
+        if session.config.cube_per_min is not None:
+            self.cube_per_min = session.config.cube_per_min
 
     # ========== OBSTACLES ==========
 

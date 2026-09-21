@@ -11,6 +11,7 @@ class SessionConfig:
         self.obs_enabled = None
         self.left_hand_enabled = None
         self.right_hand_enabled = None
+        self.cube_per_min = None
 
         self.target_time = []
         self.target_history = []
@@ -36,6 +37,9 @@ class SessionConfig:
 
         elif key == "rightHand":
             self.right_hand_enabled = value.strip().lower() == "true"
+
+        elif key == "fixedCpm":
+            self.cube_per_min = int(value)
     
     def update_target(self, target_percent):
         """Met à jour la cible de FC et stocke dans l'historique"""

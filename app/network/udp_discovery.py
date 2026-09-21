@@ -248,6 +248,9 @@ class UDPDiscovery:
         elif key == "rightHand":
             session.config.update_from_udp(key, value)
 
+        elif key == "fixedCpm":
+            session.config.update_from_udp(key, value)
+
         elif key == "cpm":
             cpm_value = float(value)
             session.metrics.add_cpm(cpm_value)
