@@ -84,7 +84,7 @@
                     orientation: "vertical"
                     padding: dp(16)
                     radius: [12]
-                    spacing: dp(16)
+                    spacing: dp(8)
                     size_hint_y: None
                     height: self.minimum_height
                     elevation: 0
@@ -132,42 +132,10 @@
                             disabled: root.pending_model == root.selected_model
                             on_release: root.apply_model_change()
 
-                    # ---- Signal FC requis (modes Fixe / Incrémental) ----
-                    MDBoxLayout:
-                        orientation: "horizontal"
-                        spacing: dp(15)
-                        size_hint_y: None
-                        height: dp(36) if root.pending_model in ("FIXE", "INCREMENTAL") else 0
-                        opacity: 1 if root.pending_model in ("FIXE", "INCREMENTAL") else 0
-                        disabled: root.pending_model not in ("FIXE", "INCREMENTAL")
-
-                        MDIcon:
-                            icon: "heart-pulse"
-                            theme_text_color: "Custom"
-                            text_color: app.theme_cls.primary_color
-                            font_size: "26sp"
-                            size_hint: None, None
-                            size: dp(30), dp(30)
-                            pos_hint: {"center_y": 0.5}
-
-                        MDLabel:
-                            text: "Signal FC requis"
-                            font_style: "Body1"
-                            halign: "left"
-                            valign: "center"
-
-                        MDCheckbox:
-                            id: require_hr_signal_checkbox
-                            active: root.require_hr_signal
-                            pos_hint: {"center_y": 0.5}
-                            size_hint: None, None
-                            size: dp(36), dp(36)
-                            on_active: root.on_require_hr_signal_toggle(self.active)
-                            disabled: not root.unity_connected
-
                     # ---- Options du mode Fixe ----
                     MDBoxLayout:
                         orientation: "vertical"
+                        padding: 0, dp(12), 0, 0
                         spacing: dp(10)
                         size_hint_y: None
                         height: self.minimum_height if root.pending_model == "FIXE" else 0
@@ -191,6 +159,7 @@
                     # ---- Options du mode Incrémental ----
                     MDBoxLayout:
                         orientation: "vertical"
+                        padding: 0, dp(12), 0, 0
                         spacing: dp(14)
                         size_hint_y: None
                         height: self.minimum_height if root.pending_model == "INCREMENTAL" else 0
@@ -242,6 +211,7 @@
                     # ---- Options des modes PID / DRL ----
                     MDBoxLayout:
                         orientation: "vertical"
+                        padding: 0, dp(12), 0, 0
                         spacing: dp(14)
                         size_hint_y: None
                         height: self.minimum_height if root.pending_model in ("PID", "DRL") else 0
@@ -301,8 +271,9 @@
                                 theme_text_color: "Custom"
                                 text_color: app.theme_cls.primary_color
                                 font_size: "26sp"
-                                size_hint_x: None
-                                width: dp(30)
+                                size_hint: None, None
+                                size: dp(30), dp(30)
+                                pos_hint: {"center_y": 0.5}
 
                             MDLabel:
                                 text: "Warmup"
@@ -333,6 +304,69 @@
                             disabled: not root.unity_connected or not root.warmup_enabled
                             on_text_validate: root.on_warmup_duration_submit(self.text)
                             on_focus: root.on_warmup_duration_submit(self.text) if not self.focus else None
+
+                    # ---- Signal FC requis (modes Fixe / Incrémental) ----
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(15)
+                        size_hint_y: None
+                        height: dp(36) if root.pending_model in ("FIXE", "INCREMENTAL") else 0
+                        opacity: 1 if root.pending_model in ("FIXE", "INCREMENTAL") else 0
+                        disabled: root.pending_model not in ("FIXE", "INCREMENTAL")
+
+                        MDIcon:
+                            icon: "heart-pulse"
+                            theme_text_color: "Custom"
+                            text_color: app.theme_cls.primary_color
+                            font_size: "26sp"
+                            size_hint: None, None
+                            size: dp(30), dp(30)
+                            pos_hint: {"center_y": 0.5}
+
+                        MDLabel:
+                            text: "Signal FC requis"
+                            font_style: "Body1"
+                            halign: "left"
+                            valign: "center"
+
+                        MDCheckbox:
+                            id: require_hr_signal_checkbox
+                            active: root.require_hr_signal
+                            pos_hint: {"center_y": 0.5}
+                            size_hint: None, None
+                            size: dp(36), dp(36)
+                            on_active: root.on_require_hr_signal_toggle(self.active)
+                            disabled: not root.unity_connected
+
+                    # ---- Alerte signal FC requis (modes PID / DRL) ----
+                    MDCard:
+                        orientation: "horizontal"
+                        padding: dp(10), dp(6)
+                        radius: [8]
+                        spacing: dp(8)
+                        size_hint_y: None
+                        height: dp(36) if root.pending_model in ("PID", "DRL") else 0
+                        opacity: 1 if root.pending_model in ("PID", "DRL") else 0
+                        disabled: root.pending_model not in ("PID", "DRL")
+                        elevation: 0
+                        md_bg_color: AMBER_BG
+
+                        MDIcon:
+                            icon: "alert-circle-outline"
+                            theme_text_color: "Custom"
+                            text_color: AMBER_FG
+                            font_size: "20sp"
+                            size_hint: None, None
+                            size: dp(22), dp(22)
+                            pos_hint: {"center_y": 0.5}
+
+                        MDLabel:
+                            text: "Ce mode nécessite un signal FC valide pour fonctionner"
+                            theme_text_color: "Custom"
+                            text_color: AMBER_FG
+                            font_style: "Caption"
+                            halign: "left"
+                            valign: "center"
 
             # ==== DURÉE DE SESSION ====
             MDBoxLayout:
