@@ -116,11 +116,66 @@ class GameSession:
         self.game_state = "idle"
         self.start_time = None
 
+        # Ancrage du décompte du temps de session restant (voir
+        # set_game_state / get_remaining_seconds). Volontairement séparé de
+        # start_time, qui lui est posé dès userHRMTarget — reçu dès la
+        # connexion Unity, bien avant le vrai game_state:Playing.
+        self.playing_anchor = None
+        self.paused_accum = 0.0
+        self._paused_at = None
+
         # Sessions passées en attente d'export ou de suppression (voir
         # reset() et l'écran HR Tracking)
         self.pending_sessions = []
 
     # ========== GESTION DE SESSION ==========
+
+    def set_game_state(self, raw_state):
+        """
+        Met à jour game_state et ancre le décompte du temps restant en
+        conséquence (voir get_remaining_seconds). Appelé directement depuis
+        le thread de réception UDP (udp_discovery.py) : le suivi des
+        transitions reste correct même si aucun écran n'affiche la session
+        à cet instant.
+        """
+        state = (raw_state or "idle").lower()
+        previous = (self.game_state or "idle").lower()
+
+        if state == "playing" and previous != "playing":
+            if previous == "paused":
+                if self._paused_at is not None:
+                    self.paused_accum += time.time() - self._paused_at
+                    self._paused_at = None
+            else:
+                # Premier "Playing" de la session (pas une reprise après pause)
+                self.playing_anchor = time.time()
+                self.paused_accum = 0.0
+
+        elif state == "paused" and previous != "paused":
+            self._paused_at = time.time()
+
+        elif state == "idle":
+            self.playing_anchor = None
+            self.paused_accum = 0.0
+            self._paused_at = None
+
+        self.game_state = raw_state or "idle"
+
+    def get_remaining_seconds(self):
+        """
+        Temps de session restant (secondes), ou None si non calculable
+        (durée inconnue, ou état "paused"/inconnu — dans ce cas l'appelant
+        doit conserver la dernière valeur affichée plutôt que d'afficher 0).
+        """
+        duration = self.config.session_duration
+        state = (self.game_state or "idle").lower()
+
+        if state == "playing" and duration is not None and self.playing_anchor is not None:
+            elapsed = time.time() - self.playing_anchor - self.paused_accum
+            return max(0, duration - elapsed)
+        if state == "idle":
+            return duration
+        return None
 
     def start_recording(self):
         """Démarre l'enregistrement des données de la session"""

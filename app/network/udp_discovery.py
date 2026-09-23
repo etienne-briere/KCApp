@@ -236,6 +236,9 @@ class UDPDiscovery:
         if key == "userAge":
             session.user_profile.update_from_udp(key, value)
 
+        elif key == "playerName":
+            session.user_profile.update_from_udp(key, value)
+
         elif key == "userHRMTarget":
             session.config.update_from_udp(key, value)
         
@@ -287,7 +290,7 @@ class UDPDiscovery:
             event_bus.emit("cpm_received", cpm_value)
         
         elif key == "game_state":
-            session.game_state = value
+            session.set_game_state(value)
 
         elif key == "SelectedModel":
             model_map = {

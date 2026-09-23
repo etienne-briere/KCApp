@@ -221,6 +221,82 @@
                     font_style: "H5"
                     halign: "left"
 
+                # ==== Joueur + état de la partie ====
+                MDCard:
+                    orientation: "horizontal"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(10)
+                    elevation: 0
+                    size_hint_y: None
+                    height: dp(70)
+
+                    MDIcon:
+                        icon: "account"
+                        theme_text_color: "Custom"
+                        text_color: app.theme_cls.primary_color
+                        font_size: "40sp"
+                        size_hint_x: None
+                        width: dp(50)
+
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        spacing: dp(2)
+
+                        MDLabel:
+                            text: root.player_name if root.player_name else "Nom inconnu"
+                            font_style: "H6"
+                            halign: "left"
+                            valign: "bottom"
+
+                        MDLabel:
+                            text: "Joueur"
+                            font_style: "Caption"
+                            theme_text_color: "Secondary"
+                            halign: "left"
+                            valign: "top"
+
+                    AnchorLayout:
+                        anchor_x: "right"
+                        anchor_y: "center"
+                        size_hint_x: None
+                        width: state_badge.width
+
+                        MDBoxLayout:
+                            id: state_badge
+                            orientation: "horizontal"
+                            spacing: dp(6)
+                            padding: dp(10), dp(4)
+                            size_hint: None, None
+                            size: self.minimum_width, dp(30)
+                            pos_hint: {"center_y": 0.5}
+                            canvas.before:
+                                Color:
+                                    rgba: root.game_state_bg
+                                RoundedRectangle:
+                                    pos: self.pos
+                                    size: self.size
+                                    radius: [dp(15)]
+
+                            MDIcon:
+                                icon: "circle"
+                                theme_text_color: "Custom"
+                                text_color: root.game_state_fg
+                                font_size: "12sp"
+                                size_hint: None, None
+                                size: dp(12), dp(12)
+                                pos_hint: {"center_y": 0.5}
+
+                            MDLabel:
+                                text: root.game_state
+                                theme_text_color: "Custom"
+                                text_color: root.game_state_fg
+                                font_style: "Caption"
+                                bold: True
+                                adaptive_size: True
+                                pos_hint: {"center_y": 0.5}
+
+                # ==== Mode de jeu / FC cible / Temps restant ====
                 MDCard:
                     orientation: "horizontal"
                     padding: dp(16)
@@ -229,7 +305,7 @@
                     elevation: 0
                     size_hint_y: None
                     height: dp(100)
-            
+
                     # ===== Affichage du modèle sélectionné dans Unity ====
                     AnchorLayout:
                         anchor_x: "center"
@@ -241,7 +317,7 @@
                             text: root.selected_model
                             font_style: "Body1"
                             halign: "center"
-                    
+
                     # ==== Séparateur ====
                     Widget:
                         size_hint_x: None
@@ -252,7 +328,7 @@
                             Rectangle:
                                 pos: self.pos
                                 size: self.size
-                    
+
                     # ===== %FC Cible choisi ====
                     AnchorLayout:
                         anchor_x: "center"
@@ -277,7 +353,7 @@
                                 font_style: "Body1"
                                 halign: "center"
                             Widget:
-                    
+
                     # ==== Séparateur ====
                     Widget:
                         size_hint_x: None
@@ -289,38 +365,59 @@
                                 pos: self.pos
                                 size: self.size
 
-                    
-                    # ==== Entrée âge joueur ====
+                    # ===== Temps de session restant ====
                     AnchorLayout:
                         anchor_x: "center"
                         anchor_y: "center"
 
                         MDBoxLayout:
                             orientation: "horizontal"
-                            spacing: dp(10)
-                            size_hint_x: 1
-                            
-                            MDTextField:
-                                id: age_input
-                                text: root.age_user
-                                hint_text: "Âge"
-                                helper_text: "Entrez l'âge du joueur"
-                                icon_left: "human-child"
-                                helper_text_mode: "on_focus"
-                                input_filter: "int"
-                                mode: "rectangle"
-                                text_color_focus: app.theme_cls.primary_color
-                                hint_text_color_focus: app.theme_cls.primary_color
-                                line_color_focus: app.theme_cls.primary_color
-                                icon_left_color_focus: app.theme_cls.primary_color
-                                helper_text_color_focus: app.theme_cls.primary_color
+                            spacing: dp(5)
 
-                            MDIconButton:
-                                icon: "send-outline"
+                            Widget:
+                            MDIcon:
+                                icon: "timer-outline"
                                 theme_text_color: "Custom"
                                 text_color: app.theme_cls.primary_color
-                                size_hint: None, None
-                                icon_size: "30sp"
-                                on_release: root.send_new_age()
-                
-                   
+                                font_size: "30sp"
+                                pos_hint: {'center_y': 0.5}
+
+                            # Label
+                            MDLabel:
+                                text: root.session_remaining_text
+                                font_style: "Body1"
+                                halign: "center"
+                            Widget:
+
+                # ==== Entrée âge joueur ====
+                MDCard:
+                    orientation: "horizontal"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(10)
+                    elevation: 0
+                    size_hint_y: None
+                    height: dp(70)
+
+                    MDTextField:
+                        id: age_input
+                        text: root.age_user
+                        hint_text: "Âge"
+                        helper_text: "Entrez l'âge du joueur"
+                        icon_left: "human-child"
+                        helper_text_mode: "on_focus"
+                        input_filter: "int"
+                        mode: "rectangle"
+                        text_color_focus: app.theme_cls.primary_color
+                        hint_text_color_focus: app.theme_cls.primary_color
+                        line_color_focus: app.theme_cls.primary_color
+                        icon_left_color_focus: app.theme_cls.primary_color
+                        helper_text_color_focus: app.theme_cls.primary_color
+
+                    MDIconButton:
+                        icon: "send-outline"
+                        theme_text_color: "Custom"
+                        text_color: app.theme_cls.primary_color
+                        size_hint: None, None
+                        icon_size: "30sp"
+                        on_release: root.send_new_age()

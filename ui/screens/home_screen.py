@@ -1,5 +1,5 @@
 from kivymd.uix.screen import MDScreen
-from kivy.properties import StringProperty, BooleanProperty, NumericProperty
+from kivy.properties import StringProperty, BooleanProperty, NumericProperty, ListProperty
 from kivy.app import App
 from utils.logger import get_logger
 from kivy.clock import Clock
@@ -11,6 +11,16 @@ from app.network.connectivity import is_wifi_enabled, get_wifi_ssid
 
 
 logger = get_logger(__name__)
+
+# Couleurs du badge d'état de partie (mêmes valeurs que GREEN/AMBER/GRAY
+# _FG/_BG dans status_bar.kv) — calculées ici plutôt qu'avec un ternaire en
+# kv sur root.game_state.lower(), qui ne se rebindait pas de façon fiable.
+_GAME_STATE_COLORS = {
+    "playing": {"fg": (0.176, 0.490, 0.196, 1), "bg": (0.906, 0.961, 0.914, 1)},
+    "paused": {"fg": (0.780, 0.518, 0.047, 1), "bg": (1, 0.976, 0.882, 1)},
+}
+_GAME_STATE_DEFAULT_COLOR = {"fg": (0.459, 0.459, 0.459, 1), "bg": (0.925, 0.925, 0.925, 1)}
+
 
 class HomeScreen(MDScreen):
     """Écran d'accueil"""
@@ -26,6 +36,11 @@ class HomeScreen(MDScreen):
     selected_model = StringProperty("Unknown")
     hr_target = StringProperty("Unknown")
     age_user = StringProperty("Unknown")
+    player_name = StringProperty("")
+    game_state = StringProperty("Idle")
+    game_state_fg = ListProperty(_GAME_STATE_DEFAULT_COLOR["fg"])
+    game_state_bg = ListProperty(_GAME_STATE_DEFAULT_COLOR["bg"])
+    session_remaining_text = StringProperty("--:--")
 
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
@@ -64,6 +79,9 @@ class HomeScreen(MDScreen):
             self.selected_model = self.session.config.model
             self.age_user = str(self.session.user_profile.age)
             self.hr_target = f"{self.session.config.target_hr_percent} %"
+            self.player_name = self.session.user_profile.name
+            self._set_game_state(self.session.game_state)
+            self._refresh_session_remaining()
 
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
@@ -73,6 +91,11 @@ class HomeScreen(MDScreen):
         event_bus.subscribe("heart_rate_received", self.handle_heart_rate_received)
         event_bus.subscribe("connection_changed", self.handle_connection_changed)
 
+        # Tick d'affichage du décompte (recalcule chaque seconde à partir
+        # de session.get_remaining_seconds(), qui reste correct même quand
+        # cet écran n'était pas affiché — voir _refresh_session_remaining)
+        Clock.schedule_interval(self._refresh_session_remaining, 1)
+
     def on_leave(self):
         event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
         event_bus.unsubscribe("session_updated", self.on_session_updated)
@@ -80,6 +103,7 @@ class HomeScreen(MDScreen):
         event_bus.unsubscribe("hr_sensor_status_changed", self.handle_hr_sensor_status)
         event_bus.unsubscribe("heart_rate_received", self.handle_heart_rate_received)
         event_bus.unsubscribe("connection_changed", self.handle_connection_changed)
+        Clock.unschedule(self._refresh_session_remaining)
 
     # ========== CALLBACKS UDP ==========
 
@@ -118,6 +142,45 @@ class HomeScreen(MDScreen):
         self.selected_model = session.config.model
         self.age_user = str(session.user_profile.age)
         self.hr_target = f"{session.config.target_hr_percent} %"
+        self.player_name = session.user_profile.name
+        self._set_game_state(session.game_state)
+        self._refresh_session_remaining()
+
+    def _set_game_state(self, raw_state):
+        """Met à jour le label d'état ET les couleurs du badge associées."""
+        raw_state = raw_state or "Idle"
+        self.game_state = raw_state.capitalize()
+        colors = _GAME_STATE_COLORS.get(raw_state.lower(), _GAME_STATE_DEFAULT_COLOR)
+        self.game_state_fg = colors["fg"]
+        self.game_state_bg = colors["bg"]
+
+    def _refresh_session_remaining(self, *_):
+        """
+        Rafraîchit l'affichage du temps de session restant.
+
+        Le calcul lui-même (ancrage sur la transition vers "Playing", suivi
+        des pauses) vit dans GameSession.get_remaining_seconds() — mis à
+        jour en continu depuis le thread UDP (udp_discovery.py), donc
+        toujours correct même quand cet écran n'est pas affiché. Ici on ne
+        fait que lire cette valeur pour l'afficher ; en "Paused" (ou état
+        inconnu), get_remaining_seconds() renvoie None et on garde la
+        dernière valeur affichée telle quelle.
+        """
+        session = getattr(self, "session", None)
+        if session is None or not self.unity_connected:
+            return
+
+        remaining = session.get_remaining_seconds()
+        if remaining is not None:
+            self.session_remaining_text = self._format_duration(remaining)
+
+    @staticmethod
+    def _format_duration(total_seconds):
+        if total_seconds is None:
+            return "--:--"
+        total_seconds = max(0, int(total_seconds))
+        minutes, seconds = divmod(total_seconds, 60)
+        return f"{minutes:02d}:{seconds:02d}"
 
     # ===== Foncions reliées à l'UI =====
     def force_reconnect(self):
