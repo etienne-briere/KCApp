@@ -243,14 +243,33 @@
                         orientation: "vertical"
                         spacing: dp(2)
 
-                        MDLabel:
-                            text: root.player_name if root.player_name else "Nom inconnu"
-                            font_style: "H6"
-                            halign: "left"
-                            valign: "bottom"
+                        MDBoxLayout:
+                            orientation: "horizontal"
+                            spacing: dp(4)
+                            size_hint_y: None
+                            height: self.minimum_height
+
+                            MDLabel:
+                                text: root.player_name if root.player_name else "Nom inconnu"
+                                font_style: "H6"
+                                halign: "left"
+                                adaptive_size: True
+                                pos_hint: {"center_y": 0.5}
+
+                            MDIconButton:
+                                icon: "account-edit"
+                                theme_text_color: "Custom"
+                                text_color: app.theme_cls.primary_color
+                                size_hint: None, None
+                                size: dp(24), dp(24)
+                                icon_size: "18sp"
+                                pos_hint: {"center_y": 0.5}
+                                on_release:
+                                    app.root.ids.screen_manager.get_screen("player_profile").request_edit_on_enter()
+                                    app.change_screen("player_profile", "Profil du joueur", True)
 
                         MDLabel:
-                            text: "Joueur"
+                            text: f"{root.age_user} ans" if root.age_user and root.age_user != "Unknown" else "Âge inconnu"
                             font_style: "Caption"
                             theme_text_color: "Secondary"
                             halign: "left"
@@ -423,36 +442,3 @@
                                     font_style: "Body1"
                                     halign: "center"
                                 Widget:
-
-                # ==== Entrée âge joueur ====
-                MDCard:
-                    orientation: "horizontal"
-                    padding: dp(16)
-                    radius: [12]
-                    spacing: dp(10)
-                    elevation: 0
-                    size_hint_y: None
-                    height: dp(70)
-
-                    MDTextField:
-                        id: age_input
-                        text: root.age_user
-                        hint_text: "Âge"
-                        helper_text: "Entrez l'âge du joueur"
-                        icon_left: "human-child"
-                        helper_text_mode: "on_focus"
-                        input_filter: "int"
-                        mode: "rectangle"
-                        text_color_focus: app.theme_cls.primary_color
-                        hint_text_color_focus: app.theme_cls.primary_color
-                        line_color_focus: app.theme_cls.primary_color
-                        icon_left_color_focus: app.theme_cls.primary_color
-                        helper_text_color_focus: app.theme_cls.primary_color
-
-                    MDIconButton:
-                        icon: "send-outline"
-                        theme_text_color: "Custom"
-                        text_color: app.theme_cls.primary_color
-                        size_hint: None, None
-                        icon_size: "30sp"
-                        on_release: root.send_new_age()

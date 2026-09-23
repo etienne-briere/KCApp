@@ -238,6 +238,7 @@ class UDPDiscovery:
 
         elif key == "playerName":
             session.user_profile.update_from_udp(key, value)
+            app.player_store.ensure(value)
 
         elif key == "userHRMTarget":
             session.config.update_from_udp(key, value)

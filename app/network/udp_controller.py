@@ -49,6 +49,10 @@ class UDPController:
     def set_age_player(self, age: int) -> bool:
         """Envoie l'âge du joueur à Unity"""
         return self.send_command("age", str(age))
+
+    def set_player_name(self, name: str) -> bool:
+        """Envoie le nom du joueur à Unity"""
+        return self.send_command("playerName", name)
     
     def set_obstacle(self, command: str)-> bool:
         """Active/Désactive les obstacles"""

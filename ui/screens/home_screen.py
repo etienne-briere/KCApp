@@ -5,7 +5,6 @@ from utils.logger import get_logger
 from kivy.clock import Clock
 from kivy.clock import mainthread
 from utils.event_bus import event_bus
-from kivymd.toast import toast
 
 from app.network.connectivity import is_wifi_enabled, get_wifi_ssid
 
@@ -232,23 +231,3 @@ class HomeScreen(MDScreen):
         app.ws_server.stop()
         app.udp_discovery.force_reconnect()
         self.unity_connected = False
-    
-    def send_new_age(self):
-        app = App.get_running_app()
-
-        try:
-            age = int(self.ids.age_input.text)
-
-            if 5 <= age <= 100:  # validation logique
-                app.user_profile.age = age
-                print("Age mis à jour :", age)
-
-                # Envoyer via UDP
-                if self.udp_controller:
-                    self.udp_controller.set_age_player(age)
-
-            else:
-                toast("Age invalide")
-        except ValueError:
-            print("Entrée âge invalide")
-            toast("Age invalide")

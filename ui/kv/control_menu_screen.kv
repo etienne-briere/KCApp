@@ -100,4 +100,50 @@
                 width: dp(26)
                 pos_hint: {"center_y": 0.5}
 
+        MDCard:
+            orientation: "horizontal"
+            padding: dp(16)
+            radius: [12]
+            spacing: dp(15)
+            size_hint_y: None
+            height: dp(90)
+            elevation: 0
+            ripple_behavior: True
+            on_release: app.change_screen("player_profile", "Profil du joueur", True)
+
+            MDIcon:
+                icon: "account-switch"
+                theme_text_color: "Custom"
+                text_color: app.theme_cls.primary_color
+                font_size: "36sp"
+                size_hint: None, None
+                size: dp(40), dp(40)
+                pos_hint: {"center_y": 0.5}
+
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(2)
+
+                MDLabel:
+                    text: "Profil du joueur"
+                    font_style: "H6"
+                    halign: "left"
+                    valign: "bottom"
+
+                MDLabel:
+                    text: "Nom et âge du joueur, choix parmi les profils enregistrés"
+                    font_style: "Caption"
+                    theme_text_color: "Secondary"
+                    halign: "left"
+                    valign: "top"
+
+            MDIcon:
+                icon: "chevron-right"
+                theme_text_color: "Custom"
+                text_color: "grey"
+                font_size: "26sp"
+                size_hint_x: None
+                width: dp(26)
+                pos_hint: {"center_y": 0.5}
+
         Widget:

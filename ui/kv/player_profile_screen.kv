@@ -1,0 +1,240 @@
+#:kivy 2.0
+#:import dp kivy.metrics.dp
+
+<PlayerProfileScreen>:
+
+    ScrollView:
+        do_scroll_x: False
+
+        MDBoxLayout:
+            orientation: "vertical"
+            spacing: dp(20)
+            padding: dp(20)
+            size_hint_y: None
+            height: self.minimum_height
+
+            # ==== PROFIL DU JOUEUR ====
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(8)
+                size_hint_y: None
+                height: self.minimum_height
+
+                MDLabel:
+                    text: "PROFIL DU JOUEUR"
+                    font_style: "Overline"
+                    theme_text_color: "Secondary"
+                    halign: "left"
+                    padding: dp(16), 0
+                    adaptive_size: True
+
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(8)
+                    size_hint_y: None
+                    height: self.minimum_height
+                    elevation: 0
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(15)
+                        size_hint_y: None
+                        height: dp(30)
+
+                        MDIcon:
+                            icon: "account"
+                            theme_text_color: "Custom"
+                            text_color: app.theme_cls.primary_color
+                            font_size: "30sp"
+                            size_hint_x: None
+                            width: dp(30)
+
+                        MDLabel:
+                            text: "Profil du joueur"
+                            font_style: "Body1"
+                            halign: "left"
+                            valign: "center"
+
+                        MDIconButton:
+                            icon: "account-plus"
+                            theme_text_color: "Custom"
+                            text_color: app.theme_cls.primary_color
+                            size_hint: None, None
+                            size: dp(30), dp(30)
+                            icon_size: "22sp"
+                            pos_hint: {"center_y": 0.5}
+                            on_release: root.open_new_form()
+
+                        MDIconButton:
+                            icon: "account-edit"
+                            theme_text_color: "Custom"
+                            text_color: app.theme_cls.primary_color
+                            size_hint: None, None
+                            size: dp(30), dp(30)
+                            icon_size: "22sp"
+                            pos_hint: {"center_y": 0.5}
+                            on_release: root.open_edit_form()
+
+                        MDIconButton:
+                            icon: "account-remove"
+                            theme_text_color: "Custom"
+                            text_color: RED_FG
+                            size_hint: None, None
+                            size: dp(30), dp(30)
+                            icon_size: "22sp"
+                            pos_hint: {"center_y": 0.5}
+                            on_release: root.confirm_delete_player()
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(48)
+
+                        MDRectangleFlatIconButton:
+                            id: player_selector_button
+                            text: root.player_name if root.player_name else "Nouveau joueur"
+                            icon: "account-switch"
+                            size_hint_x: 1
+                            size_hint_y: None
+                            height: dp(48)
+                            on_release: root.open_player_menu(self)
+
+                    MDLabel:
+                        text: f"{root.player_age} ans" if root.player_name else ""
+                        font_style: "Caption"
+                        theme_text_color: "Secondary"
+                        halign: "left"
+                        padding: dp(4), 0
+                        size_hint_y: None
+                        height: self.texture_size[1] if root.player_name else 0
+
+            # ==== NOUVEAU JOUEUR ====
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(8)
+                size_hint_y: None
+                height: self.minimum_height if root.show_new_form else 0
+                opacity: 1 if root.show_new_form else 0
+                disabled: not root.show_new_form
+
+                MDLabel:
+                    text: "NOUVEAU JOUEUR"
+                    font_style: "Overline"
+                    theme_text_color: "Secondary"
+                    halign: "left"
+                    padding: dp(16), 0
+                    adaptive_size: True
+
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(8)
+                    size_hint_y: None
+                    height: self.minimum_height
+                    elevation: 0
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(48)
+
+                        MDTextField:
+                            id: new_name_field
+                            text: root.new_name_field_text
+                            hint_text: "Nom du joueur"
+                            icon_left: "account-outline"
+                            mode: "rectangle"
+                            size_hint_x: 0.65
+                            text_color_focus: app.theme_cls.primary_color
+                            hint_text_color_focus: app.theme_cls.primary_color
+                            line_color_focus: app.theme_cls.primary_color
+                            icon_left_color_focus: app.theme_cls.primary_color
+
+                        MDTextField:
+                            id: new_age_field
+                            text: root.new_age_field_text
+                            hint_text: "Âge"
+                            icon_left: "cake-variant-outline"
+                            mode: "rectangle"
+                            input_filter: "int"
+                            size_hint_x: 0.35
+                            text_color_focus: app.theme_cls.primary_color
+                            hint_text_color_focus: app.theme_cls.primary_color
+                            line_color_focus: app.theme_cls.primary_color
+                            icon_left_color_focus: app.theme_cls.primary_color
+
+                    MDRaisedButton:
+                        text: "Créer"
+                        size_hint_x: 1
+                        size_hint_y: None
+                        height: dp(48)
+                        on_release: root.create_player()
+
+            # ==== MODIFICATION DU JOUEUR ====
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(8)
+                size_hint_y: None
+                height: self.minimum_height if root.show_edit_form else 0
+                opacity: 1 if root.show_edit_form else 0
+                disabled: not root.show_edit_form
+
+                MDLabel:
+                    text: "MODIFICATION DU JOUEUR"
+                    font_style: "Overline"
+                    theme_text_color: "Secondary"
+                    halign: "left"
+                    padding: dp(16), 0
+                    adaptive_size: True
+
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(8)
+                    size_hint_y: None
+                    height: self.minimum_height
+                    elevation: 0
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(48)
+
+                        MDTextField:
+                            id: edit_name_field
+                            text: root.edit_name_field_text
+                            hint_text: "Nom du joueur"
+                            icon_left: "account-outline"
+                            mode: "rectangle"
+                            size_hint_x: 0.65
+                            text_color_focus: app.theme_cls.primary_color
+                            hint_text_color_focus: app.theme_cls.primary_color
+                            line_color_focus: app.theme_cls.primary_color
+                            icon_left_color_focus: app.theme_cls.primary_color
+
+                        MDTextField:
+                            id: edit_age_field
+                            text: root.edit_age_field_text
+                            hint_text: "Âge"
+                            icon_left: "cake-variant-outline"
+                            mode: "rectangle"
+                            input_filter: "int"
+                            size_hint_x: 0.35
+                            text_color_focus: app.theme_cls.primary_color
+                            hint_text_color_focus: app.theme_cls.primary_color
+                            line_color_focus: app.theme_cls.primary_color
+                            icon_left_color_focus: app.theme_cls.primary_color
+
+                    MDRaisedButton:
+                        text: "Enregistrer"
+                        size_hint_x: 1
+                        size_hint_y: None
+                        height: dp(48)
+                        on_release: root.save_edited_player()

@@ -1,5 +1,3 @@
-from kivy.app import App
-
 from datetime import datetime
 import time
 
@@ -56,8 +54,7 @@ class HRSession:
 
     def _compute_percent(self, bpm: int) -> Optional[float]:
         try:
-            app = App.get_running_app()
-            max_hr = app.user_profile.calculate_max_hr()
+            max_hr = self.session.user_profile.calculate_max_hr()
             return (bpm / max_hr) * 100
         except:
             return None
