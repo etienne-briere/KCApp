@@ -11,6 +11,7 @@ from kivy.uix.scrollview import ScrollView
 
 # Custom modules
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 import time
 import numpy as np
 
@@ -79,6 +80,14 @@ class TrackingScreen(MDScreen):
     # Affichage du graphique (activé par défaut)
     show_target = BooleanProperty(True)
     show_cpm = BooleanProperty(True)
+    show_game_state = BooleanProperty(True)
+
+    # Mode de jeu courant — mirroir de session.config.model (pas une
+    # propriété Kivy) pour permettre au kv de réagir à son changement, ex.
+    # désactiver la case "%FC cible" en Fixe/Incrémental (pas de cible FC
+    # envoyée à Unity dans ces modes, voir pilotage_screen.kv)
+    current_model = StringProperty("Unknown")
+    MODELS_WITHOUT_TARGET = ("FIXE", "INCREMENTAL")
 
     # Sessions passées en attente d'export ou de suppression
     has_pending_sessions = BooleanProperty(False)
@@ -92,6 +101,10 @@ class TrackingScreen(MDScreen):
         self.placeholder_text = None
         self.target_zone = None
         self.target_received = False
+
+        # Bandes grisées idle/paused (voir update_graph / GameSession.get_inactive_segments)
+        self.inactive_zone_artists = []
+        self.has_inactive_zone = False
 
         # UDP Controller
         self.udp_controller = None
@@ -116,9 +129,12 @@ class TrackingScreen(MDScreen):
         if self.session.config.target_hr_percent is not None:
             self.target_received = True
 
+        self._sync_model(self.session.config.model)
+
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC et de CPM
         event_bus.subscribe("heart_rate_received", self.on_hr_received)
         event_bus.subscribe("cpm_received", self.on_cpm_received)
+        event_bus.subscribe("session_updated", self.on_session_updated)
 
         # Charger toutes les data pré-existantes dans le graphique
         self.load_existing_data()
@@ -131,7 +147,22 @@ class TrackingScreen(MDScreen):
         # Nettoyer les callbacks pour éviter les fuites de mémoire et les appels indésirables
         event_bus.unsubscribe("heart_rate_received", self.on_hr_received)
         event_bus.unsubscribe("cpm_received", self.on_cpm_received)
-    
+        event_bus.unsubscribe("session_updated", self.on_session_updated)
+
+    def on_session_updated(self, session):
+        self._sync_model(session.config.model)
+
+    def _sync_model(self, model):
+        """
+        Reflète session.config.model (pas une propriété Kivy) dans
+        current_model, et décoche/verrouille "%FC cible" en Fixe/Incrémental
+        — ces modes n'envoient jamais de cible FC à Unity.
+        """
+        self.current_model = model
+        if model in self.MODELS_WITHOUT_TARGET and self.show_target:
+            self.show_target = False
+            self.update_graph()
+
     # ========== GESTION DES DONNÉES EXISTANTES ==========
 
     def load_existing_data(self):
@@ -259,6 +290,11 @@ class TrackingScreen(MDScreen):
         self.show_cpm = active
         self.update_graph()
 
+    def on_toggle_game_state(self, active):
+        """Afficher/masquer les bandes idle/paused sur le graphique"""
+        self.show_game_state = active
+        self.update_graph()
+
     #==== GRAPHIQUE =====#
 
     def update_graph(self):
@@ -273,6 +309,18 @@ class TrackingScreen(MDScreen):
         if self.target_zone:
             self.target_zone.remove()
             self.target_zone = None
+
+        # supprimer anciennes bandes idle/paused et redessiner à jour
+        for artist in self.inactive_zone_artists:
+            artist.remove()
+        self.inactive_zone_artists = []
+
+        inactive_segments = self.session.get_inactive_segments() if self.show_game_state else []
+        for start, end in inactive_segments:
+            self.inactive_zone_artists.append(
+                self.ax1.axvspan(start, end, color='#9e9e9e', alpha=0.15, linewidth=0, zorder=0)
+            )
+        self.has_inactive_zone = bool(inactive_segments)
 
         if self.show_target and target_times and target_values:
             target_values = np.array(target_values, dtype=float)
@@ -365,6 +413,10 @@ class TrackingScreen(MDScreen):
             if line is not None and len(line.get_xdata()) > 0 and line.get_visible():
                 lines.append(line)
                 labels.append(plot["label"])
+
+        if self.has_inactive_zone:
+            lines.append(Patch(facecolor='#9e9e9e', alpha=0.3))
+            labels.append("Jeu en pause / non démarré")
 
         # supprimer ancienne légende
         if hasattr(self, "legend") and self.legend:

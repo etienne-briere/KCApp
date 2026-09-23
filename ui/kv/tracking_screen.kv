@@ -215,7 +215,7 @@
                         anchor_x: "center"
                         anchor_y: "center"
                         size_hint_y: None
-                        height: dp(36) if Window.width >= dp(500) else dp(72)
+                        height: dp(36) if Window.width >= dp(500) else dp(108)
 
                         MDBoxLayout:
                             orientation: "horizontal" if Window.width >= dp(500) else "vertical"
@@ -232,6 +232,7 @@
                                 MDCheckbox:
                                     active: root.show_target
                                     on_active: root.on_toggle_target(self.active)
+                                    disabled: root.current_model in root.MODELS_WITHOUT_TARGET
                                     size_hint: None, None
                                     size: dp(30), dp(30)
                                     pos_hint: {"center_y": 0.5}
@@ -239,6 +240,7 @@
                                 MDLabel:
                                     text: "%FC cible"
                                     font_style: "Caption"
+                                    opacity: 0.5 if root.current_model in root.MODELS_WITHOUT_TARGET else 1
                                     adaptive_size: True
                                     pos_hint: {"center_y": 0.5}
 
@@ -257,6 +259,25 @@
 
                                 MDLabel:
                                     text: "Cubes/min"
+                                    font_style: "Caption"
+                                    adaptive_size: True
+                                    pos_hint: {"center_y": 0.5}
+
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: dp(8)
+                                size_hint_x: None
+                                width: self.minimum_width
+
+                                MDCheckbox:
+                                    active: root.show_game_state
+                                    on_active: root.on_toggle_game_state(self.active)
+                                    size_hint: None, None
+                                    size: dp(30), dp(30)
+                                    pos_hint: {"center_y": 0.5}
+
+                                MDLabel:
+                                    text: "État du jeu"
                                     font_style: "Caption"
                                     adaptive_size: True
                                     pos_hint: {"center_y": 0.5}
