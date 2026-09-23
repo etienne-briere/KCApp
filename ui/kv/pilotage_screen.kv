@@ -31,39 +31,39 @@
                 MDCard:
                     orientation: "horizontal"
                     padding: dp(16)
+                    spacing: dp(10)
                     radius: [12]
                     size_hint_y: None
-                    height: dp(90)
+                    height: dp(72)
                     elevation: 0
                     disabled: not root.unity_connected
 
-                    Widget:
-
-                    MDIconButton:
+                    MDRectangleFlatIconButton:
+                        text: "Pause"
                         icon: "pause-circle-outline"
-                        theme_text_color: "Custom"
-                        text_color: app.theme_cls.primary_color
-                        icon_size: "50sp"
+                        size_hint_x: 1
+                        size_hint_y: None
+                        height: dp(48)
                         pos_hint: {"center_y": 0.5}
                         on_release: root.pause_game()
 
-                    MDIconButton:
+                    MDRectangleFlatIconButton:
+                        text: "Reprendre"
                         icon: "play-circle-outline"
-                        theme_text_color: "Custom"
-                        text_color: app.theme_cls.primary_color
-                        icon_size: "50sp"
+                        size_hint_x: 1
+                        size_hint_y: None
+                        height: dp(48)
                         pos_hint: {"center_y": 0.5}
                         on_release: root.resume_game()
 
-                    MDIconButton:
+                    MDRectangleFlatIconButton:
+                        text: "Restart"
                         icon: "restart"
-                        theme_text_color: "Custom"
-                        text_color: app.theme_cls.primary_color
-                        icon_size: "50sp"
+                        size_hint_x: 1
+                        size_hint_y: None
+                        height: dp(48)
                         pos_hint: {"center_y": 0.5}
                         on_release: root.restart_game()
-
-                    Widget:
 
             # ==== MODE DE JEU ====
             MDBoxLayout:
