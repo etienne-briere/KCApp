@@ -193,6 +193,15 @@ class PilotageScreen(MDScreen):
             for name in self.MODEL_ORDER
         ]
         self._model_menu = MDDropdownMenu(caller=caller, items=items, width_mult=4)
+        # Par défaut, un clic en dehors du menu (dismiss) déclenche une
+        # animation de réduction avant de retirer le widget de la Window
+        # (cf. MotionDropDownMenuBehavior.on_dismiss dans KivyMD). Pendant
+        # toute cette animation, le widget reste attaché à la Window et son
+        # on_touch_down intercepte TOUS les clics de l'écran, provoquant des
+        # zones mortes de clic tant qu'elle n'est pas terminée. On force donc
+        # un retrait immédiat (sans animation) dès que le menu est fermé de
+        # cette façon.
+        self._model_menu.bind(on_dismiss=lambda *_: self._close_model_menu())
         self._model_menu.open()
 
     def _close_model_menu(self):

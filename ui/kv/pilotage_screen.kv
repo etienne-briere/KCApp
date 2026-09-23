@@ -116,17 +116,18 @@
                         size_hint_y: None
                         height: dp(48)
 
-                        MDRaisedButton:
+                        MDRectangleFlatIconButton:
                             id: model_selector_button
                             text: root.MODEL_LABELS[root.pending_model]
-                            size_hint_x: 0.6
+                            icon: "menu-swap"
+                            size_hint_x: 0.75
                             size_hint_y: None
                             height: dp(48)
                             on_release: root.open_model_menu(self)
 
                         MDRaisedButton:
                             text: "Appliquer"
-                            size_hint_x: 0.4
+                            size_hint_x: 0.25
                             size_hint_y: None
                             height: dp(48)
                             disabled: root.pending_model == root.selected_model
@@ -158,9 +159,9 @@
 
                     # ---- Options du mode Incrémental ----
                     MDBoxLayout:
-                        orientation: "vertical"
+                        orientation: "horizontal"
                         padding: 0, dp(12), 0, 0
-                        spacing: dp(14)
+                        spacing: dp(10)
                         size_hint_y: None
                         height: self.minimum_height if root.pending_model == "INCREMENTAL" else 0
                         opacity: 1 if root.pending_model == "INCREMENTAL" else 0
@@ -218,47 +219,53 @@
                         opacity: 1 if root.pending_model in ("PID", "DRL") else 0
                         disabled: root.pending_model not in ("PID", "DRL")
 
-                        MDTextField:
-                            id: target_hr_field
-                            text: str(int(root.target_hr))
-                            hint_text: "FC cible (% FCmax)"
-                            icon_left: "target"
-                            mode: "rectangle"
-                            input_filter: "int"
-                            text_color_focus: app.theme_cls.primary_color
-                            hint_text_color_focus: app.theme_cls.primary_color
-                            line_color_focus: app.theme_cls.primary_color
-                            icon_left_color_focus: app.theme_cls.primary_color
-                            on_text_validate: root.on_target_hr_submit(self.text)
-                            on_focus: root.on_target_hr_submit(self.text) if not self.focus else None
+                        MDBoxLayout:
+                            orientation: "horizontal"
+                            spacing: dp(10)
+                            size_hint_y: None
+                            height: self.minimum_height
 
-                        MDTextField:
-                            id: adaptive_min_cpm_field
-                            text: str(int(root.adaptive_min_cpm))
-                            hint_text: "Cpm minimum"
-                            icon_left: "arrow-collapse-down"
-                            mode: "rectangle"
-                            input_filter: "int"
-                            text_color_focus: app.theme_cls.primary_color
-                            hint_text_color_focus: app.theme_cls.primary_color
-                            line_color_focus: app.theme_cls.primary_color
-                            icon_left_color_focus: app.theme_cls.primary_color
-                            on_text_validate: root.on_adaptive_min_cpm_submit(self.text)
-                            on_focus: root.on_adaptive_min_cpm_submit(self.text) if not self.focus else None
+                            MDTextField:
+                                id: target_hr_field
+                                text: str(int(root.target_hr))
+                                hint_text: "FC cible (% FCmax)"
+                                icon_left: "target"
+                                mode: "rectangle"
+                                input_filter: "int"
+                                text_color_focus: app.theme_cls.primary_color
+                                hint_text_color_focus: app.theme_cls.primary_color
+                                line_color_focus: app.theme_cls.primary_color
+                                icon_left_color_focus: app.theme_cls.primary_color
+                                on_text_validate: root.on_target_hr_submit(self.text)
+                                on_focus: root.on_target_hr_submit(self.text) if not self.focus else None
 
-                        MDTextField:
-                            id: adaptive_max_cpm_field
-                            text: str(int(root.adaptive_max_cpm))
-                            hint_text: "Cpm maximum"
-                            icon_left: "arrow-collapse-up"
-                            mode: "rectangle"
-                            input_filter: "int"
-                            text_color_focus: app.theme_cls.primary_color
-                            hint_text_color_focus: app.theme_cls.primary_color
-                            line_color_focus: app.theme_cls.primary_color
-                            icon_left_color_focus: app.theme_cls.primary_color
-                            on_text_validate: root.on_adaptive_max_cpm_submit(self.text)
-                            on_focus: root.on_adaptive_max_cpm_submit(self.text) if not self.focus else None
+                            MDTextField:
+                                id: adaptive_min_cpm_field
+                                text: str(int(root.adaptive_min_cpm))
+                                hint_text: "Cpm minimum"
+                                icon_left: "arrow-collapse-down"
+                                mode: "rectangle"
+                                input_filter: "int"
+                                text_color_focus: app.theme_cls.primary_color
+                                hint_text_color_focus: app.theme_cls.primary_color
+                                line_color_focus: app.theme_cls.primary_color
+                                icon_left_color_focus: app.theme_cls.primary_color
+                                on_text_validate: root.on_adaptive_min_cpm_submit(self.text)
+                                on_focus: root.on_adaptive_min_cpm_submit(self.text) if not self.focus else None
+
+                            MDTextField:
+                                id: adaptive_max_cpm_field
+                                text: str(int(root.adaptive_max_cpm))
+                                hint_text: "Cpm maximum"
+                                icon_left: "arrow-collapse-up"
+                                mode: "rectangle"
+                                input_filter: "int"
+                                text_color_focus: app.theme_cls.primary_color
+                                hint_text_color_focus: app.theme_cls.primary_color
+                                line_color_focus: app.theme_cls.primary_color
+                                icon_left_color_focus: app.theme_cls.primary_color
+                                on_text_validate: root.on_adaptive_max_cpm_submit(self.text)
+                                on_focus: root.on_adaptive_max_cpm_submit(self.text) if not self.focus else None
 
                         MDBoxLayout:
                             orientation: "horizontal"
