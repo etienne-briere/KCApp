@@ -329,7 +329,7 @@
                                 pos: self.pos
                                 size: self.size
 
-                    # ===== %FC Cible choisi ====
+                    # ===== Feedback spécifique au mode de jeu =====
                     AnchorLayout:
                         anchor_x: "center"
                         anchor_y: "center"
@@ -337,22 +337,37 @@
                         MDBoxLayout:
                             orientation: "horizontal"
                             spacing: dp(5)
-                            # size_hint_x: 1
+                            size_hint: None, None
+                            size: self.minimum_size
+                            pos_hint: {"center_x": 0.5, "center_y": 0.5}
 
-                            Widget:
                             MDIcon:
-                                icon: "target"
+                                icon: root.mode_feedback_icon
                                 theme_text_color: "Custom"
                                 text_color: app.theme_cls.primary_color
                                 font_size: "30sp"
+                                size_hint: None, None
+                                size: dp(30), dp(30)
                                 pos_hint: {'center_y': 0.5}
 
-                            # Label
-                            MDLabel:
-                                text: root.hr_target
-                                font_style: "Body1"
-                                halign: "center"
-                            Widget:
+                            MDBoxLayout:
+                                orientation: "vertical"
+                                size_hint: None, None
+                                size: self.minimum_size
+                                pos_hint: {"center_y": 0.5}
+
+                                MDLabel:
+                                    text: root.mode_feedback_text
+                                    font_style: "Body1"
+                                    halign: "center"
+                                    adaptive_size: True
+
+                                MDLabel:
+                                    text: root.mode_feedback_subtext
+                                    font_style: "Caption"
+                                    theme_text_color: "Secondary"
+                                    halign: "center"
+                                    adaptive_size: True
 
                     # ==== Séparateur ====
                     Widget:

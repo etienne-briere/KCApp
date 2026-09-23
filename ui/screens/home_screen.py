@@ -34,8 +34,12 @@ class HomeScreen(MDScreen):
     hr_sensor_name = StringProperty("")
     heart_rate_text = StringProperty("--")
     selected_model = StringProperty("Unknown")
-    hr_target = StringProperty("Unknown")
     age_user = StringProperty("Unknown")
+    # Feedback spécifique au mode de jeu en cours (voir _update_mode_feedback) :
+    # cpm en Fixe, paliers + plage cpm en Incrémental, %FC cible en PID/DRL.
+    mode_feedback_icon = StringProperty("target")
+    mode_feedback_text = StringProperty("Unknown")
+    mode_feedback_subtext = StringProperty("")
     player_name = StringProperty("")
     game_state = StringProperty("Idle")
     game_state_fg = ListProperty(_GAME_STATE_DEFAULT_COLOR["fg"])
@@ -78,7 +82,7 @@ class HomeScreen(MDScreen):
         if self.unity_connected :
             self.selected_model = self.session.config.model
             self.age_user = str(self.session.user_profile.age)
-            self.hr_target = f"{self.session.config.target_hr_percent} %"
+            self._update_mode_feedback(self.session.config)
             self.player_name = self.session.user_profile.name
             self._set_game_state(self.session.game_state)
             self._refresh_session_remaining()
@@ -141,7 +145,7 @@ class HomeScreen(MDScreen):
          # Mise à jour UI
         self.selected_model = session.config.model
         self.age_user = str(session.user_profile.age)
-        self.hr_target = f"{session.config.target_hr_percent} %"
+        self._update_mode_feedback(session.config)
         self.player_name = session.user_profile.name
         self._set_game_state(session.game_state)
         self._refresh_session_remaining()
@@ -153,6 +157,43 @@ class HomeScreen(MDScreen):
         colors = _GAME_STATE_COLORS.get(raw_state.lower(), _GAME_STATE_DEFAULT_COLOR)
         self.game_state_fg = colors["fg"]
         self.game_state_bg = colors["bg"]
+
+    def _update_mode_feedback(self, config):
+        """
+        Met à jour l'icône/texte affichés dans la card "Session en cours"
+        selon le mode de jeu : cpm en Fixe, paliers + plage cpm en
+        Incrémental, %FC cible + plage cpm adaptative en PID/DRL (seuls
+        modes où Unity reçoit réellement une cible FC).
+        """
+        model = config.model
+        self.mode_feedback_subtext = ""
+
+        if model == "FIXE":
+            self.mode_feedback_icon = "speedometer"
+            cpm = config.cube_per_min
+            self.mode_feedback_text = f"{int(cpm)} cpm" if cpm is not None else "-- cpm"
+
+        elif model == "INCREMENTAL":
+            self.mode_feedback_icon = "stairs"
+            steps = config.incremental_steps
+            min_cpm = config.incremental_min_cpm
+            max_cpm = config.incremental_max_cpm
+
+            # L'icône "stairs" porte déjà le sens de "paliers" — pas besoin
+            # de le répéter en toutes lettres, juste le nombre.
+            self.mode_feedback_text = str(int(steps)) if steps is not None else "--"
+            if min_cpm is not None and max_cpm is not None:
+                self.mode_feedback_subtext = f"{int(min_cpm)}-{int(max_cpm)} cpm"
+
+        else:
+            self.mode_feedback_icon = "target"
+            target = config.target_hr_percent
+            self.mode_feedback_text = f"{int(target)} %" if target is not None else "Unknown"
+
+            min_cpm = config.adaptive_min_cpm
+            max_cpm = config.adaptive_max_cpm
+            if min_cpm is not None and max_cpm is not None:
+                self.mode_feedback_subtext = f"{int(min_cpm)}-{int(max_cpm)} cpm"
 
     def _refresh_session_remaining(self, *_):
         """
