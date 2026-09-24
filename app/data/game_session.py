@@ -129,7 +129,7 @@ class GameSession:
 
         # Initialisation des états
         self.is_recording = False
-        self.game_state = "idle"
+        self.game_state = "menu"  # le jeu démarre toujours sur l'écran Menu
         self.start_time = None
 
         # Ancrage du décompte du temps de session restant (voir
@@ -188,7 +188,10 @@ class GameSession:
         elif state == "paused" and previous != "paused":
             self._paused_at = time.time()
 
-        elif state == "idle":
+        elif state in ("idle", "menu"):
+            # "menu" : le joueur n'est pas (encore) dans la scène de jeu —
+            # traité comme "idle" pour l'ancrage du décompte (nouvelle
+            # session en attente de démarrage).
             self.playing_anchor = None
             self.paused_accum = 0.0
             self._paused_at = None
@@ -207,7 +210,7 @@ class GameSession:
         if state == "playing" and duration is not None and self.playing_anchor is not None:
             elapsed = time.time() - self.playing_anchor - self.paused_accum
             return max(0, duration - elapsed)
-        if state == "idle":
+        if state in ("idle", "menu"):
             return duration
         return None
 

@@ -12,12 +12,14 @@ from app.network.connectivity import is_wifi_enabled, get_wifi_ssid
 
 logger = get_logger(__name__)
 
-# Couleurs du badge d'état de partie (mêmes valeurs que GREEN/AMBER/GRAY
+# Couleurs du badge d'état de partie (mêmes valeurs que GREEN/AMBER/BLUE
 # _FG/_BG dans status_bar.kv) — calculées ici plutôt qu'avec un ternaire en
 # kv sur root.game_state.lower(), qui ne se rebindait pas de façon fiable.
 _GAME_STATE_COLORS = {
     "playing": {"fg": (0.176, 0.490, 0.196, 1), "bg": (0.906, 0.961, 0.914, 1)},
     "paused": {"fg": (0.780, 0.518, 0.047, 1), "bg": (1, 0.976, 0.882, 1)},
+    # "Menu" : le joueur est connecté mais pas encore dans la scène de jeu.
+    "menu": {"fg": (0.098, 0.463, 0.824, 1), "bg": (0.890, 0.949, 0.992, 1)},
 }
 _GAME_STATE_DEFAULT_COLOR = {"fg": (0.459, 0.459, 0.459, 1), "bg": (0.925, 0.925, 0.925, 1)}
 
@@ -47,7 +49,7 @@ class HomeScreen(MDScreen):
     # hauteur jamais recalculée). Ne pas remettre "" ici.
     mode_feedback_subtext = StringProperty("Unknown")
     player_name = StringProperty("")
-    game_state = StringProperty("Idle")
+    game_state = StringProperty("Menu")
     game_state_fg = ListProperty(_GAME_STATE_DEFAULT_COLOR["fg"])
     game_state_bg = ListProperty(_GAME_STATE_DEFAULT_COLOR["bg"])
     session_remaining_text = StringProperty("--:--")

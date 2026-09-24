@@ -45,6 +45,7 @@ class PilotageScreen(MDScreen):
     warmup_duration = NumericProperty(90) # modes PID/DRL : durée du warmup (s)
     require_hr_signal = BooleanProperty(False) # modes Fixe/Incrémental : signal FC requis
     player_name = StringProperty("") # nom du profil joueur actif
+    game_state = StringProperty("Menu") # état de partie reçu de Unity (Menu/Idle/Playing/Paused)
 
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
@@ -58,6 +59,7 @@ class PilotageScreen(MDScreen):
         self.player_store = app.player_store
 
         self.player_name = self.session.user_profile.name
+        self.game_state = self.session.game_state.capitalize()
 
         # Vérifier la connexion Unity (au cas où on arrive dans l'écran après la connexion)
         self.unity_connected = self.udp_discovery.is_unity_connected()
@@ -128,6 +130,7 @@ class PilotageScreen(MDScreen):
     def on_session_updated(self, session):
          # Mise à jour UI
         self.player_name = session.user_profile.name
+        self.game_state = session.game_state.capitalize()
         if session.config.target_hr_percent is not None:
             self.target_hr = session.config.target_hr_percent
         if session.config.obs_enabled is not None:
