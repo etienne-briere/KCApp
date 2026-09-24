@@ -40,6 +40,6 @@
     
     MDIcon:
         id: unity_icon
-        icon: "unity" if root.unity_connected else "lan-disconnect"
+        icon: "lan-connect" if root.unity_connected else "lan-disconnect"
         theme_text_color: "Custom"
         text_color: GREEN_FG if root.unity_connected else (1, 0, 0, 1)

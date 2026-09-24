@@ -157,7 +157,7 @@
                         radius: [dp(12), 0, 0, dp(12)]
 
                 MDIcon:
-                    icon: "unity" if root.unity_connected else "lan-disconnect"
+                    icon: "lan-connect" if root.unity_connected else "lan-disconnect"
                     theme_text_color: "Custom"
                     text_color: GREEN_FG if root.unity_connected else RED_FG
                     font_size: "40sp"
