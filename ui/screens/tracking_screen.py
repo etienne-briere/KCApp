@@ -485,18 +485,19 @@ class TrackingScreen(MDScreen):
         self.ax1.set_ylim(0, 100)
         self.fig.canvas.draw_idle()
 
-    def export_session(self):
-        """Exporte la session en cours en CSV, sans la réinitialiser"""
-        path = self.session.export_csv(
-            include_target=self.show_target,
-            include_cpm=self.show_cpm,
-            include_state=self.show_game_state,
-        )
-
-        if path:
-            toast(f"Session exportée : {path}")
-        else:
-            toast("Aucune donnée à exporter")
+    # Export désactivé pour la version Android (voir game_session.py)
+    # def export_session(self):
+    #     """Exporte la session en cours en CSV, sans la réinitialiser"""
+    #     path = self.session.export_csv(
+    #         include_target=self.show_target,
+    #         include_cpm=self.show_cpm,
+    #         include_state=self.show_game_state,
+    #     )
+    #
+    #     if path:
+    #         toast(f"Session exportée : {path}")
+    #     else:
+    #         toast("Aucune donnée à exporter")
 
     # ========== SESSIONS EN ATTENTE D'EXPORT/SUPPRESSION ==========
 
@@ -510,7 +511,7 @@ class TrackingScreen(MDScreen):
         row = SessionRow(
             record=record,
             delete_callback=self._delete_pending_session,
-            export_callback=self._export_pending_session,
+            # export_callback=self._export_pending_session,  # Export désactivé pour la version Android
         )
         self.ids.pending_sessions_list.add_widget(row)
         self.has_pending_sessions = True
@@ -526,12 +527,13 @@ class TrackingScreen(MDScreen):
         self._remove_session_row(row)
         toast("Session supprimée")
 
-    def _export_pending_session(self, row):
-        """Exporte une session en attente en CSV, puis la retire de la liste"""
-        path = row.record.export_csv(
-            include_target=self.show_target,
-            include_cpm=self.show_cpm,
-            include_state=self.show_game_state,
-        )
-        toast(f"Session exportée : {path}")
-        self._remove_session_row(row)
+    # Export désactivé pour la version Android (voir game_session.py)
+    # def _export_pending_session(self, row):
+    #     """Exporte une session en attente en CSV, puis la retire de la liste"""
+    #     path = row.record.export_csv(
+    #         include_target=self.show_target,
+    #         include_cpm=self.show_cpm,
+    #         include_state=self.show_game_state,
+    #     )
+    #     toast(f"Session exportée : {path}")
+    #     self._remove_session_row(row)

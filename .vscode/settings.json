@@ -1,4 +1,5 @@
 {
     "simcode.androidhome": "C:\\Users\\etien\\AppData\\Local\\Android\\Sdk",
-    "materialkv.pythonFile": "main.py"
+    "materialkv.pythonFile": "main.py",
+    "python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe"
 }

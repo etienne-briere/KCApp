@@ -44,79 +44,80 @@ class SessionRecord:
         self.model = model
         self.duration = duration
 
-    def export_csv(self, folder: str = SESSIONS_DIR,
-                    include_target: bool = True, include_cpm: bool = True,
-                    include_state: bool = True) -> str:
-        """
-        Écrit le CSV sur disque : une ligne par mesure de FC (la métrique
-        la plus dense), avec la %FC cible, les cubes/min et l'état de
-        partie (idle/playing/paused) reportés à leur dernière valeur
-        connue à cet instant (aucune valeur interpolée/inventée entre
-        deux mesures réelles).
-
-        include_target / include_cpm / include_state : n'inclut la colonne
-        correspondante que si demandé — pour target/cpm ça reflète les
-        cases à cocher du graphique au moment de l'export.
-
-        Returns:
-            str: chemin du fichier créé
-        """
-        os.makedirs(folder, exist_ok=True)
-        path = os.path.join(folder, self.filename)
-
-        with open(path, "w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow(["# Date", self.timestamp])
-            writer.writerow(["# Âge patient", self.age])
-            writer.writerow(["# FCmax estimée (bpm)", round(self.hr_max, 1)])
-            writer.writerow(["# Modèle de jeu", self.model])
-            writer.writerow(["# Durée (s)", round(self.duration, 1)])
-            writer.writerow([])
-
-            header = ["temps_s", "bpm", "fcmax_pct"]
-            if include_target:
-                header.append("cible_pct")
-            if include_cpm:
-                header.append("cpm")
-            if include_state:
-                header.append("etat")
-            writer.writerow(header)
-
-            target_idx = 0
-            cpm_idx = 0
-            state_idx = 0
-            last_target = ""
-            last_cpm = ""
-            last_state = ""
-
-            for t, bpm, pct in zip(self.hr_times, self.hr_values, self.hrmax_values):
-                # Avancer chaque curseur jusqu'à la dernière valeur connue au temps t
-                if include_target:
-                    while target_idx < len(self.target_times) and self.target_times[target_idx] <= t:
-                        last_target = self.target_values[target_idx]
-                        target_idx += 1
-
-                if include_cpm:
-                    while cpm_idx < len(self.cpm_times) and self.cpm_times[cpm_idx] <= t:
-                        last_cpm = self.cpm_values[cpm_idx]
-                        cpm_idx += 1
-
-                if include_state:
-                    while state_idx < len(self.state_times) and self.state_times[state_idx] <= t:
-                        last_state = self.state_values[state_idx]
-                        state_idx += 1
-
-                row = [round(t, 2), bpm, round(pct, 1) if pct is not None else ""]
-                if include_target:
-                    row.append(last_target)
-                if include_cpm:
-                    row.append(last_cpm)
-                if include_state:
-                    row.append(last_state)
-                writer.writerow(row)
-
-        logger.info(f"💾 Session exportée : {path}")
-        return path
+    # Export désactivé pour la version Android
+    # def export_csv(self, folder: str = SESSIONS_DIR,
+    #                 include_target: bool = True, include_cpm: bool = True,
+    #                 include_state: bool = True) -> str:
+    #     """
+    #     Écrit le CSV sur disque : une ligne par mesure de FC (la métrique
+    #     la plus dense), avec la %FC cible, les cubes/min et l'état de
+    #     partie (idle/playing/paused) reportés à leur dernière valeur
+    #     connue à cet instant (aucune valeur interpolée/inventée entre
+    #     deux mesures réelles).
+    #
+    #     include_target / include_cpm / include_state : n'inclut la colonne
+    #     correspondante que si demandé — pour target/cpm ça reflète les
+    #     cases à cocher du graphique au moment de l'export.
+    #
+    #     Returns:
+    #         str: chemin du fichier créé
+    #     """
+    #     os.makedirs(folder, exist_ok=True)
+    #     path = os.path.join(folder, self.filename)
+    #
+    #     with open(path, "w", newline="", encoding="utf-8") as f:
+    #         writer = csv.writer(f)
+    #         writer.writerow(["# Date", self.timestamp])
+    #         writer.writerow(["# Âge patient", self.age])
+    #         writer.writerow(["# FCmax estimée (bpm)", round(self.hr_max, 1)])
+    #         writer.writerow(["# Modèle de jeu", self.model])
+    #         writer.writerow(["# Durée (s)", round(self.duration, 1)])
+    #         writer.writerow([])
+    #
+    #         header = ["temps_s", "bpm", "fcmax_pct"]
+    #         if include_target:
+    #             header.append("cible_pct")
+    #         if include_cpm:
+    #             header.append("cpm")
+    #         if include_state:
+    #             header.append("etat")
+    #         writer.writerow(header)
+    #
+    #         target_idx = 0
+    #         cpm_idx = 0
+    #         state_idx = 0
+    #         last_target = ""
+    #         last_cpm = ""
+    #         last_state = ""
+    #
+    #         for t, bpm, pct in zip(self.hr_times, self.hr_values, self.hrmax_values):
+    #             # Avancer chaque curseur jusqu'à la dernière valeur connue au temps t
+    #             if include_target:
+    #                 while target_idx < len(self.target_times) and self.target_times[target_idx] <= t:
+    #                     last_target = self.target_values[target_idx]
+    #                     target_idx += 1
+    #
+    #             if include_cpm:
+    #                 while cpm_idx < len(self.cpm_times) and self.cpm_times[cpm_idx] <= t:
+    #                     last_cpm = self.cpm_values[cpm_idx]
+    #                     cpm_idx += 1
+    #
+    #             if include_state:
+    #                 while state_idx < len(self.state_times) and self.state_times[state_idx] <= t:
+    #                     last_state = self.state_values[state_idx]
+    #                     state_idx += 1
+    #
+    #             row = [round(t, 2), bpm, round(pct, 1) if pct is not None else ""]
+    #             if include_target:
+    #                 row.append(last_target)
+    #             if include_cpm:
+    #                 row.append(last_cpm)
+    #             if include_state:
+    #                 row.append(last_state)
+    #             writer.writerow(row)
+    #
+    #     logger.info(f"💾 Session exportée : {path}")
+    #     return path
 
 
 class GameSession:
@@ -333,20 +334,21 @@ class GameSession:
             state_values=state_values,
         )
 
-    def export_csv(self, folder: str = SESSIONS_DIR,
-                    include_target: bool = True, include_cpm: bool = True,
-                    include_state: bool = True):
-        """
-        Exporte immédiatement la session en cours (sans la réinitialiser
-        ni l'archiver dans pending_sessions).
-
-        Returns:
-            str: chemin du fichier créé, ou None si aucune donnée de FC
-        """
-        record = self.snapshot()
-        if not record:
-            logger.info("📊 Aucune donnée de FC à exporter")
-            return None
-
-        return record.export_csv(folder, include_target=include_target, include_cpm=include_cpm,
-                                  include_state=include_state)
+    # Export désactivé pour la version Android
+    # def export_csv(self, folder: str = SESSIONS_DIR,
+    #                 include_target: bool = True, include_cpm: bool = True,
+    #                 include_state: bool = True):
+    #     """
+    #     Exporte immédiatement la session en cours (sans la réinitialiser
+    #     ni l'archiver dans pending_sessions).
+    #
+    #     Returns:
+    #         str: chemin du fichier créé, ou None si aucune donnée de FC
+    #     """
+    #     record = self.snapshot()
+    #     if not record:
+    #         logger.info("📊 Aucune donnée de FC à exporter")
+    #         return None
+    #
+    #     return record.export_csv(folder, include_target=include_target, include_cpm=include_cpm,
+    #                               include_state=include_state)
