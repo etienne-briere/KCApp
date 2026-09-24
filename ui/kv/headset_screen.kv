@@ -1,6 +1,5 @@
 #:kivy 2.0
 #:import dp kivy.metrics.dp
-#:import Window kivy.core.window.Window
 
 <HeadsetScreen>:
 
@@ -64,80 +63,85 @@
                     pos_hint: {"center_y": 0.5}
                     on_release: root.afficher_info_casque()
 
-            # ==== CONNEXION ET PRÉPARATION ====
-            MDBoxLayout:
+            # ==== Détection et préparation du casque ====
+            MDCard:
                 orientation: "vertical"
-                spacing: dp(8)
+                padding: dp(16)
+                radius: [12]
+                spacing: dp(15)
                 size_hint_y: None
                 height: self.minimum_height
+                elevation: 0
 
-                MDLabel:
-                    text: "CONNEXION ET PRÉPARATION"
-                    font_style: "Overline"
-                    theme_text_color: "Secondary"
-                    halign: "left"
-                    padding: dp(16), 0
-                    adaptive_size: True
-
-                MDCard:
-                    orientation: "vertical"
-                    padding: dp(16)
-                    radius: [12]
-                    spacing: dp(15)
+                # ---- Détection du casque (titre à gauche, action à droite) ----
+                MDBoxLayout:
+                    orientation: "horizontal"
+                    spacing: dp(10)
                     size_hint_y: None
-                    height: self.minimum_height
-                    elevation: 0
+                    height: dp(50)
 
-                    MDBoxLayout:
-                        orientation: "horizontal" if Window.width >= dp(600) else "vertical"
-                        spacing: dp(10)
-                        size_hint_y: None
-                        height: dp(48) if Window.width >= dp(600) else self.minimum_height
+                    MDIcon:
+                        icon: "headset"
+                        theme_text_color: "Custom"
+                        text_color: app.theme_cls.primary_color
+                        font_size: "30sp"
+                        size_hint: None, None
+                        size: dp(50), dp(50)
+                        pos_hint: {"center_y": 0.5}
 
-                        MDIconButton:
-                            icon: "magnify"
-                            theme_text_color: "Custom"
-                            text_color: "grey"
-                            size_hint: None, None
-                            size: dp(48), dp(48)
-                            pos_hint: {"center_x": 0.5}
-                            disabled: root.casque_en_cours
-                            on_release: root.detecter_casque()
+                    MDLabel:
+                        text: "Détection du casque"
+                        font_style: "Body1"
+                        halign: "left"
+                        valign: "center"
 
-                        MDTextField:
-                            id: casque_ip_field
-                            hint_text: "Adresse IP du casque"
-                            text: root.casque_ip
-                            on_text: root.on_casque_ip_change(self.text)
-                            size_hint_x: 1 if Window.width < dp(600) else 0.45
-                            disabled: root.casque_en_cours
+                    MDIconButton:
+                        icon: "magnify"
+                        theme_text_color: "Custom"
+                        text_color: "grey"
+                        size_hint: None, None
+                        size: dp(48), dp(48)
+                        pos_hint: {"center_y": 0.5}
+                        disabled: root.casque_en_cours
+                        on_release: root.detecter_casque()
 
-                        MDRaisedButton:
-                            text: "Préparation..." if root.casque_en_cours else "Préparer le casque"
-                            disabled: root.casque_en_cours
-                            size_hint_x: 1 if Window.width < dp(600) else 0.4
-                            size_hint_y: None
-                            height: dp(48)
-                            pos_hint: {"center_x": 0.5, "center_y": 0.5}
-                            on_release: root.preparer_casque()
+                # ---- Adresse IP (auto-remplie si détectée, sinon manuelle) ----
+                MDTextField:
+                    id: casque_ip_field
+                    hint_text: "Adresse IP du casque"
+                    icon_left: "ip-network-outline"
+                    mode: "rectangle"
+                    text: root.casque_ip
+                    on_text: root.on_casque_ip_change(self.text)
+                    disabled: root.casque_en_cours
 
-                    MDBoxLayout:
-                        orientation: "horizontal"
-                        spacing: dp(10)
-                        size_hint_y: None
-                        height: dp(36)
+                # ---- Alerte de zone (juste au-dessus de Préparer : s'applique au même moment) ----
+                MDBoxLayout:
+                    orientation: "horizontal"
+                    spacing: dp(10)
+                    size_hint_y: None
+                    height: dp(36)
 
-                        MDCheckbox:
-                            id: limite_switch
-                            active: root.casque_limite_active
-                            disabled: root.casque_en_cours
-                            on_active: root.on_toggle_limite(self.active)
-                            size_hint: None, None
-                            size: dp(36), dp(36)
-                            pos_hint: {"center_y": 0.5}
+                    MDCheckbox:
+                        id: limite_switch
+                        active: root.casque_limite_active
+                        disabled: root.casque_en_cours
+                        on_active: root.on_toggle_limite(self.active)
+                        size_hint: None, None
+                        size: dp(36), dp(36)
+                        pos_hint: {"center_y": 0.5}
 
-                        MDLabel:
-                            text: "Alerte de zone activée (recommandé)" if root.casque_limite_active else "Alerte de zone désactivée — dérogation"
-                            font_style: "Caption"
-                            halign: "left"
-                            valign: "center"
+                    MDLabel:
+                        text: "Alerte de zone activée (recommandé)" if root.casque_limite_active else "Alerte de zone désactivée — dérogation"
+                        font_style: "Caption"
+                        halign: "left"
+                        valign: "center"
+
+                # ---- Préparer le casque (actif dès qu'une IP est renseignée) ----
+                MDRaisedButton:
+                    text: "Préparation..." if root.casque_en_cours else "Préparer le casque"
+                    disabled: root.casque_en_cours or not root.casque_ip.strip()
+                    size_hint_x: 1
+                    size_hint_y: None
+                    height: dp(48)
+                    on_release: root.preparer_casque()
