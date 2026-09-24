@@ -445,14 +445,31 @@
                         size_hint_y: None
                         height: self.minimum_height
     
-                        MDLabel:
-                            text: "OPTIONS ENREGISTRÉES"
-                            font_style: "Overline"
-                            theme_text_color: "Secondary"
-                            halign: "left"
-                            padding: dp(16), 0
-                            adaptive_size: True
-    
+                        MDBoxLayout:
+                            orientation: "horizontal"
+                            spacing: dp(4)
+                            size_hint_y: None
+                            height: self.minimum_height
+
+                            MDLabel:
+                                text: "OPTIONS ENREGISTRÉES"
+                                font_style: "Overline"
+                                theme_text_color: "Secondary"
+                                halign: "left"
+                                padding: dp(16), 0
+                                adaptive_size: True
+
+
+                            MDRectangleFlatButton:
+                                text: "Rafraîchir les options"
+                                theme_text_color: "Custom"
+                                text_color: app.theme_cls.primary_color
+                                line_color: app.theme_cls.primary_color
+                                font_size: "10sp"
+                                _min_height: dp(15)
+                                padding: dp(6), 0
+                                on_release: root.refresh_config()
+
                         MDCard:
                             orientation: "vertical"
                             padding: dp(10), dp(4), dp(16), dp(16)

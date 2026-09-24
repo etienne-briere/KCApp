@@ -130,6 +130,10 @@ class UDPController:
         """Paramètre la vitesse des briques (tous modes)"""
         return self.send_command("brickSpeed", str(speed))
 
+    def request_config_refresh(self) -> bool:
+        """Demande à Unity de renvoyer l'ensemble de ses réglages actuels"""
+        return self.send_command("requestConfig", "true")
+
     def set_stream_game(self, command: str)-> bool:
         """Activation/Désactivation du stream de l'écran du jeux"""
         return self.send_command("stream_game", command)

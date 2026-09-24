@@ -271,6 +271,13 @@ class HomeScreen(MDScreen):
         app.udp_discovery.force_reconnect()
         self.unity_connected = False
 
+    def refresh_config(self):
+        """Redemande à Unity de renvoyer l'ensemble de ses réglages actuels"""
+        if self.udp_controller:
+            success = self.udp_controller.request_config_refresh()
+            if not success:
+                toast("❌ Échec de la demande de synchronisation")
+
     # ===== Actions rapides du jeu (sécurité pendant la session) =====
     def pause_game(self):
         """Met le jeu en pause"""
