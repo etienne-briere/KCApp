@@ -18,6 +18,7 @@ class PlayerProfileScreen(MDScreen):
     """Écran de gestion du profil joueur (nom, âge) accessible depuis le menu Contrôle"""
 
     unity_connected = BooleanProperty(False) # connexion Unity
+    game_state = StringProperty("Menu") # état de partie reçu de Unity (Menu/Ready/Playing/Paused/Finished)
     player_name = StringProperty("") # nom du profil actif (affiché sur le sélecteur)
     player_age = StringProperty("") # âge du profil actif (affiché sous le sélecteur)
 
@@ -46,6 +47,7 @@ class PlayerProfileScreen(MDScreen):
         self.player_store = app.player_store
 
         self.unity_connected = self.udp_discovery.is_unity_connected()
+        self.game_state = self.session.game_state.capitalize()
         self._sync_active_profile(self.session.user_profile)
 
         event_bus.subscribe("session_updated", self.on_session_updated)
@@ -74,6 +76,7 @@ class PlayerProfileScreen(MDScreen):
         self._close_player_menu()
 
     def on_session_updated(self, session):
+        self.game_state = session.game_state.capitalize()
         self._sync_active_profile(session.user_profile)
 
     @mainthread
