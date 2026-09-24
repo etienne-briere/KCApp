@@ -45,7 +45,7 @@ class PilotageScreen(MDScreen):
     warmup_duration = NumericProperty(90) # modes PID/DRL : durée du warmup (s)
     require_hr_signal = BooleanProperty(False) # modes Fixe/Incrémental : signal FC requis
     player_name = StringProperty("") # nom du profil joueur actif
-    game_state = StringProperty("Menu") # état de partie reçu de Unity (Menu/Idle/Playing/Paused)
+    game_state = StringProperty("Menu") # état de partie reçu de Unity (Menu/Ready/Playing/Paused/Finished)
 
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""

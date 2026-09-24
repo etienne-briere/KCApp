@@ -129,7 +129,7 @@ class GameSession:
 
         # Initialisation des états
         self.is_recording = False
-        self.game_state = "menu"  # le jeu démarre toujours sur l'écran Menu
+        self.game_state = "disconnected"  # Unity pas encore connecté au lancement de l'app
         self.start_time = None
 
         # Ancrage du décompte du temps de session restant (voir
@@ -162,8 +162,8 @@ class GameSession:
         transitions reste correct même si aucun écran n'affiche la session
         à cet instant.
         """
-        state = (raw_state or "idle").lower()
-        previous = (self.game_state or "idle").lower()
+        state = (raw_state or "menu").lower()
+        previous = (self.game_state or "menu").lower()
 
         if state != previous:
             self._close_current_segment()
@@ -188,15 +188,19 @@ class GameSession:
         elif state == "paused" and previous != "paused":
             self._paused_at = time.time()
 
-        elif state in ("idle", "menu"):
-            # "menu" : le joueur n'est pas (encore) dans la scène de jeu —
-            # traité comme "idle" pour l'ancrage du décompte (nouvelle
-            # session en attente de démarrage).
+        elif state in ("menu", "ready", "finished", "disconnected"):
+            # "menu" : le joueur n'est pas (encore) dans la scène de jeu.
+            # "ready" : dans la scène de jeu, session pas encore démarrée.
+            # "finished" : la session vient de se terminer.
+            # "disconnected" : Unity n'est plus joignable (posé localement,
+            # pas envoyé par Unity — voir udp_discovery.py).
+            # Dans tous les cas, aucune partie n'est en cours : on
+            # réinitialise l'ancrage du décompte pour la prochaine session.
             self.playing_anchor = None
             self.paused_accum = 0.0
             self._paused_at = None
 
-        self.game_state = raw_state or "idle"
+        self.game_state = raw_state or "menu"
 
     def get_remaining_seconds(self):
         """
@@ -205,13 +209,15 @@ class GameSession:
         doit conserver la dernière valeur affichée plutôt que d'afficher 0).
         """
         duration = self.config.session_duration
-        state = (self.game_state or "idle").lower()
+        state = (self.game_state or "menu").lower()
 
         if state == "playing" and duration is not None and self.playing_anchor is not None:
             elapsed = time.time() - self.playing_anchor - self.paused_accum
             return max(0, duration - elapsed)
-        if state in ("idle", "menu"):
+        if state in ("menu", "ready", "disconnected"):
             return duration
+        if state == "finished":
+            return 0
         return None
 
     def _close_current_segment(self):
@@ -235,10 +241,11 @@ class GameSession:
 
     def get_inactive_segments(self):
         """
-        Segments (début_s, fin_s) où l'état n'était pas "playing" (idle ou
-        paused), en secondes relatives à start_time — pour l'affichage de
-        bandes sur le graphique FC. Le segment en cours, s'il y en a un,
-        est fermé sur l'instant présent (pas encore de "end" enregistré).
+        Segments (début_s, fin_s, état) où l'état n'était pas "playing"
+        (menu, ready, paused, finished...), en secondes relatives à
+        start_time — pour l'affichage de bandes colorées par état sur le
+        graphique FC. Le segment en cours, s'il y en a un, est fermé sur
+        l'instant présent (pas encore de "end" enregistré).
         """
         if self.start_time is None:
             return []
@@ -249,7 +256,7 @@ class GameSession:
             if seg["state"] == "playing":
                 continue
             end = seg["end"] if seg["end"] is not None else now
-            segments.append((seg["start"], end))
+            segments.append((seg["start"], end, seg["state"]))
         return segments
 
     def get_state_history(self):

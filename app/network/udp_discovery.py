@@ -405,6 +405,11 @@ class UDPDiscovery:
                 self.ip_unity = None  # Reset pour éviter les appels multiples
                 logger.warning("⚠️ Unity déconnecté (timeout ping)")
 
+                # Distinct de "menu" : le jeu n'est plus joignable du tout
+                # (déconnecté), pas juste dans son écran de menu.
+                session = App.get_running_app().session
+                session.set_game_state("disconnected")
+
                 # Renvoyer l'IP pour reconnecter
                 self._start_ip_broadcast()
 
@@ -412,6 +417,7 @@ class UDPDiscovery:
                     "connected": False,
                     "ip": None
                 })
+                event_bus.emit("session_updated", session)
         
      # ========== ENVOI DE MESSAGES ==========
     

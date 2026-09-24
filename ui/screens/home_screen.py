@@ -12,14 +12,34 @@ from app.network.connectivity import is_wifi_enabled, get_wifi_ssid
 
 logger = get_logger(__name__)
 
-# Couleurs du badge d'état de partie (mêmes valeurs que GREEN/AMBER/BLUE
-# _FG/_BG dans status_bar.kv) — calculées ici plutôt qu'avec un ternaire en
-# kv sur root.game_state.lower(), qui ne se rebindait pas de façon fiable.
+# Traduction française des états de partie envoyés par Unity (bannière Home).
+# "disconnected" n'est pas envoyé par Unity : posé localement dès qu'Unity
+# n'est plus joignable (voir udp_discovery.py/_check_unity_connection), pour
+# le distinguer de "menu" dans le badge, le graphique et l'export CSV.
+_GAME_STATE_LABELS = {
+    "menu": "Menu",
+    "ready": "Prêt",
+    "playing": "En cours",
+    "paused": "En pause",
+    "finished": "Terminé",
+    "disconnected": "Jeu déconnecté",
+}
+
+# Couleurs du badge d'état de partie (mêmes valeurs que GREEN/AMBER/BLUE/
+# PURPLE/RED _FG/_BG dans status_bar.kv) — calculées ici plutôt qu'avec un
+# ternaire en kv sur root.game_state.lower(), qui ne se rebindait pas de
+# façon fiable. "ready" n'a pas d'entrée dédiée : il retombe sur le gris
+# par défaut (état neutre, en attente).
 _GAME_STATE_COLORS = {
     "playing": {"fg": (0.176, 0.490, 0.196, 1), "bg": (0.906, 0.961, 0.914, 1)},
     "paused": {"fg": (0.780, 0.518, 0.047, 1), "bg": (1, 0.976, 0.882, 1)},
     # "Menu" : le joueur est connecté mais pas encore dans la scène de jeu.
     "menu": {"fg": (0.098, 0.463, 0.824, 1), "bg": (0.890, 0.949, 0.992, 1)},
+    # "Finished" : la session est terminée.
+    "finished": {"fg": (0.482, 0.122, 0.635, 1), "bg": (0.953, 0.898, 0.961, 1)},
+    # "Jeu déconnecté" : mêmes couleurs que les autres indicateurs de
+    # déconnexion de l'app (RED_FG/RED_BG dans status_bar.kv).
+    "disconnected": {"fg": (0.776, 0.157, 0.157, 1), "bg": (0.988, 0.910, 0.906, 1)},
 }
 _GAME_STATE_DEFAULT_COLOR = {"fg": (0.459, 0.459, 0.459, 1), "bg": (0.925, 0.925, 0.925, 1)}
 
@@ -87,12 +107,19 @@ class HomeScreen(MDScreen):
             self.hr_data_sent = status_bar.hr_data_sent
         connected_device = app.ble_manager.connected_device
         self.hr_sensor_name = (connected_device.name or connected_device.address) if connected_device else ""
+
+        # Reflète l'état de partie réel même hors connexion (ex.
+        # "disconnected" posé par GameSession dès le lancement de l'app, ou
+        # après une coupure) — la section "Session en cours" masque de toute
+        # façon ce badge tant qu'Unity n'est pas connecté, mais on garde la
+        # propriété correcte au cas où.
+        self._set_game_state(self.session.game_state)
+
         if self.unity_connected :
             self.selected_model = self.session.config.model
             self.age_user = str(self.session.user_profile.age)
             self._update_mode_feedback(self.session.config)
             self.player_name = self.session.user_profile.name
-            self._set_game_state(self.session.game_state)
             self._refresh_session_remaining()
 
         # S'abonner pour écouter les eventbus
@@ -159,10 +186,11 @@ class HomeScreen(MDScreen):
         self._refresh_session_remaining()
 
     def _set_game_state(self, raw_state):
-        """Met à jour le label d'état ET les couleurs du badge associées."""
-        raw_state = raw_state or "Idle"
-        self.game_state = raw_state.capitalize()
-        colors = _GAME_STATE_COLORS.get(raw_state.lower(), _GAME_STATE_DEFAULT_COLOR)
+        """Met à jour le label d'état (traduit en français) ET les couleurs du badge associées."""
+        raw_state = raw_state or "Menu"
+        state_key = raw_state.lower()
+        self.game_state = _GAME_STATE_LABELS.get(state_key, raw_state.capitalize())
+        colors = _GAME_STATE_COLORS.get(state_key, _GAME_STATE_DEFAULT_COLOR)
         self.game_state_fg = colors["fg"]
         self.game_state_bg = colors["bg"]
 

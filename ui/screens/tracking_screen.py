@@ -24,6 +24,22 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+# Couleurs/labels des bandes d'état inactif (mêmes valeurs FG que la
+# bannière Home, voir home_screen.py _GAME_STATE_COLORS/_GAME_STATE_LABELS)
+# — cohérence visuelle entre l'écran d'accueil et le graphique de suivi.
+_INACTIVE_STATE_STYLES = {
+    "menu": {"color": (0.098, 0.463, 0.824, 1), "label": "Menu"},
+    "ready": {"color": (0.459, 0.459, 0.459, 1), "label": "Prêt"},
+    "paused": {"color": (0.780, 0.518, 0.047, 1), "label": "En pause"},
+    "finished": {"color": (0.482, 0.122, 0.635, 1), "label": "Terminé"},
+    # Posé localement (pas envoyé par Unity) dès qu'Unity n'est plus
+    # joignable — voir udp_discovery.py/_check_unity_connection.
+    "disconnected": {"color": (0.776, 0.157, 0.157, 1), "label": "Jeu déconnecté"},
+}
+_DEFAULT_INACTIVE_STYLE = {"color": (0.459, 0.459, 0.459, 1), "label": "Inactif"}
+# Ordre d'affichage dans la légende, pour un ordre stable d'un tracé à l'autre.
+_INACTIVE_STATE_ORDER = ["disconnected", "menu", "ready", "paused", "finished"]
+
 
 class GraphAwareScrollView(ScrollView):
     '''
@@ -102,9 +118,9 @@ class TrackingScreen(MDScreen):
         self.target_zone = None
         self.target_received = False
 
-        # Bandes grisées idle/paused (voir update_graph / GameSession.get_inactive_segments)
+        # Bandes colorées par état inactif (voir update_graph / GameSession.get_inactive_segments)
         self.inactive_zone_artists = []
-        self.has_inactive_zone = False
+        self.inactive_state_styles = []
 
         # UDP Controller
         self.udp_controller = None
@@ -310,17 +326,27 @@ class TrackingScreen(MDScreen):
             self.target_zone.remove()
             self.target_zone = None
 
-        # supprimer anciennes bandes idle/paused et redessiner à jour
+        # supprimer anciennes bandes d'état inactif et redessiner à jour
         for artist in self.inactive_zone_artists:
             artist.remove()
         self.inactive_zone_artists = []
 
         inactive_segments = self.session.get_inactive_segments() if self.show_game_state else []
-        for start, end in inactive_segments:
+        seen_states = set()
+        for start, end, state in inactive_segments:
+            style = _INACTIVE_STATE_STYLES.get(state, _DEFAULT_INACTIVE_STYLE)
             self.inactive_zone_artists.append(
-                self.ax1.axvspan(start, end, color='#9e9e9e', alpha=0.15, linewidth=0, zorder=0)
+                self.ax1.axvspan(start, end, color=style["color"], alpha=0.15, linewidth=0, zorder=0)
             )
-        self.has_inactive_zone = bool(inactive_segments)
+            seen_states.add(state)
+
+        # Une entrée de légende par état réellement apparu dans la session,
+        # dans un ordre stable (menu -> ready -> paused -> finished).
+        ordered_states = [s for s in _INACTIVE_STATE_ORDER if s in seen_states]
+        ordered_states += sorted(seen_states - set(_INACTIVE_STATE_ORDER))
+        self.inactive_state_styles = [
+            _INACTIVE_STATE_STYLES.get(s, _DEFAULT_INACTIVE_STYLE) for s in ordered_states
+        ]
 
         if self.show_target and target_times and target_values:
             target_values = np.array(target_values, dtype=float)
@@ -414,9 +440,9 @@ class TrackingScreen(MDScreen):
                 lines.append(line)
                 labels.append(plot["label"])
 
-        if self.has_inactive_zone:
-            lines.append(Patch(facecolor='#9e9e9e', alpha=0.3))
-            labels.append("Jeu en pause / non démarré")
+        for style in self.inactive_state_styles:
+            lines.append(Patch(facecolor=style["color"], alpha=0.3))
+            labels.append(style["label"])
 
         # supprimer ancienne légende
         if hasattr(self, "legend") and self.legend:
@@ -464,6 +490,7 @@ class TrackingScreen(MDScreen):
         path = self.session.export_csv(
             include_target=self.show_target,
             include_cpm=self.show_cpm,
+            include_state=self.show_game_state,
         )
 
         if path:
@@ -504,6 +531,7 @@ class TrackingScreen(MDScreen):
         path = row.record.export_csv(
             include_target=self.show_target,
             include_cpm=self.show_cpm,
+            include_state=self.show_game_state,
         )
         toast(f"Session exportée : {path}")
         self._remove_session_row(row)
