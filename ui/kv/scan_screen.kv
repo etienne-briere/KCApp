@@ -56,14 +56,14 @@
                     active: root.is_busy
                     opacity: 1 if root.is_busy else 0
 
-                MDRaisedButton:
-                    text: "SCANNER"
-                    md_bg_color: BLE_BLUE
-                    text_color: 1, 1, 1, 1
-                    font_size: dp(14)
-                    _radius: dp(12)
+                MDIconButton:
+                    icon: "magnify"
+                    theme_text_color: "Custom"
+                    text_color: BLE_BLUE
+                    size_hint: None, None
+                    size: dp(40), dp(40)
+                    icon_size: "28sp"
                     pos_hint: {"center_y": 0.5}
-                    elevation: 0
                     disabled: root.is_busy
                     on_release: root.start_ble_scan()
 
