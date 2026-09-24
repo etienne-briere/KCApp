@@ -5,6 +5,8 @@ from utils.logger import get_logger
 from kivy.clock import Clock
 from kivy.clock import mainthread
 from kivymd.toast import toast
+from kivymd.uix.button import MDFlatButton
+from kivymd.uix.dialog import MDDialog
 from utils.event_bus import event_bus
 
 from app.network.connectivity import is_wifi_enabled, get_wifi_ssid
@@ -296,3 +298,50 @@ class HomeScreen(MDScreen):
                 logger.info("🔄 Jeu redémarré")
             else:
                 toast("❌ Échec du redémarrage")
+
+    def launch_game(self):
+        """Lance la scène de jeu depuis le menu"""
+        if self.udp_controller:
+            success = self.udp_controller.launch_game()
+            if success:
+                logger.info("🚀 Partie lancée")
+            else:
+                toast("❌ Échec du lancement de la partie")
+
+    def return_to_menu(self):
+        """Retourne au menu principal depuis la scène de jeu"""
+        if self.udp_controller:
+            success = self.udp_controller.return_to_menu()
+            if success:
+                logger.info("↩️ Retour au menu")
+            else:
+                toast("❌ Échec du retour au menu")
+
+    def confirm_quit_game(self):
+        """Bouton « Quitter » : demande confirmation avant de fermer le jeu"""
+        if not hasattr(self, "_dialog_confirm_quit") or self._dialog_confirm_quit is None:
+            self._dialog_confirm_quit = MDDialog(
+                title="Quitter le jeu ?",
+                text="Le jeu va se fermer sur le casque.",
+                buttons=[
+                    MDFlatButton(
+                        text="ANNULER",
+                        on_release=lambda *_: self._dialog_confirm_quit.dismiss(),
+                    ),
+                    MDFlatButton(
+                        text="QUITTER",
+                        on_release=lambda *_: self._confirm_quit_game(),
+                    ),
+                ],
+            )
+        self._dialog_confirm_quit.open()
+
+    def _confirm_quit_game(self):
+        """Confirmation du dialog : envoie la commande de fermeture"""
+        self._dialog_confirm_quit.dismiss()
+        if self.udp_controller:
+            success = self.udp_controller.quit_game()
+            if success:
+                logger.info("🚪 Jeu quitté")
+            else:
+                toast("❌ Échec de la fermeture du jeu")

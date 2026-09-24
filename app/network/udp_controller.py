@@ -41,7 +41,19 @@ class UDPController:
     def restart_game(self) -> bool:
         """Redémarre le jeu"""
         return self.send_command("restart", "true")
-    
+
+    def launch_game(self) -> bool:
+        """Lance la scène de jeu depuis le menu"""
+        return self.send_command("launchGame", "true")
+
+    def return_to_menu(self) -> bool:
+        """Retourne au menu principal depuis la scène de jeu"""
+        return self.send_command("returnToMenu", "true")
+
+    def quit_game(self) -> bool:
+        """Quitte le jeu Unity"""
+        return self.send_command("quitGame", "true")
+
     def set_target_hr(self, target_hr: float) -> bool:
         """Envoie la FC cible à Unity"""
         return self.send_command("target_hr", str(target_hr))
