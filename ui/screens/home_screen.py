@@ -38,7 +38,13 @@ class HomeScreen(MDScreen):
     # cpm en Fixe, paliers + plage cpm en Incrémental, %FC cible en PID/DRL.
     mode_feedback_icon = StringProperty("target")
     mode_feedback_text = StringProperty("Unknown")
-    mode_feedback_subtext = StringProperty("")
+    # Défaut volontairement non vide : le mode Fixe remet ce texte à "" ; si
+    # la valeur par défaut était déjà "", ce premier appel ne changerait
+    # rien, Kivy ne déclencherait jamais on_text sur le MDLabel lié, et son
+    # calcul de texture (donc sa taille) resterait indéterminé — décalant
+    # verticalement le BoxLayout qui l'englobe (adaptive_size sur une
+    # hauteur jamais recalculée). Ne pas remettre "" ici.
+    mode_feedback_subtext = StringProperty("Unknown")
     player_name = StringProperty("")
     game_state = StringProperty("Idle")
     game_state_fg = ListProperty(_GAME_STATE_DEFAULT_COLOR["fg"])
