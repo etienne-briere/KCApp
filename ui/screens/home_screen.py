@@ -4,6 +4,7 @@ from kivy.app import App
 from utils.logger import get_logger
 from kivy.clock import Clock
 from kivy.clock import mainthread
+from kivymd.toast import toast
 from utils.event_bus import event_bus
 
 from app.network.connectivity import is_wifi_enabled, get_wifi_ssid
@@ -237,3 +238,31 @@ class HomeScreen(MDScreen):
         app.ws_server.stop()
         app.udp_discovery.force_reconnect()
         self.unity_connected = False
+
+    # ===== Actions rapides du jeu (sécurité pendant la session) =====
+    def pause_game(self):
+        """Met le jeu en pause"""
+        if self.udp_controller:
+            success = self.udp_controller.pause_game()
+            if success:
+                logger.info("⏸️ Jeu en pause")
+            else:
+                toast("❌ Échec de la mise en pause")
+
+    def resume_game(self):
+        """Reprend le jeu"""
+        if self.udp_controller:
+            success = self.udp_controller.resume_game()
+            if success:
+                logger.info("▶️ Jeu repris")
+            else:
+                toast("❌ Échec de la reprise")
+
+    def restart_game(self):
+        """Redémarre le jeu"""
+        if self.udp_controller:
+            success = self.udp_controller.restart_game()
+            if success:
+                logger.info("🔄 Jeu redémarré")
+            else:
+                toast("❌ Échec du redémarrage")
