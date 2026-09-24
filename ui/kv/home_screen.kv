@@ -177,7 +177,7 @@
                     MDLabel:
                         text:
                             ("Connecté à " + root.unity_ip) if root.unity_connected else \
-                            "Appuyez sur le bouton pour relancer la recherche du casque"
+                            "Appuyez sur le bouton pour relancer la recherche du jeu"
                         font_style: "Caption"
                         theme_text_color: "Secondary"
                         halign: "left"
@@ -190,10 +190,12 @@
                     width: dp(48)
 
                     MDIconButton:
-                        icon: "refresh"
+                        icon: "wifi-sync"
                         theme_text_color: "Custom"
                         text_color: RED_FG
                         icon_size: "30sp"
+                        size_hint: None, None
+                        size: (dp(48), dp(48)) if not root.unity_connected else (0, 0)
                         opacity: 0 if root.unity_connected else 1
                         disabled: root.unity_connected
                         on_release: root.force_reconnect()
@@ -203,368 +205,377 @@
                         theme_text_color: "Custom"
                         text_color: app.theme_cls.primary_color
                         icon_size: "30sp"
+                        size_hint: None, None
+                        size: (dp(48), dp(48)) if root.unity_connected else (0, 0)
                         opacity: 1 if root.unity_connected else 0
                         disabled: not root.unity_connected
                         on_release:
                             app.root.ids.bottom_nav.ids.tab_manager.get_screen("pilotage_tab").dispatch("on_tab_press")
 
-            MDBoxLayout:
-                orientation: "vertical"
-                spacing: dp(20)
-                size_hint: 1, None
-                height: self.minimum_height if root.unity_connected else 0
+            ScrollView:
+                do_scroll_x: False
+                do_scroll_y: False
+                size_hint_y: None
+                height: game_actions_content.height if root.unity_connected else 0
                 opacity: 1 if root.unity_connected else 0
-                disabled: 0 if root.unity_connected else 1
+                disabled: not root.unity_connected
 
-                # ==== Actions du jeu ====
                 MDBoxLayout:
+                    id: game_actions_content
                     orientation: "vertical"
-                    spacing: dp(8)
+                    spacing: dp(20)
                     size_hint_y: None
                     height: self.minimum_height
 
-                    MDLabel:
-                        text: "ACTIONS DU JEU"
-                        font_style: "Overline"
-                        theme_text_color: "Secondary"
-                        halign: "left"
-                        padding: dp(16), 0
-                        adaptive_size: True
-
-                    MDCard:
+                    # ==== Actions du jeu ====
+                    MDBoxLayout:
                         orientation: "vertical"
-                        padding: dp(16)
-                        spacing: dp(3)
-                        radius: [12]
+                        spacing: dp(8)
                         size_hint_y: None
                         height: self.minimum_height
-                        elevation: 0
-                        disabled: not root.unity_connected
-
-                        # ---- Lancer la partie (actif seulement dans le Menu) ----
-                        MDBoxLayout:
-                            orientation: "horizontal"
-                            size_hint_y: None
-                            height: dp(48)
-
-                            MDRectangleFlatIconButton:
-                                text: "Lancer la partie"
-                                icon: "rocket-launch-outline"
-                                size_hint_x: 1
-                                size_hint_y: None
-                                height: dp(48)
-                                disabled: root.game_state != "Menu"
-                                on_release: root.launch_game()
-
-                        # ---- Pause / reprendre / restart (actifs hors Menu) ----
-                        MDBoxLayout:
-                            orientation: "horizontal"
-                            spacing: dp(10)
-                            size_hint_y: None
-                            height: dp(48)
-
-                            MDRectangleFlatIconButton:
-                                text: "Pause"
-                                icon: "pause-circle-outline"
-                                size_hint_x: 1
-                                size_hint_y: None
-                                height: dp(48)
-                                disabled: root.game_state == "Menu"
-                                on_release: root.pause_game()
-
-                            MDRectangleFlatIconButton:
-                                text: "Reprendre"
-                                icon: "play-circle-outline"
-                                size_hint_x: 1
-                                size_hint_y: None
-                                height: dp(48)
-                                disabled: root.game_state == "Menu"
-                                on_release: root.resume_game()
-
-                            MDRectangleFlatIconButton:
-                                text: "Restart"
-                                icon: "restart"
-                                size_hint_x: 1
-                                size_hint_y: None
-                                height: dp(48)
-                                disabled: root.game_state == "Menu"
-                                on_release: root.restart_game()
-
-                        # ---- Retour au menu (actif hors Menu) ----
-                        MDBoxLayout:
-                            orientation: "horizontal"
-                            size_hint_y: None
-                            height: dp(48)
-
-                            MDRectangleFlatIconButton:
-                                text: "Retour au menu"
-                                icon: "arrow-left-circle-outline"
-                                size_hint_x: 1
-                                size_hint_y: None
-                                height: dp(48)
-                                disabled: root.game_state == "Menu"
-                                on_release: root.return_to_menu()
-
-                        # ---- Quitter le jeu (toujours actif) ----
-                        MDBoxLayout:
-                            orientation: "horizontal"
-                            size_hint_y: None
-                            height: dp(48)
-
-                            MDRectangleFlatIconButton:
-                                text: "Quitter le jeu"
-                                icon: "exit-to-app"
-                                size_hint_x: 1
-                                size_hint_y: None
-                                height: dp(48)
-                                on_release: root.confirm_quit_game()
-
-                # ==== Joueur + état de la partie ====
-                MDBoxLayout:
-                    orientation: "vertical"
-                    spacing: dp(8)
-                    size_hint_y: None
-                    height: self.minimum_height
-
-                    MDLabel:
-                        text: "JOUEUR CONNECTÉ"
-                        font_style: "Overline"
-                        theme_text_color: "Secondary"
-                        halign: "left"
-                        padding: dp(16), 0
-                        adaptive_size: True
-
-                    MDCard:
-                        orientation: "horizontal"
-                        padding: dp(16)
-                        radius: [12]
-                        spacing: dp(10)
-                        elevation: 0
-                        size_hint_y: None
-                        height: dp(70)
-
-                        MDIcon:
-                            icon: "account"
-                            theme_text_color: "Custom"
-                            text_color: app.theme_cls.primary_color
-                            font_size: "40sp"
-                            size_hint_x: None
-                            width: dp(50)
-
-                        MDBoxLayout:
+    
+                        MDLabel:
+                            text: "ACTIONS DU JEU"
+                            font_style: "Overline"
+                            theme_text_color: "Secondary"
+                            halign: "left"
+                            padding: dp(16), 0
+                            adaptive_size: True
+    
+                        MDCard:
                             orientation: "vertical"
-                            spacing: dp(2)
-
+                            padding: dp(16)
+                            spacing: dp(3)
+                            radius: [12]
+                            size_hint_y: None
+                            height: self.minimum_height
+                            elevation: 0
+                            disabled: not root.unity_connected
+    
+                            # ---- Lancer la partie (actif seulement dans le Menu) ----
                             MDBoxLayout:
                                 orientation: "horizontal"
-                                spacing: dp(4)
                                 size_hint_y: None
-                                height: self.minimum_height
-
+                                height: dp(48)
+    
+                                MDRectangleFlatIconButton:
+                                    text: "Lancer la partie"
+                                    icon: "rocket-launch-outline"
+                                    size_hint_x: 1
+                                    size_hint_y: None
+                                    height: dp(48)
+                                    disabled: root.game_state != "Menu"
+                                    on_release: root.launch_game()
+    
+                            # ---- Pause / reprendre / restart (actifs hors Menu) ----
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: dp(10)
+                                size_hint_y: None
+                                height: dp(48)
+    
+                                MDRectangleFlatIconButton:
+                                    text: "Pause"
+                                    icon: "pause-circle-outline"
+                                    size_hint_x: 1
+                                    size_hint_y: None
+                                    height: dp(48)
+                                    disabled: root.game_state == "Menu"
+                                    on_release: root.pause_game()
+    
+                                MDRectangleFlatIconButton:
+                                    text: "Reprendre"
+                                    icon: "play-circle-outline"
+                                    size_hint_x: 1
+                                    size_hint_y: None
+                                    height: dp(48)
+                                    disabled: root.game_state == "Menu"
+                                    on_release: root.resume_game()
+    
+                                MDRectangleFlatIconButton:
+                                    text: "Restart"
+                                    icon: "restart"
+                                    size_hint_x: 1
+                                    size_hint_y: None
+                                    height: dp(48)
+                                    disabled: root.game_state == "Menu"
+                                    on_release: root.restart_game()
+    
+                            # ---- Retour au menu (actif hors Menu) ----
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                size_hint_y: None
+                                height: dp(48)
+    
+                                MDRectangleFlatIconButton:
+                                    text: "Retour au menu"
+                                    icon: "arrow-left-circle-outline"
+                                    size_hint_x: 1
+                                    size_hint_y: None
+                                    height: dp(48)
+                                    disabled: root.game_state == "Menu"
+                                    on_release: root.return_to_menu()
+    
+                            # ---- Quitter le jeu (toujours actif) ----
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                size_hint_y: None
+                                height: dp(48)
+    
+                                MDRectangleFlatIconButton:
+                                    text: "Quitter le jeu"
+                                    icon: "exit-to-app"
+                                    size_hint_x: 1
+                                    size_hint_y: None
+                                    height: dp(48)
+                                    on_release: root.confirm_quit_game()
+    
+                    # ==== Joueur + état de la partie ====
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        spacing: dp(8)
+                        size_hint_y: None
+                        height: self.minimum_height
+    
+                        MDLabel:
+                            text: "JOUEUR CONNECTÉ"
+                            font_style: "Overline"
+                            theme_text_color: "Secondary"
+                            halign: "left"
+                            padding: dp(16), 0
+                            adaptive_size: True
+    
+                        MDCard:
+                            orientation: "horizontal"
+                            padding: dp(16)
+                            radius: [12]
+                            spacing: dp(10)
+                            elevation: 0
+                            size_hint_y: None
+                            height: dp(70)
+    
+                            MDIcon:
+                                icon: "account"
+                                theme_text_color: "Custom"
+                                text_color: app.theme_cls.primary_color
+                                font_size: "40sp"
+                                size_hint_x: None
+                                width: dp(50)
+    
+                            MDBoxLayout:
+                                orientation: "vertical"
+                                spacing: dp(2)
+    
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: dp(4)
+                                    size_hint_y: None
+                                    height: self.minimum_height
+    
+                                    MDLabel:
+                                        text: root.player_name if root.player_name else "Nom inconnu"
+                                        font_style: "H6"
+                                        halign: "left"
+                                        adaptive_size: True
+                                        pos_hint: {"center_y": 0.5}
+    
+                                    MDIconButton:
+                                        icon: "account-edit"
+                                        theme_text_color: "Custom"
+                                        text_color: app.theme_cls.primary_color
+                                        size_hint: None, None
+                                        size: dp(24), dp(24)
+                                        icon_size: "18sp"
+                                        pos_hint: {"center_y": 0.5}
+                                        on_release:
+                                            app.root.ids.screen_manager.get_screen("player_profile").request_edit_on_enter()
+                                            app.change_screen("player_profile", "Profil du joueur", True)
+    
                                 MDLabel:
-                                    text: root.player_name if root.player_name else "Nom inconnu"
-                                    font_style: "H6"
+                                    text: f"{root.age_user} ans" if root.age_user and root.age_user != "Unknown" else "Âge inconnu"
+                                    font_style: "Caption"
+                                    theme_text_color: "Secondary"
                                     halign: "left"
-                                    adaptive_size: True
+                                    valign: "top"
+    
+                            AnchorLayout:
+                                anchor_x: "right"
+                                anchor_y: "center"
+                                size_hint_x: None
+                                width: state_badge.width
+    
+                                MDBoxLayout:
+                                    id: state_badge
+                                    orientation: "horizontal"
+                                    spacing: dp(6)
+                                    padding: dp(10), dp(4)
+                                    size_hint: None, None
+                                    size: self.minimum_width, dp(30)
                                     pos_hint: {"center_y": 0.5}
-
+                                    canvas.before:
+                                        Color:
+                                            rgba: root.game_state_bg
+                                        RoundedRectangle:
+                                            pos: self.pos
+                                            size: self.size
+                                            radius: [dp(15)]
+    
+                                    MDIcon:
+                                        icon: "circle"
+                                        theme_text_color: "Custom"
+                                        text_color: root.game_state_fg
+                                        font_size: "12sp"
+                                        size_hint: None, None
+                                        size: dp(12), dp(12)
+                                        pos_hint: {"center_y": 0.5}
+    
+                                    MDLabel:
+                                        text: root.game_state
+                                        theme_text_color: "Custom"
+                                        text_color: root.game_state_fg
+                                        font_style: "Caption"
+                                        bold: True
+                                        adaptive_size: True
+                                        pos_hint: {"center_y": 0.5}
+    
+                    # ==== Mode de jeu / FC cible / Temps restant ====
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        spacing: dp(8)
+                        size_hint_y: None
+                        height: self.minimum_height
+    
+                        MDLabel:
+                            text: "OPTIONS ENREGISTRÉES"
+                            font_style: "Overline"
+                            theme_text_color: "Secondary"
+                            halign: "left"
+                            padding: dp(16), 0
+                            adaptive_size: True
+    
+                        MDCard:
+                            orientation: "vertical"
+                            padding: dp(10), dp(4), dp(16), dp(16)
+                            radius: [12]
+                            spacing: dp(2)
+                            elevation: 0
+                            size_hint_y: None
+                            height: dp(100) + dp(24)
+    
+                            # ==== Raccourci vers l'écran Contrôle du jeu ====
+                            AnchorLayout:
+                                anchor_x: "right"
+                                anchor_y: "top"
+                                size_hint_y: None
+                                height: dp(24)
+    
                                 MDIconButton:
-                                    icon: "account-edit"
+                                    icon: "square-edit-outline"
                                     theme_text_color: "Custom"
                                     text_color: app.theme_cls.primary_color
                                     size_hint: None, None
                                     size: dp(24), dp(24)
-                                    icon_size: "18sp"
-                                    pos_hint: {"center_y": 0.5}
-                                    on_release:
-                                        app.root.ids.screen_manager.get_screen("player_profile").request_edit_on_enter()
-                                        app.change_screen("player_profile", "Profil du joueur", True)
-
-                            MDLabel:
-                                text: f"{root.age_user} ans" if root.age_user and root.age_user != "Unknown" else "Âge inconnu"
-                                font_style: "Caption"
-                                theme_text_color: "Secondary"
-                                halign: "left"
-                                valign: "top"
-
-                        AnchorLayout:
-                            anchor_x: "right"
-                            anchor_y: "center"
-                            size_hint_x: None
-                            width: state_badge.width
-
+                                    icon_size: "20sp"
+                                    on_release: app.change_screen("pilotage", "Contrôle du jeu", True)
+    
                             MDBoxLayout:
-                                id: state_badge
                                 orientation: "horizontal"
-                                spacing: dp(6)
-                                padding: dp(10), dp(4)
-                                size_hint: None, None
-                                size: self.minimum_width, dp(30)
-                                pos_hint: {"center_y": 0.5}
-                                canvas.before:
-                                    Color:
-                                        rgba: root.game_state_bg
-                                    RoundedRectangle:
-                                        pos: self.pos
-                                        size: self.size
-                                        radius: [dp(15)]
-
-                                MDIcon:
-                                    icon: "circle"
-                                    theme_text_color: "Custom"
-                                    text_color: root.game_state_fg
-                                    font_size: "12sp"
-                                    size_hint: None, None
-                                    size: dp(12), dp(12)
-                                    pos_hint: {"center_y": 0.5}
-
-                                MDLabel:
-                                    text: root.game_state
-                                    theme_text_color: "Custom"
-                                    text_color: root.game_state_fg
-                                    font_style: "Caption"
-                                    bold: True
-                                    adaptive_size: True
-                                    pos_hint: {"center_y": 0.5}
-
-                # ==== Mode de jeu / FC cible / Temps restant ====
-                MDBoxLayout:
-                    orientation: "vertical"
-                    spacing: dp(8)
-                    size_hint_y: None
-                    height: self.minimum_height
-
-                    MDLabel:
-                        text: "OPTIONS ENREGISTRÉES"
-                        font_style: "Overline"
-                        theme_text_color: "Secondary"
-                        halign: "left"
-                        padding: dp(16), 0
-                        adaptive_size: True
-
-                    MDCard:
-                        orientation: "vertical"
-                        padding: dp(10), dp(4), dp(16), dp(16)
-                        radius: [12]
-                        spacing: dp(2)
-                        elevation: 0
-                        size_hint_y: None
-                        height: dp(100) + dp(24)
-
-                        # ==== Raccourci vers l'écran Contrôle du jeu ====
-                        AnchorLayout:
-                            anchor_x: "right"
-                            anchor_y: "top"
-                            size_hint_y: None
-                            height: dp(24)
-
-                            MDIconButton:
-                                icon: "square-edit-outline"
-                                theme_text_color: "Custom"
-                                text_color: app.theme_cls.primary_color
-                                size_hint: None, None
-                                size: dp(24), dp(24)
-                                icon_size: "20sp"
-                                on_release: app.change_screen("pilotage", "Contrôle du jeu", True)
-
-                        MDBoxLayout:
-                            orientation: "horizontal"
-                            spacing: dp(10)
-
-                            # ===== Affichage du modèle sélectionné dans Unity ====
-                            AnchorLayout:
-                                anchor_x: "center"
-                                anchor_y: "center"
-
-                                # Label
-                                MDLabel:
-                                    id: selected_model
-                                    text: root.selected_model
-                                    font_style: "Body1"
-                                    halign: "center"
-
-                            # ==== Séparateur ====
-                            Widget:
-                                size_hint_x: None
-                                width: dp(1)
-                                canvas:
-                                    Color:
-                                        rgba: app.theme_cls.divider_color
-                                    Rectangle:
-                                        pos: self.pos
-                                        size: self.size
-
-                            # ===== Feedback spécifique au mode de jeu =====
-                            AnchorLayout:
-                                anchor_x: "center"
-                                anchor_y: "center"
-
-                                MDBoxLayout:
-                                    orientation: "horizontal"
-                                    spacing: dp(5)
-                                    size_hint: None, None
-                                    size: self.minimum_size
-                                    pos_hint: {"center_x": 0.5, "center_y": 0.5}
-
-                                    MDIcon:
-                                        icon: root.mode_feedback_icon
-                                        theme_text_color: "Custom"
-                                        text_color: app.theme_cls.primary_color
-                                        font_size: "30sp"
-                                        size_hint: None, None
-                                        size: dp(30), dp(30)
-                                        pos_hint: {'center_y': 0.5}
-
-                                    MDBoxLayout:
-                                        orientation: "vertical"
-                                        size_hint: None, None
-                                        size: self.minimum_size
-                                        pos_hint: {"center_y": 0.5}
-
-                                        MDLabel:
-                                            text: root.mode_feedback_text
-                                            font_style: "Body1"
-                                            halign: "center"
-                                            adaptive_size: True
-
-                                        MDLabel:
-                                            text: root.mode_feedback_subtext
-                                            font_style: "Caption"
-                                            theme_text_color: "Secondary"
-                                            halign: "center"
-                                            adaptive_size: True
-
-                            # ==== Séparateur ====
-                            Widget:
-                                size_hint_x: None
-                                width: dp(1)
-                                canvas:
-                                    Color:
-                                        rgba: app.theme_cls.divider_color
-                                    Rectangle:
-                                        pos: self.pos
-                                        size: self.size
-
-                            # ===== Temps de session restant ====
-                            AnchorLayout:
-                                anchor_x: "center"
-                                anchor_y: "center"
-
-                                MDBoxLayout:
-                                    orientation: "horizontal"
-                                    spacing: dp(5)
-
-                                    Widget:
-                                    MDIcon:
-                                        icon: "timer-outline"
-                                        theme_text_color: "Custom"
-                                        text_color: app.theme_cls.primary_color
-                                        font_size: "30sp"
-                                        pos_hint: {'center_y': 0.5}
-
+                                spacing: dp(10)
+    
+                                # ===== Affichage du modèle sélectionné dans Unity ====
+                                AnchorLayout:
+                                    anchor_x: "center"
+                                    anchor_y: "center"
+    
                                     # Label
                                     MDLabel:
-                                        text: root.session_remaining_text
+                                        id: selected_model
+                                        text: root.selected_model
                                         font_style: "Body1"
                                         halign: "center"
-                                    Widget:
+    
+                                # ==== Séparateur ====
+                                Widget:
+                                    size_hint_x: None
+                                    width: dp(1)
+                                    canvas:
+                                        Color:
+                                            rgba: app.theme_cls.divider_color
+                                        Rectangle:
+                                            pos: self.pos
+                                            size: self.size
+    
+                                # ===== Feedback spécifique au mode de jeu =====
+                                AnchorLayout:
+                                    anchor_x: "center"
+                                    anchor_y: "center"
+    
+                                    MDBoxLayout:
+                                        orientation: "horizontal"
+                                        spacing: dp(5)
+                                        size_hint: None, None
+                                        size: self.minimum_size
+                                        pos_hint: {"center_x": 0.5, "center_y": 0.5}
+    
+                                        MDIcon:
+                                            icon: root.mode_feedback_icon
+                                            theme_text_color: "Custom"
+                                            text_color: app.theme_cls.primary_color
+                                            font_size: "30sp"
+                                            size_hint: None, None
+                                            size: dp(30), dp(30)
+                                            pos_hint: {'center_y': 0.5}
+    
+                                        MDBoxLayout:
+                                            orientation: "vertical"
+                                            size_hint: None, None
+                                            size: self.minimum_size
+                                            pos_hint: {"center_y": 0.5}
+    
+                                            MDLabel:
+                                                text: root.mode_feedback_text
+                                                font_style: "Body1"
+                                                halign: "center"
+                                                adaptive_size: True
+    
+                                            MDLabel:
+                                                text: root.mode_feedback_subtext
+                                                font_style: "Caption"
+                                                theme_text_color: "Secondary"
+                                                halign: "center"
+                                                adaptive_size: True
+    
+                                # ==== Séparateur ====
+                                Widget:
+                                    size_hint_x: None
+                                    width: dp(1)
+                                    canvas:
+                                        Color:
+                                            rgba: app.theme_cls.divider_color
+                                        Rectangle:
+                                            pos: self.pos
+                                            size: self.size
+    
+                                # ===== Temps de session restant ====
+                                AnchorLayout:
+                                    anchor_x: "center"
+                                    anchor_y: "center"
+    
+                                    MDBoxLayout:
+                                        orientation: "horizontal"
+                                        spacing: dp(5)
+    
+                                        Widget:
+                                        MDIcon:
+                                            icon: "timer-outline"
+                                            theme_text_color: "Custom"
+                                            text_color: app.theme_cls.primary_color
+                                            font_size: "30sp"
+                                            pos_hint: {'center_y': 0.5}
+    
+                                        # Label
+                                        MDLabel:
+                                            text: root.session_remaining_text
+                                            font_style: "Body1"
+                                            halign: "center"
+                                        Widget:
