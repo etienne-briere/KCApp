@@ -77,34 +77,28 @@ BoxLayout:
 		
         MDBottomNavigationItem:
             name: "home_tab"
-            text: "Home"
+            text: "Accueil"
             icon: "home"
             on_tab_press:
-                # screen_manager.current = "home"
-                # top_bar.title = "Home"
-                app.change_screen("home", "Home")
+                app.change_screen("home", "Accueil")
 
         MDBottomNavigationItem:
             name: "scan_tab"
-            text: "Sensor"
+            text: "Capteur"
             icon: "bluetooth"
             on_tab_press:
-                # screen_manager.current = "scan"
-                # top_bar.title = "Sensor Connection"
-                app.change_screen("scan", "Sensor Connection")
+                app.change_screen("scan", "Connexion capteur")
 
         MDBottomNavigationItem:
             name: "tracking_tab"
-            text: "HR Tracking"
-            icon: "chart-line"
+            text: "Suivi FC"
+            icon: "chart-bell-curve-cumulative"
             on_tab_press:
-                # screen_manager.current = "tracking"
-                # top_bar.title = "Heart Rate Tracking"
-                app.change_screen("tracking", "Heart Rate Tracking")
+                app.change_screen("tracking", "Suivi de la fréquence cardiaque")
 
         MDBottomNavigationItem:
             name: "pilotage_tab"
-            text: "Control"
+            text: "Contrôle"
             icon: "microsoft-xbox-controller-menu"
             on_tab_press:
                 app.change_screen("control_menu", "Contrôle")
