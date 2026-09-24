@@ -76,14 +76,8 @@ class StatusBar(MDBoxLayout):
     
     def handle_unity_connection(self, data):
         """Callback quand Unity se connecte ou se déconnecte"""
-        ip = data.get("ip")
         self.unity_connected = data["connected"]
-        
-        if self.unity_connected:
-            toast(f"Unity connected ({ip})")
-        else :
-            toast("Unity disconnected")
-        
+
     def handle_hr_received(self, bpm):
         """Callback quand FC reçue"""
 
