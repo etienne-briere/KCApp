@@ -126,6 +126,10 @@ class UDPController:
         """Active/Désactive l'exigence du signal FC (modes Fixe/Incrémental)"""
         return self.send_command("requireHRSignal", "1" if enabled else "0")
 
+    def set_brick_speed(self, speed: int) -> bool:
+        """Paramètre la vitesse des briques (tous modes)"""
+        return self.send_command("brickSpeed", str(speed))
+
     def set_stream_game(self, command: str)-> bool:
         """Activation/Désactivation du stream de l'écran du jeux"""
         return self.send_command("stream_game", command)

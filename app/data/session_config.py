@@ -22,6 +22,7 @@ class SessionConfig:
         self.warmup_enabled = None
         self.warmup_duration = None  # secondes
         self.require_hr_signal = None
+        self.brick_speed = None  # vitesse des briques (tous modes)
 
         self.target_time = []
         self.target_history = []
@@ -80,6 +81,9 @@ class SessionConfig:
 
         elif key == "requireHRSignal":
             self.require_hr_signal = value.strip().lower() == "true"
+
+        elif key == "brickSpeed":
+            self.brick_speed = int(value)
     
     def update_target(self, target_percent):
         """Met à jour la cible de FC et stocke dans l'historique"""

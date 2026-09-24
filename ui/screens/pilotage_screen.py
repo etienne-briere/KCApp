@@ -44,6 +44,7 @@ class PilotageScreen(MDScreen):
     warmup_enabled = BooleanProperty(False) # modes PID/DRL : warmup
     warmup_duration = NumericProperty(90) # modes PID/DRL : durée du warmup (s)
     require_hr_signal = BooleanProperty(False) # modes Fixe/Incrémental : signal FC requis
+    brick_speed = NumericProperty(8) # vitesse des briques (tous modes)
     player_name = StringProperty("") # nom du profil joueur actif
     game_state = StringProperty("Menu") # état de partie reçu de Unity (Menu/Ready/Playing/Paused/Finished)
 
@@ -95,6 +96,8 @@ class PilotageScreen(MDScreen):
                 self.warmup_duration = self.session.config.warmup_duration
             if self.session.config.require_hr_signal is not None:
                 self.require_hr_signal = self.session.config.require_hr_signal
+            if self.session.config.brick_speed is not None:
+                self.brick_speed = self.session.config.brick_speed
 
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
@@ -162,6 +165,8 @@ class PilotageScreen(MDScreen):
             self.warmup_duration = session.config.warmup_duration
         if session.config.require_hr_signal is not None:
             self.require_hr_signal = session.config.require_hr_signal
+        if session.config.brick_speed is not None:
+            self.brick_speed = session.config.brick_speed
 
     def _submit_int_field(self, text, field_id, prop_name, config_attr,
                            min_value, max_value, controller_method_name, label):
@@ -324,14 +329,18 @@ class PilotageScreen(MDScreen):
 
     # ========== DURÉE DE SESSION ==========
 
-    def on_session_duration_change(self, value):
-        """Slider durée de session changé"""
+    def on_session_duration_submit(self, text):
+        """Champ durée de session (min) validé"""
+        try:
+            value = int(text)
+        except ValueError:
+            toast("Valeur invalide")
+            self.ids.session_duration_field.text = str(int(self.session_duration_min))
+            return
+
+        value = max(1, min(20, value))
         self.session_duration_min = value
-
-    def on_session_duration_touch_up(self):
-        """Appelé quand l'utilisateur relâche le slider"""
-        logger.debug(f"🎯 Slider relâché à {self.session_duration_min} min")
-
+        self.ids.session_duration_field.text = str(value)
         self.send_session_duration()
 
     def send_session_duration(self):
@@ -485,6 +494,14 @@ class PilotageScreen(MDScreen):
 
         if self.udp_controller:
             self.udp_controller.set_require_hr_signal(is_active)
+
+    # ========== VITESSE DES BRIQUES ==========
+
+    def on_brick_speed_submit(self, text):
+        """Champ vitesse des briques validé"""
+        self._submit_int_field(text, "brick_speed_field", "brick_speed",
+                                "brick_speed", 1, None, "set_brick_speed",
+                                "Vitesse des briques")
 
     # ========== GAME ACTIONS ==========
 

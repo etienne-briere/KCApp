@@ -428,20 +428,26 @@
                                 on_active: root.on_warmup_toggle(self.active)
                                 disabled: not root.unity_connected
 
-                        MDTextField:
-                            id: warmup_duration_field
-                            text: str(int(root.warmup_duration))
-                            hint_text: "Durée du warmup (s)"
-                            icon_left: "timer-sand"
-                            mode: "rectangle"
-                            input_filter: "int"
-                            text_color_focus: app.theme_cls.primary_color
-                            hint_text_color_focus: app.theme_cls.primary_color
-                            line_color_focus: app.theme_cls.primary_color
-                            icon_left_color_focus: app.theme_cls.primary_color
+                        MDBoxLayout:
+                            orientation: "vertical"
+                            size_hint_y: None
+                            height: self.minimum_height if root.warmup_enabled else 0
+                            opacity: 1 if root.warmup_enabled else 0
                             disabled: not root.unity_connected or not root.warmup_enabled
-                            on_text_validate: root.on_warmup_duration_submit(self.text)
-                            on_focus: root.on_warmup_duration_submit(self.text) if not self.focus else None
+
+                            MDTextField:
+                                id: warmup_duration_field
+                                text: str(int(root.warmup_duration))
+                                hint_text: "Durée du warmup (s)"
+                                icon_left: "timer-sand"
+                                mode: "rectangle"
+                                input_filter: "int"
+                                text_color_focus: app.theme_cls.primary_color
+                                hint_text_color_focus: app.theme_cls.primary_color
+                                line_color_focus: app.theme_cls.primary_color
+                                icon_left_color_focus: app.theme_cls.primary_color
+                                on_text_validate: root.on_warmup_duration_submit(self.text)
+                                on_focus: root.on_warmup_duration_submit(self.text) if not self.focus else None
 
                     # ---- Signal FC requis (modes Fixe / Incrémental) ----
                     MDBoxLayout:
@@ -476,99 +482,33 @@
                             on_active: root.on_require_hr_signal_toggle(self.active)
                             disabled: not root.unity_connected
 
-                    # ---- Alerte signal FC requis (modes PID / DRL) ----
-                    MDCard:
-                        orientation: "horizontal"
-                        padding: dp(10), dp(6)
-                        radius: [8]
-                        spacing: dp(8)
-                        size_hint_y: None
-                        height: dp(36) if root.pending_model in ("PID", "DRL") else 0
-                        opacity: 1 if root.pending_model in ("PID", "DRL") else 0
-                        disabled: root.pending_model not in ("PID", "DRL")
-                        elevation: 0
-                        md_bg_color: AMBER_BG
-
-                        MDIcon:
-                            icon: "alert-circle-outline"
-                            theme_text_color: "Custom"
-                            text_color: AMBER_FG
-                            font_size: "20sp"
-                            size_hint: None, None
-                            size: dp(22), dp(22)
-                            pos_hint: {"center_y": 0.5}
-
-                        MDLabel:
-                            text: "Ce mode nécessite un signal FC valide pour fonctionner"
-                            theme_text_color: "Custom"
-                            text_color: AMBER_FG
-                            font_style: "Caption"
-                            halign: "left"
-                            valign: "center"
-
-            # ==== DURÉE DE SESSION ====
-            MDBoxLayout:
-                orientation: "vertical"
-                spacing: dp(8)
-                size_hint_y: None
-                height: self.minimum_height
-
-                MDLabel:
-                    text: "DURÉE DE SESSION"
-                    font_style: "Overline"
-                    theme_text_color: "Secondary"
-                    halign: "left"
+                # ---- Alerte signal FC requis (modes PID / DRL) ----
+                MDBoxLayout:
+                    orientation: "horizontal"
+                    spacing: dp(6)
                     padding: dp(16), 0
-                    adaptive_size: True
-
-                MDCard:
-                    orientation: "vertical"
-                    padding: dp(16)
-                    radius: [12]
-                    spacing: dp(10)
                     size_hint_y: None
-                    height: dp(130)
-                    elevation: 0
-                    disabled: not root.unity_connected
+                    height: dp(20) if root.pending_model in ("PID", "DRL") else 0
+                    opacity: 1 if root.pending_model in ("PID", "DRL") else 0
 
-                    MDBoxLayout:
-                        orientation: "horizontal"
-                        spacing: dp(15)
-                        size_hint_y: None
-                        height: dp(30)
+                    MDIcon:
+                        icon: "information-outline"
+                        theme_text_color: "Custom"
+                        text_color: AMBER_FG
+                        font_size: "16sp"
+                        size_hint: None, None
+                        size: dp(16), dp(20)
+                        pos_hint: {"center_y": 0.5}
 
-                        MDIcon:
-                            icon: "timer-outline"
-                            theme_text_color: "Custom"
-                            text_color: app.theme_cls.primary_color
-                            font_size: "30sp"
-                            size_hint_x: None
-                            width: dp(30)
+                    MDLabel:
+                        text: "Ce mode nécessite un signal FC valide pour fonctionner"
+                        theme_text_color: "Custom"
+                        text_color: AMBER_FG
+                        font_style: "Caption"
+                        halign: "left"
+                        valign: "center"
 
-                        MDLabel:
-                            text: "Durée de session"
-                            font_style: "Body1"
-                            halign: "left"
-                            valign: "center"
-
-                        MDLabel:
-                            text: "{} min".format(int(root.session_duration_min))
-                            font_style: "H6"
-                            theme_text_color: "Primary"
-                            halign: "right"
-
-                    MDSlider:
-                        id: session_duration_slider
-                        min: 1
-                        max: 20
-                        value: root.session_duration_min
-                        step: 1
-                        hint: True
-                        hint_text: "{} min".format(int(self.value))
-                        on_value: root.on_session_duration_change(self.value)
-                        on_touch_up: root.on_session_duration_touch_up() if self.collide_point(*args[1].pos) else None
-
-            # ==== OBSTACLES ====
+            # ==== OPTIONS GÉNÉRALES (indépendantes du mode de jeu) ====
             MDBoxLayout:
                 orientation: "vertical"
                 spacing: dp(8)
@@ -576,7 +516,7 @@
                 height: self.minimum_height
 
                 MDLabel:
-                    text: "OBSTACLES"
+                    text: "OPTIONS GÉNÉRALES"
                     font_style: "Overline"
                     theme_text_color: "Secondary"
                     halign: "left"
@@ -587,11 +527,76 @@
                     orientation: "vertical"
                     padding: dp(16)
                     radius: [12]
-                    spacing: dp(10)
+                    spacing: dp(12)
                     size_hint_y: None
                     height: self.minimum_height
                     elevation: 0
+                    disabled: not root.unity_connected
 
+                    # ---- Durée de session ----
+                    MDTextField:
+                        id: session_duration_field
+                        text: str(int(root.session_duration_min))
+                        hint_text: "Durée de session (min)"
+                        icon_left: "timer-outline"
+                        mode: "rectangle"
+                        input_filter: "int"
+                        text_color_focus: app.theme_cls.primary_color
+                        hint_text_color_focus: app.theme_cls.primary_color
+                        line_color_focus: app.theme_cls.primary_color
+                        icon_left_color_focus: app.theme_cls.primary_color
+                        on_text_validate: root.on_session_duration_submit(self.text)
+                        on_focus: root.on_session_duration_submit(self.text) if not self.focus else None
+
+                    # ---- Vitesse des briques ----
+                    MDTextField:
+                        id: brick_speed_field
+                        text: str(int(root.brick_speed))
+                        hint_text: "Vitesse des briques"
+                        icon_left: "cube-send"
+                        mode: "rectangle"
+                        input_filter: "int"
+                        text_color_focus: app.theme_cls.primary_color
+                        hint_text_color_focus: app.theme_cls.primary_color
+                        line_color_focus: app.theme_cls.primary_color
+                        icon_left_color_focus: app.theme_cls.primary_color
+                        on_text_validate: root.on_brick_speed_submit(self.text)
+                        on_focus: root.on_brick_speed_submit(self.text) if not self.focus else None
+
+                    # ---- Probabilité d'apparition des obstacles ----
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        size_hint_y: None
+                        height: self.minimum_height if root.obs_enabled else 0
+                        opacity: 1 if root.obs_enabled else 0
+                        disabled: not root.obs_enabled
+
+                        MDTextField:
+                            id: obstacle_probability_field
+                            text: str(int(root.obstacle_probability))
+                            hint_text: "Probabilité d'apparition (obstacles)"
+                            icon_left: "percent"
+                            mode: "rectangle"
+                            input_filter: "int"
+                            text_color_focus: app.theme_cls.primary_color
+                            hint_text_color_focus: app.theme_cls.primary_color
+                            line_color_focus: app.theme_cls.primary_color
+                            icon_left_color_focus: app.theme_cls.primary_color
+                            on_text_validate: root.on_obstacle_probability_submit(self.text)
+                            on_focus: root.on_obstacle_probability_submit(self.text) if not self.focus else None
+
+                    # ---- Séparateur ----
+                    Widget:
+                        size_hint_y: None
+                        height: dp(1)
+                        canvas:
+                            Color:
+                                rgba: app.theme_cls.divider_color
+                            Rectangle:
+                                pos: self.pos
+                                size: self.size
+
+                    # ---- Obstacles ----
                     MDBoxLayout:
                         orientation: "horizontal"
                         spacing: dp(15)
@@ -619,52 +624,8 @@
                             size_hint: None, None
                             size: dp(36), dp(36)
                             on_active: root.on_obstacles_toggle(self.active)
-                            disabled: not root.unity_connected
 
-                    MDBoxLayout:
-                        orientation: "horizontal"
-                        size_hint_y: None
-                        height: self.minimum_height
-
-                        MDTextField:
-                            id: obstacle_probability_field
-                            text: str(int(root.obstacle_probability))
-                            hint_text: "Probabilité d'apparition"
-                            icon_left: "percent"
-                            mode: "rectangle"
-                            input_filter: "int"
-                            text_color_focus: app.theme_cls.primary_color
-                            hint_text_color_focus: app.theme_cls.primary_color
-                            line_color_focus: app.theme_cls.primary_color
-                            icon_left_color_focus: app.theme_cls.primary_color
-                            disabled: not root.unity_connected or not root.obs_enabled
-                            on_text_validate: root.on_obstacle_probability_submit(self.text)
-                            on_focus: root.on_obstacle_probability_submit(self.text) if not self.focus else None
-
-            # ==== MAINS ACTIVES ====
-            MDBoxLayout:
-                orientation: "vertical"
-                spacing: dp(8)
-                size_hint_y: None
-                height: self.minimum_height
-
-                MDLabel:
-                    text: "MAINS ACTIVES"
-                    font_style: "Overline"
-                    theme_text_color: "Secondary"
-                    halign: "left"
-                    padding: dp(16), 0
-                    adaptive_size: True
-
-                MDCard:
-                    orientation: "vertical"
-                    padding: dp(16)
-                    radius: [12]
-                    spacing: dp(10)
-                    size_hint_y: None
-                    height: dp(114)
-                    elevation: 0
-
+                    # ---- Mains actives ----
                     MDBoxLayout:
                         orientation: "horizontal"
                         spacing: dp(15)
@@ -693,7 +654,6 @@
                             size_hint: None, None
                             size: dp(36), dp(36)
                             on_active: root.on_left_hand_toggle(self.active)
-                            disabled: not root.unity_connected
 
                     MDBoxLayout:
                         orientation: "horizontal"
@@ -723,4 +683,3 @@
                             size_hint: None, None
                             size: dp(36), dp(36)
                             on_active: root.on_right_hand_toggle(self.active)
-                            disabled: not root.unity_connected
