@@ -1,7 +1,7 @@
 from kivymd.uix.screen import MDScreen
 from kivy.properties import StringProperty, BooleanProperty
 from kivy.app import App
-from kivy.clock import Clock
+from kivy.clock import Clock, mainthread
 from kivy.core.window import Window
 from kivymd.toast import toast
 from kivymd.uix.button import MDFlatButton
@@ -17,6 +17,7 @@ logger = get_logger(__name__)
 class PlayerProfileScreen(MDScreen):
     """Écran de gestion du profil joueur (nom, âge) accessible depuis le menu Contrôle"""
 
+    unity_connected = BooleanProperty(False) # connexion Unity
     player_name = StringProperty("") # nom du profil actif (affiché sur le sélecteur)
     player_age = StringProperty("") # âge du profil actif (affiché sous le sélecteur)
 
@@ -40,12 +41,15 @@ class PlayerProfileScreen(MDScreen):
         app = App.get_running_app()
 
         self.udp_controller = app.udp_controller
+        self.udp_discovery = app.udp_discovery
         self.session = app.session
         self.player_store = app.player_store
 
+        self.unity_connected = self.udp_discovery.is_unity_connected()
         self._sync_active_profile(self.session.user_profile)
 
         event_bus.subscribe("session_updated", self.on_session_updated)
+        event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
 
         # Ouverture directe du formulaire d'édition demandée depuis un autre
         # écran (ex. icône crayon sur Home) via request_edit_on_enter() —
@@ -66,10 +70,15 @@ class PlayerProfileScreen(MDScreen):
 
     def on_leave(self):
         event_bus.unsubscribe("session_updated", self.on_session_updated)
+        event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
         self._close_player_menu()
 
     def on_session_updated(self, session):
         self._sync_active_profile(session.user_profile)
+
+    @mainthread
+    def handle_unity_connection(self, data):
+        self.unity_connected = data["connected"]
 
     def _sync_active_profile(self, user_profile):
         """

@@ -36,6 +36,7 @@
                     size_hint_y: None
                     height: self.minimum_height
                     elevation: 0
+                    disabled: not root.unity_connected
 
                     MDBoxLayout:
                         orientation: "horizontal"
@@ -95,7 +96,7 @@
 
                         MDRectangleFlatIconButton:
                             id: player_selector_button
-                            text: root.player_name if root.player_name else "Nouveau joueur"
+                            text: root.player_name if root.player_name else "Aucun joueur sélectionné"
                             icon: "account-switch"
                             size_hint_x: 1
                             size_hint_y: None

@@ -65,6 +65,60 @@
                         pos_hint: {"center_y": 0.5}
                         on_release: root.restart_game()
 
+            # ==== PROFIL DU JOUEUR ====
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(8)
+                size_hint_y: None
+                height: self.minimum_height
+
+                MDLabel:
+                    text: "JOUEUR"
+                    font_style: "Overline"
+                    theme_text_color: "Secondary"
+                    halign: "left"
+                    padding: dp(16), 0
+                    adaptive_size: True
+
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(8)
+                    size_hint_y: None
+                    height: self.minimum_height
+                    elevation: 0
+                    disabled: not root.unity_connected
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(15)
+                        size_hint_y: None
+                        height: dp(30)
+
+                        MDIcon:
+                            icon: "account"
+                            theme_text_color: "Custom"
+                            text_color: app.theme_cls.primary_color
+                            font_size: "30sp"
+                            size_hint_x: None
+                            width: dp(30)
+
+                        MDLabel:
+                            text: "Joueur"
+                            font_style: "Body1"
+                            halign: "left"
+                            valign: "center"
+
+                    MDRectangleFlatIconButton:
+                        id: player_selector_button
+                        text: root.player_name if root.player_name else "Aucun joueur sélectionné"
+                        icon: "account-switch"
+                        size_hint_x: 1
+                        size_hint_y: None
+                        height: dp(48)
+                        on_release: root.open_player_menu(self)
+
             # ==== MODE DE JEU ====
             MDBoxLayout:
                 orientation: "vertical"

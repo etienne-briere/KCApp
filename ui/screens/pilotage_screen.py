@@ -44,6 +44,7 @@ class PilotageScreen(MDScreen):
     warmup_enabled = BooleanProperty(False) # modes PID/DRL : warmup
     warmup_duration = NumericProperty(90) # modes PID/DRL : durée du warmup (s)
     require_hr_signal = BooleanProperty(False) # modes Fixe/Incrémental : signal FC requis
+    player_name = StringProperty("") # nom du profil joueur actif
 
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
@@ -54,6 +55,9 @@ class PilotageScreen(MDScreen):
         self.udp_discovery = app.udp_discovery
         self.hr_session = app.hr_session
         self.session = app.session
+        self.player_store = app.player_store
+
+        self.player_name = self.session.user_profile.name
 
         # Vérifier la connexion Unity (au cas où on arrive dans l'écran après la connexion)
         self.unity_connected = self.udp_discovery.is_unity_connected()
@@ -98,6 +102,7 @@ class PilotageScreen(MDScreen):
         event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
         event_bus.unsubscribe("session_updated", self.on_session_updated)
         self._close_model_menu()
+        self._close_player_menu()
 
     # ========== CALLBACKS ==========
 
@@ -122,6 +127,7 @@ class PilotageScreen(MDScreen):
 
     def on_session_updated(self, session):
          # Mise à jour UI
+        self.player_name = session.user_profile.name
         if session.config.target_hr_percent is not None:
             self.target_hr = session.config.target_hr_percent
         if session.config.obs_enabled is not None:
@@ -178,6 +184,53 @@ class PilotageScreen(MDScreen):
             success = send_fn(value)
             if success:
                 logger.info(f"📤 {label} envoyé: {value}")
+
+    # ========== PROFIL DU JOUEUR ==========
+
+    def open_player_menu(self, caller):
+        """Ouvre le menu déroulant de sélection du profil joueur"""
+        self._close_player_menu()
+
+        names = self.player_store.names()
+        if not names:
+            toast("Aucun profil enregistré")
+            return
+
+        items = [
+            {
+                "text": name,
+                "on_release": lambda name=name: self.on_player_select(name),
+            }
+            for name in names
+        ]
+        self._player_menu = MDDropdownMenu(caller=caller, items=items, width_mult=4)
+        # Voir open_model_menu : retrait immédiat pour éviter les zones
+        # mortes de clic laissées par l'animation de dismiss par défaut.
+        self._player_menu.bind(on_dismiss=lambda *_: self._close_player_menu())
+        self._player_menu.open()
+
+    def _close_player_menu(self):
+        menu = getattr(self, "_player_menu", None)
+        if menu is not None:
+            self._player_menu = None
+            Clock.schedule_once(lambda dt: Window.remove_widget(menu), 0)
+
+    def on_player_select(self, name):
+        """Sélection d'un profil dans le menu : devient le profil actif de la session"""
+        self._close_player_menu()
+        profile = self.player_store.get(name)
+        if not profile:
+            return
+
+        self.session.user_profile.name = profile["name"]
+        self.session.user_profile.age = profile["age"]
+        self.player_name = profile["name"]
+        logger.info(f"👤 Profil joueur actif : {profile['name']}, {profile['age']} ans")
+
+        if self.udp_controller:
+            self.udp_controller.set_player_name(profile["name"])
+            self.udp_controller.set_age_player(profile["age"])
+            logger.info(f"📤 Profil joueur envoyé : {profile['name']}, {profile['age']} ans")
 
     # ========== MODE DE JEU ==========
 
