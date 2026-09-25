@@ -95,6 +95,13 @@
                         halign: "left"
                         valign: "center"
 
+                    MDSpinner:
+                        size_hint: None, None
+                        size: dp(24), dp(24)
+                        pos_hint: {"center_y": 0.5}
+                        active: root.casque_en_cours
+                        opacity: 1 if root.casque_en_cours else 0
+
                     MDIconButton:
                         icon: "magnify"
                         theme_text_color: "Custom"
@@ -140,7 +147,7 @@
                 # ---- Préparer le casque (actif dès qu'une IP est renseignée) ----
                 MDRaisedButton:
                     text: "Préparation..." if root.casque_en_cours else "Préparer le casque"
-                    disabled: root.casque_en_cours or not root.casque_ip.strip()
+                    disabled: root.casque_en_cours or not root.casque_ip
                     size_hint_x: 1
                     size_hint_y: None
                     height: dp(48)

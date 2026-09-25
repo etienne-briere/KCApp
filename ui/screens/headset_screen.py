@@ -88,8 +88,16 @@ class HeadsetScreen(MDScreen):
         self._dialog_info_casque.open()
 
     def on_casque_ip_change(self, value):
-        """Champ IP du casque modifié"""
-        self.casque_ip = value
+        """
+        Champ IP du casque modifié.
+
+        Le strip() se fait ici plutôt que dans le kv (headset_screen.kv,
+        condition "disabled" du bouton Préparer) : kv ne crée pas de
+        binding réactif correct quand on appelle une méthode directement
+        sur la propriété observée dans l'expression — root.casque_ip
+        change bien, mais "root.casque_ip.strip()" ne se réévalue jamais.
+        """
+        self.casque_ip = value.strip()
 
     def on_toggle_limite(self, active):
         """
