@@ -43,30 +43,33 @@ _INACTIVE_STATE_ORDER = ["disconnected", "menu", "ready", "paused", "finished"]
 
 class GraphAwareScrollView(ScrollView):
     '''
-    ScrollView qui laisse la molette de la souris atteindre un widget
-    enfant qui gère lui-même le scroll (ici, le zoom du graphique
-    matplotlib) au lieu de systématiquement faire défiler la page.
+    ScrollView qui laisse un widget enfant (ici le graphique matplotlib)
+    gérer lui-même tout toucher qui le concerne — molette de souris,
+    pan à un doigt, zoom pincé à deux doigts — au lieu de systématiquement
+    faire défiler la page.
 
-    Sans ça, ScrollView.on_scroll_start intercepte toute molette sur son
-    contenu (sauf tout en haut/bas de page) avant même qu'elle puisse
-    atteindre un enfant plus bas dans l'arbre — le graphique ne recevait
-    donc jamais l'événement nécessaire à son zoom.
+    Sans ça, ScrollView.on_scroll_start/on_touch_down intercepte tout
+    toucher sur son contenu (sauf tout en haut/bas de page) avant même
+    qu'il puisse atteindre un enfant plus bas dans l'arbre. Pour la molette,
+    le graphique ne recevait alors jamais l'événement nécessaire à son
+    zoom. Pour un pincement à deux doigts sur tablette/mobile, c'est pire :
+    ScrollView garde le PREMIER doigt en attente (pour décider si c'est un
+    tap ou un scroll) et ne le transmet au graphique qu'après un délai —
+    le second doigt du pincement arrive donc seul côté graphique, qui n'a
+    alors qu'un seul point de contact et ne peut pas calculer de zoom.
     '''
     no_scroll_widget = ObjectProperty(None, allownone=True)
 
     def on_touch_down(self, touch):
-        if (
-            self.no_scroll_widget is not None
-            and 'button' in touch.profile
-            and touch.button.startswith('scroll')
-        ):
+        if self.no_scroll_widget is not None:
             touch.push()
             touch.apply_transform_2d(self.to_local)
             collides = self.no_scroll_widget.collide_point(*touch.pos)
             touch.pop()
             if collides:
-                # Contourne la gestion de molette de ScrollView et
-                # redispatche normalement aux enfants (dont le graphique).
+                # Contourne la gestion de scroll/molette de ScrollView et
+                # redispatche immédiatement aux enfants (dont le
+                # graphique), qui gère pan/zoom lui-même.
                 return self.simulate_touch_down(touch)
         return super().on_touch_down(touch)
 
@@ -223,7 +226,6 @@ class TrackingScreen(MDScreen):
         self.fig.patch.set_alpha(0.0) # Fond transparent
         self.ax1.set_facecolor("none") # Fond transparent
         self.ax1.margins(x=0, y=0) # Pas de marges autour des données
-        self.fig.tight_layout() # Ajuster le layout
         self.ax1.grid(True, alpha=0.2) # Grille légère
 
         # Texte indicatif quand pas de données
@@ -274,8 +276,21 @@ class TrackingScreen(MDScreen):
 
         self.update_legend()
 
+        # Ajuster le layout maintenant que les labels/légende existent — le
+        # faire plus tôt (avant qu'ils ne soient posés) ne réservait pas de
+        # place pour eux, ce qui coupait "Temps (s)" en bas du graphique.
+        self.fig.tight_layout()
+
         # Ajouter la figure au widget
         self.ids.hr_graph_widget.figure = self.fig
+        # Réajuste le layout à la taille réelle du widget une fois que Kivy
+        # l'a posé (au premier appel, tight_layout ci-dessus tourne encore
+        # sur la taille par défaut de matplotlib, pas celle de la Card).
+        self.ids.hr_graph_widget.bind(size=self._on_graph_widget_resize)
+
+    def _on_graph_widget_resize(self, *args):
+        self.fig.tight_layout()
+        self.fig.canvas.draw_idle()
     
     #==== CALLBACK =====#
     
