@@ -136,7 +136,13 @@ def pousser_fichier(chemin_local: Path, package: str, nom_distant: str,
     if chemin_distant:
         destination = chemin_distant
     else:
-        destination = nom_distant  # relatif au dossier "files" de run-as
+        # run-as place son répertoire de travail à la RACINE des données de
+        # l'app (/data/user/0/<package>/), pas dans son sous-dossier
+        # "files/" — celui que app_storage_path() renvoie côté Python
+        # (voir _chemin_cle_par_defaut() dans app/network/quest_client.py).
+        # Un chemin relatif atterrirait donc au mauvais endroit ; on
+        # construit directement le chemin absolu attendu.
+        destination = f"/data/user/0/{package}/files/{nom_distant}"
 
     # Toute la commande distante est passée en UN SEUL argument à "shell" :
     # adb.exe recolle les arguments avec de simples espaces avant de les
@@ -160,7 +166,7 @@ def pousser_fichier(chemin_local: Path, package: str, nom_distant: str,
 def verifier_depot(package: str, nom_distant: str, chemin_distant: str | None,
                     *, serial: str | None, adb: str) -> bool:
     """Confirme que le fichier existe bien côté application après dépôt."""
-    destination = chemin_distant or nom_distant
+    destination = chemin_distant or f"/data/user/0/{package}/files/{nom_distant}"
     commande = f"[ -f {shlex.quote(destination)} ] && echo OK || echo ABSENT"
     commande_distante = f"run-as {package} sh -c {shlex.quote(commande)}"
     try:
