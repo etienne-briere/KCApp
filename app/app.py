@@ -8,6 +8,7 @@ from kivymd.toast import toast
 from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.clock import Clock
+from kivy.utils import platform
 
 # Custom modules
 from config import THEME_STYLE, PRIMARY_PALETTE, ACCENT_PALETTE
@@ -95,11 +96,61 @@ class KCApp(MDApp):
         '''
         logger.info("Démarrage de l'application")
 
+        self._request_android_permissions()
+        self._start_background_tracker()
+
         # ScreenManager
         self.sm = self.root.ids.screen_manager
 
         # Démarrer la découverte Unity automatiquement
         self.udp_discovery.start_discovery()
+
+    def _start_background_tracker(self):
+        """
+        Démarre le service "Tracker" (voir buildozer.spec et service.py) qui
+        protège le process (donc le BLE/UDP de l'app principale, inchangés)
+        d'un gel par Android quand l'intervenant passe sur une autre app.
+
+        Le nom de classe Java généré par p4a suit le schéma
+        "<package.domain>.<package.name>.Service<NomDuService>" (voir
+        buildozer.spec : package.domain=org.m2s.apex, package.name=
+        APEX_control, service=Tracker). Si le service ne démarre pas
+        (exception au premier lancement sur l'appareil), vérifier le nom
+        exact généré dans
+        .buildozer/android/platform/build-*/dists/*/src/main/java/ et
+        corriger la chaîne ci-dessous en conséquence.
+        """
+        if platform != "android":
+            return
+
+        try:
+            from jnius import autoclass
+
+            service = autoclass("org.m2s.apex.APEX_control.ServiceTracker")
+            py_activity = autoclass("org.kivy.android.PythonActivity")
+            service.start(py_activity.mActivity, "")
+            logger.info("🔒 Service Tracker démarré (protection arrière-plan)")
+        except Exception:
+            logger.exception("⚠️ Échec du démarrage du service Tracker")
+
+    def _request_android_permissions(self):
+        """
+        Demande au runtime BLUETOOTH_SCAN/BLUETOOTH_CONNECT (Android 12+,
+        API 31+) : bleak (backend p4android) ne demande que les permissions
+        de localisation avant un scan BLE, jamais celles-ci — sans cet appel,
+        le scan/appairage du capteur FC échoue silencieusement sur les
+        appareils récents (ex. Android 16) malgré leur déclaration dans
+        buildozer.spec.
+        """
+        if platform != "android":
+            return
+
+        from android.permissions import Permission, request_permissions
+
+        request_permissions([
+            Permission.BLUETOOTH_SCAN,
+            Permission.BLUETOOTH_CONNECT,
+        ])
     
     def on_stop(self):
         """
