@@ -112,11 +112,13 @@ class KCApp(MDApp):
         d'un gel par Android quand l'intervenant passe sur une autre app.
 
         Le nom de classe Java généré par p4a suit le schéma
-        "<package.domain>.<package.name>.Service<NomDuService>" (voir
-        buildozer.spec : package.domain=org.m2s.apex, package.name=
-        APEX_control, service=Tracker). Si le service ne démarre pas
-        (exception au premier lancement sur l'appareil), vérifier le nom
-        exact généré dans
+        "<package.domain>.<package.name minuscule>.Service<NomDuService>"
+        (voir buildozer.spec : package.domain=org.m2s.apex, package.name=
+        APEX_control -> org.m2s.apex.apex_control (Android exige un nom de
+        paquet en minuscules — confirmé par le chemin de la clé ADB attendue
+        par QuestClient : /data/user/0/org.m2s.apex.apex_control/files/),
+        service=Tracker. Si le service ne démarre pas (exception au premier
+        lancement sur l'appareil), vérifier le nom exact généré dans
         .buildozer/android/platform/build-*/dists/*/src/main/java/ et
         corriger la chaîne ci-dessous en conséquence.
         """
@@ -126,7 +128,7 @@ class KCApp(MDApp):
         try:
             from jnius import autoclass
 
-            service = autoclass("org.m2s.apex.APEX_control.ServiceTracker")
+            service = autoclass("org.m2s.apex.apex_control.ServiceTracker")
             py_activity = autoclass("org.kivy.android.PythonActivity")
             service.start(py_activity.mActivity, "")
             logger.info("🔒 Service Tracker démarré (protection arrière-plan)")

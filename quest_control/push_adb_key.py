@@ -28,7 +28,7 @@ pour la préparation du casque VR" pour le détail.
 Utilisation :
 
     python quest_control/push_adb_key.py
-    python quest_control/push_adb_key.py --package org.m2sapex.apex_manips
+    python quest_control/push_adb_key.py --package org.m2s.apex.apex_control
     python quest_control/push_adb_key.py --cle ~/.android/adbkey --serial ABC123
     python quest_control/push_adb_key.py --chemin-distant /data/user/0/<package>/files/adbkey
 
@@ -48,7 +48,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-PACKAGE_PAR_DEFAUT = "org.m2sapex.apex_manips"
+PACKAGE_PAR_DEFAUT = "org.m2s.apex.apex_control"
 NOM_FICHIER_CLE_PRIVEE = "adbkey"
 NOM_FICHIER_CLE_PUBLIQUE = "adbkey.pub"
 
@@ -118,26 +118,40 @@ def pousser_fichier(chemin_local: Path, package: str, nom_distant: str,
     if not chemin_local.exists():
         raise ErreurPoussage(f"Fichier introuvable sur le poste : {chemin_local}")
 
-    chemin_temporaire_sdcard = f"/sdcard/{nom_distant}"
+    # /data/local/tmp/ plutôt que /sdcard/ : run-as tourne sous l'UID de
+    # l'application mais reste soumis au bac à sable de stockage
+    # (scoped storage / SELinux) sur Android récent, qui lui refuse l'accès
+    # à /sdcard/ ("Permission denied") même si l'app elle-même y accéderait
+    # sans problème via son Context. /data/local/tmp/ est un dossier "shell"
+    # classique, sans cette restriction.
+    chemin_temporaire = f"/data/local/tmp/{nom_distant}"
 
     print(f"\n→ {chemin_local.name}")
 
-    # 1. Poste -> zone publique de la tablette
-    executer_adb(["push", str(chemin_local), chemin_temporaire_sdcard],
+    # 1. Poste -> zone temporaire accessible à run-as
+    executer_adb(["push", str(chemin_local), chemin_temporaire],
                  serial=serial, adb=adb)
 
-    # 2. Zone publique -> dossier privé de l'application (droits de l'appli)
+    # 2. Zone temporaire -> dossier privé de l'application (droits de l'appli)
     if chemin_distant:
         destination = chemin_distant
     else:
         destination = nom_distant  # relatif au dossier "files" de run-as
 
-    commande_cp = f"cp {shlex.quote(chemin_temporaire_sdcard)} {shlex.quote(destination)}"
-    executer_adb(["shell", "run-as", package, "sh", "-c", commande_cp],
-                 serial=serial, adb=adb)
+    # Toute la commande distante est passée en UN SEUL argument à "shell" :
+    # adb.exe recolle les arguments avec de simples espaces avant de les
+    # envoyer à l'appareil (pas de shell local entre les deux), donc
+    # ["shell", "run-as", pkg, "sh", "-c", "cp a b"] perd le regroupement de
+    # "cp a b" en un seul argument pour -c — cp se retrouve sans arguments
+    # côté device ("cp: Needs 1 argument"). En ne passant qu'une chaîne
+    # après "shell", le shell distant peut interpréter les quotes lui-même.
+    commande_cp = f"cp {shlex.quote(chemin_temporaire)} {shlex.quote(destination)}"
+    commande_distante = f"run-as {package} sh -c {shlex.quote(commande_cp)}"
+    executer_adb(["shell", commande_distante], serial=serial, adb=adb)
 
-    # 3. Nettoyage de la copie temporaire en zone publique
-    executer_adb(["shell", "rm", "-f", chemin_temporaire_sdcard],
+    # 3. Nettoyage de la copie temporaire (accessible sans run-as : c'est le
+    # shell/adbd, propriétaire de /data/local/tmp/, qui l'a créée)
+    executer_adb(["shell", "rm", "-f", chemin_temporaire],
                  serial=serial, adb=adb)
 
     print(f"  ✅ Déposé sous les droits de {package} ({destination})")
@@ -148,8 +162,9 @@ def verifier_depot(package: str, nom_distant: str, chemin_distant: str | None,
     """Confirme que le fichier existe bien côté application après dépôt."""
     destination = chemin_distant or nom_distant
     commande = f"[ -f {shlex.quote(destination)} ] && echo OK || echo ABSENT"
+    commande_distante = f"run-as {package} sh -c {shlex.quote(commande)}"
     try:
-        sortie = executer_adb(["shell", "run-as", package, "sh", "-c", commande],
+        sortie = executer_adb(["shell", commande_distante],
                                serial=serial, adb=adb, verbeux=False)
     except ErreurPoussage:
         return False
