@@ -265,114 +265,70 @@
                             on_release: root.apply_model_change()
 
                     # ---- Options du mode Fixe ----
-                    MDBoxLayout:
-                        orientation: "vertical"
-                        padding: 0, dp(12), 0, 0
-                        spacing: dp(10)
+                    ScrollView:
+                        do_scroll_x: False
+                        do_scroll_y: False
                         size_hint_y: None
-                        height: self.minimum_height if root.pending_model == "FIXE" else 0
+                        height: fixe_options_content.height if root.pending_model == "FIXE" else 0
                         opacity: 1 if root.pending_model == "FIXE" else 0
                         disabled: root.pending_model != "FIXE"
 
-                        MDTextField:
-                            id: cube_frequency_field
-                            text: str(int(root.cube_per_min))
-                            hint_text: "Cubes par minute"
-                            icon_left: "speedometer"
-                            mode: "rectangle"
-                            input_filter: "int"
-                            text_color_focus: app.theme_cls.primary_color
-                            hint_text_color_focus: app.theme_cls.primary_color
-                            line_color_focus: app.theme_cls.primary_color
-                            icon_left_color_focus: app.theme_cls.primary_color
-                            on_text_validate: root.on_cube_frequency_submit(self.text)
-                            on_focus: root.on_cube_frequency_submit(self.text) if not self.focus else None
-
-                    # ---- Options du mode Incrémental ----
-                    MDBoxLayout:
-                        orientation: "horizontal"
-                        padding: 0, dp(12), 0, 0
-                        spacing: dp(10)
-                        size_hint_y: None
-                        height: self.minimum_height if root.pending_model == "INCREMENTAL" else 0
-                        opacity: 1 if root.pending_model == "INCREMENTAL" else 0
-                        disabled: root.pending_model != "INCREMENTAL"
-
-                        MDTextField:
-                            id: incremental_steps_field
-                            text: str(int(root.incremental_steps))
-                            hint_text: "Nombre de paliers"
-                            icon_left: "stairs"
-                            mode: "rectangle"
-                            input_filter: "int"
-                            text_color_focus: app.theme_cls.primary_color
-                            hint_text_color_focus: app.theme_cls.primary_color
-                            line_color_focus: app.theme_cls.primary_color
-                            icon_left_color_focus: app.theme_cls.primary_color
-                            on_text_validate: root.on_incremental_steps_submit(self.text)
-                            on_focus: root.on_incremental_steps_submit(self.text) if not self.focus else None
-
-                        MDTextField:
-                            id: incremental_min_cpm_field
-                            text: str(int(root.incremental_min_cpm))
-                            hint_text: "Cpm minimum"
-                            icon_left: "arrow-collapse-down"
-                            mode: "rectangle"
-                            input_filter: "int"
-                            text_color_focus: app.theme_cls.primary_color
-                            hint_text_color_focus: app.theme_cls.primary_color
-                            line_color_focus: app.theme_cls.primary_color
-                            icon_left_color_focus: app.theme_cls.primary_color
-                            on_text_validate: root.on_incremental_min_cpm_submit(self.text)
-                            on_focus: root.on_incremental_min_cpm_submit(self.text) if not self.focus else None
-
-                        MDTextField:
-                            id: incremental_max_cpm_field
-                            text: str(int(root.incremental_max_cpm))
-                            hint_text: "Cpm maximum"
-                            icon_left: "arrow-collapse-up"
-                            mode: "rectangle"
-                            input_filter: "int"
-                            text_color_focus: app.theme_cls.primary_color
-                            hint_text_color_focus: app.theme_cls.primary_color
-                            line_color_focus: app.theme_cls.primary_color
-                            icon_left_color_focus: app.theme_cls.primary_color
-                            on_text_validate: root.on_incremental_max_cpm_submit(self.text)
-                            on_focus: root.on_incremental_max_cpm_submit(self.text) if not self.focus else None
-
-                    # ---- Options des modes PID / DRL ----
-                    MDBoxLayout:
-                        orientation: "vertical"
-                        padding: 0, dp(12), 0, 0
-                        spacing: dp(14)
-                        size_hint_y: None
-                        height: self.minimum_height if root.pending_model in ("PID", "DRL") else 0
-                        opacity: 1 if root.pending_model in ("PID", "DRL") else 0
-                        disabled: root.pending_model not in ("PID", "DRL")
-
                         MDBoxLayout:
-                            orientation: "horizontal"
+                            id: fixe_options_content
+                            orientation: "vertical"
+                            padding: 0, dp(12), 0, 0
                             spacing: dp(10)
                             size_hint_y: None
                             height: self.minimum_height
 
                             MDTextField:
-                                id: target_hr_field
-                                text: str(int(root.target_hr))
-                                hint_text: "FC cible (% FCmax)"
-                                icon_left: "target"
+                                id: cube_frequency_field
+                                text: str(int(root.cube_per_min))
+                                hint_text: "Cubes par minute"
+                                icon_left: "speedometer"
                                 mode: "rectangle"
                                 input_filter: "int"
                                 text_color_focus: app.theme_cls.primary_color
                                 hint_text_color_focus: app.theme_cls.primary_color
                                 line_color_focus: app.theme_cls.primary_color
                                 icon_left_color_focus: app.theme_cls.primary_color
-                                on_text_validate: root.on_target_hr_submit(self.text)
-                                on_focus: root.on_target_hr_submit(self.text) if not self.focus else None
+                                on_text_validate: root.on_cube_frequency_submit(self.text)
+                                on_focus: root.on_cube_frequency_submit(self.text) if not self.focus else None
+
+                    # ---- Options du mode Incrémental ----
+                    ScrollView:
+                        do_scroll_x: False
+                        do_scroll_y: False
+                        size_hint_y: None
+                        height: incremental_options_content.height if root.pending_model == "INCREMENTAL" else 0
+                        opacity: 1 if root.pending_model == "INCREMENTAL" else 0
+                        disabled: root.pending_model != "INCREMENTAL"
+
+                        MDBoxLayout:
+                            id: incremental_options_content
+                            orientation: "horizontal"
+                            padding: 0, dp(12), 0, 0
+                            spacing: dp(10)
+                            size_hint_y: None
+                            height: self.minimum_height
 
                             MDTextField:
-                                id: adaptive_min_cpm_field
-                                text: str(int(root.adaptive_min_cpm))
+                                id: incremental_steps_field
+                                text: str(int(root.incremental_steps))
+                                hint_text: "Nombre de paliers"
+                                icon_left: "stairs"
+                                mode: "rectangle"
+                                input_filter: "int"
+                                text_color_focus: app.theme_cls.primary_color
+                                hint_text_color_focus: app.theme_cls.primary_color
+                                line_color_focus: app.theme_cls.primary_color
+                                icon_left_color_focus: app.theme_cls.primary_color
+                                on_text_validate: root.on_incremental_steps_submit(self.text)
+                                on_focus: root.on_incremental_steps_submit(self.text) if not self.focus else None
+
+                            MDTextField:
+                                id: incremental_min_cpm_field
+                                text: str(int(root.incremental_min_cpm))
                                 hint_text: "Cpm minimum"
                                 icon_left: "arrow-collapse-down"
                                 mode: "rectangle"
@@ -381,12 +337,12 @@
                                 hint_text_color_focus: app.theme_cls.primary_color
                                 line_color_focus: app.theme_cls.primary_color
                                 icon_left_color_focus: app.theme_cls.primary_color
-                                on_text_validate: root.on_adaptive_min_cpm_submit(self.text)
-                                on_focus: root.on_adaptive_min_cpm_submit(self.text) if not self.focus else None
+                                on_text_validate: root.on_incremental_min_cpm_submit(self.text)
+                                on_focus: root.on_incremental_min_cpm_submit(self.text) if not self.focus else None
 
                             MDTextField:
-                                id: adaptive_max_cpm_field
-                                text: str(int(root.adaptive_max_cpm))
+                                id: incremental_max_cpm_field
+                                text: str(int(root.incremental_max_cpm))
                                 hint_text: "Cpm maximum"
                                 icon_left: "arrow-collapse-up"
                                 mode: "rectangle"
@@ -395,8 +351,140 @@
                                 hint_text_color_focus: app.theme_cls.primary_color
                                 line_color_focus: app.theme_cls.primary_color
                                 icon_left_color_focus: app.theme_cls.primary_color
-                                on_text_validate: root.on_adaptive_max_cpm_submit(self.text)
-                                on_focus: root.on_adaptive_max_cpm_submit(self.text) if not self.focus else None
+                                on_text_validate: root.on_incremental_max_cpm_submit(self.text)
+                                on_focus: root.on_incremental_max_cpm_submit(self.text) if not self.focus else None
+
+                    # ---- Options des modes PID / DRL ----
+                    ScrollView:
+                        do_scroll_x: False
+                        do_scroll_y: False
+                        size_hint_y: None
+                        height: pid_drl_options_content.height if root.pending_model in ("PID", "DRL") else 0
+                        opacity: 1 if root.pending_model in ("PID", "DRL") else 0
+                        disabled: root.pending_model not in ("PID", "DRL")
+
+                        MDBoxLayout:
+                            id: pid_drl_options_content
+                            orientation: "vertical"
+                            padding: 0, dp(12), 0, 0
+                            spacing: dp(14)
+                            size_hint_y: None
+                            height: self.minimum_height
+
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: dp(10)
+                                size_hint_y: None
+                                height: self.minimum_height
+
+                                MDTextField:
+                                    id: target_hr_field
+                                    text: str(int(root.target_hr))
+                                    hint_text: "FC cible (% FCmax)"
+                                    icon_left: "target"
+                                    mode: "rectangle"
+                                    input_filter: "int"
+                                    text_color_focus: app.theme_cls.primary_color
+                                    hint_text_color_focus: app.theme_cls.primary_color
+                                    line_color_focus: app.theme_cls.primary_color
+                                    icon_left_color_focus: app.theme_cls.primary_color
+                                    on_text_validate: root.on_target_hr_submit(self.text)
+                                    on_focus: root.on_target_hr_submit(self.text) if not self.focus else None
+    
+                                MDTextField:
+                                    id: adaptive_min_cpm_field
+                                    text: str(int(root.adaptive_min_cpm))
+                                    hint_text: "Cpm minimum"
+                                    icon_left: "arrow-collapse-down"
+                                    mode: "rectangle"
+                                    input_filter: "int"
+                                    text_color_focus: app.theme_cls.primary_color
+                                    hint_text_color_focus: app.theme_cls.primary_color
+                                    line_color_focus: app.theme_cls.primary_color
+                                    icon_left_color_focus: app.theme_cls.primary_color
+                                    on_text_validate: root.on_adaptive_min_cpm_submit(self.text)
+                                    on_focus: root.on_adaptive_min_cpm_submit(self.text) if not self.focus else None
+    
+                                MDTextField:
+                                    id: adaptive_max_cpm_field
+                                    text: str(int(root.adaptive_max_cpm))
+                                    hint_text: "Cpm maximum"
+                                    icon_left: "arrow-collapse-up"
+                                    mode: "rectangle"
+                                    input_filter: "int"
+                                    text_color_focus: app.theme_cls.primary_color
+                                    hint_text_color_focus: app.theme_cls.primary_color
+                                    line_color_focus: app.theme_cls.primary_color
+                                    icon_left_color_focus: app.theme_cls.primary_color
+                                    on_text_validate: root.on_adaptive_max_cpm_submit(self.text)
+                                    on_focus: root.on_adaptive_max_cpm_submit(self.text) if not self.focus else None
+    
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: dp(15)
+                                size_hint_y: None
+                                height: dp(36)
+    
+                                MDIcon:
+                                    icon: "timer-play-outline"
+                                    theme_text_color: "Custom"
+                                    text_color: app.theme_cls.primary_color
+                                    font_size: "26sp"
+                                    size_hint: None, None
+                                    size: dp(30), dp(30)
+                                    pos_hint: {"center_y": 0.5}
+    
+                                MDLabel:
+                                    text: "Warmup"
+                                    font_style: "Body1"
+                                    halign: "left"
+                                    valign: "center"
+    
+                                MDCheckbox:
+                                    id: warmup_checkbox
+                                    active: root.warmup_enabled
+                                    pos_hint: {"center_y": 0.5}
+                                    size_hint: None, None
+                                    size: dp(36), dp(36)
+                                    on_active: root.on_warmup_toggle(self.active)
+                                    disabled: not root.unity_connected
+    
+                            ScrollView:
+                                do_scroll_x: False
+                                do_scroll_y: False
+                                size_hint_y: None
+                                height: warmup_duration_content.height if root.warmup_enabled else 0
+                                opacity: 1 if root.warmup_enabled else 0
+                                disabled: not root.unity_connected or not root.warmup_enabled
+
+                                MDBoxLayout:
+                                    id: warmup_duration_content
+                                    orientation: "vertical"
+                                    size_hint_y: None
+                                    height: self.minimum_height
+
+                                    MDTextField:
+                                        id: warmup_duration_field
+                                        text: str(int(root.warmup_duration))
+                                        hint_text: "Durée du warmup (s)"
+                                        icon_left: "timer-sand"
+                                        mode: "rectangle"
+                                        input_filter: "int"
+                                        text_color_focus: app.theme_cls.primary_color
+                                        hint_text_color_focus: app.theme_cls.primary_color
+                                        line_color_focus: app.theme_cls.primary_color
+                                        icon_left_color_focus: app.theme_cls.primary_color
+                                        on_text_validate: root.on_warmup_duration_submit(self.text)
+                                        on_focus: root.on_warmup_duration_submit(self.text) if not self.focus else None
+
+                    # ---- Signal FC requis (modes Fixe / Incrémental) ----
+                    ScrollView:
+                        do_scroll_x: False
+                        do_scroll_y: False
+                        size_hint_y: None
+                        height: dp(36) if root.pending_model in ("FIXE", "INCREMENTAL") else 0
+                        opacity: 1 if root.pending_model in ("FIXE", "INCREMENTAL") else 0
+                        disabled: root.pending_model not in ("FIXE", "INCREMENTAL")
 
                         MDBoxLayout:
                             orientation: "horizontal"
@@ -405,7 +493,7 @@
                             height: dp(36)
 
                             MDIcon:
-                                icon: "timer-play-outline"
+                                icon: "heart-pulse"
                                 theme_text_color: "Custom"
                                 text_color: app.theme_cls.primary_color
                                 font_size: "26sp"
@@ -414,99 +502,52 @@
                                 pos_hint: {"center_y": 0.5}
 
                             MDLabel:
-                                text: "Warmup"
+                                text: "Signal FC requis"
                                 font_style: "Body1"
                                 halign: "left"
                                 valign: "center"
 
                             MDCheckbox:
-                                id: warmup_checkbox
-                                active: root.warmup_enabled
+                                id: require_hr_signal_checkbox
+                                active: root.require_hr_signal
                                 pos_hint: {"center_y": 0.5}
                                 size_hint: None, None
                                 size: dp(36), dp(36)
-                                on_active: root.on_warmup_toggle(self.active)
+                                on_active: root.on_require_hr_signal_toggle(self.active)
                                 disabled: not root.unity_connected
 
-                        MDBoxLayout:
-                            orientation: "vertical"
-                            size_hint_y: None
-                            height: self.minimum_height if root.warmup_enabled else 0
-                            opacity: 1 if root.warmup_enabled else 0
-                            disabled: not root.unity_connected or not root.warmup_enabled
-
-                            MDTextField:
-                                id: warmup_duration_field
-                                text: str(int(root.warmup_duration))
-                                hint_text: "Durée du warmup (s)"
-                                icon_left: "timer-sand"
-                                mode: "rectangle"
-                                input_filter: "int"
-                                text_color_focus: app.theme_cls.primary_color
-                                hint_text_color_focus: app.theme_cls.primary_color
-                                line_color_focus: app.theme_cls.primary_color
-                                icon_left_color_focus: app.theme_cls.primary_color
-                                on_text_validate: root.on_warmup_duration_submit(self.text)
-                                on_focus: root.on_warmup_duration_submit(self.text) if not self.focus else None
-
-                    # ---- Signal FC requis (modes Fixe / Incrémental) ----
-                    MDBoxLayout:
-                        orientation: "horizontal"
-                        spacing: dp(15)
-                        size_hint_y: None
-                        height: dp(36) if root.pending_model in ("FIXE", "INCREMENTAL") else 0
-                        opacity: 1 if root.pending_model in ("FIXE", "INCREMENTAL") else 0
-                        disabled: root.pending_model not in ("FIXE", "INCREMENTAL")
-
-                        MDIcon:
-                            icon: "heart-pulse"
-                            theme_text_color: "Custom"
-                            text_color: app.theme_cls.primary_color
-                            font_size: "26sp"
-                            size_hint: None, None
-                            size: dp(30), dp(30)
-                            pos_hint: {"center_y": 0.5}
-
-                        MDLabel:
-                            text: "Signal FC requis"
-                            font_style: "Body1"
-                            halign: "left"
-                            valign: "center"
-
-                        MDCheckbox:
-                            id: require_hr_signal_checkbox
-                            active: root.require_hr_signal
-                            pos_hint: {"center_y": 0.5}
-                            size_hint: None, None
-                            size: dp(36), dp(36)
-                            on_active: root.on_require_hr_signal_toggle(self.active)
-                            disabled: not root.unity_connected
-
                 # ---- Alerte signal FC requis (modes PID / DRL) ----
-                MDBoxLayout:
-                    orientation: "horizontal"
-                    spacing: dp(6)
-                    padding: dp(16), 0
+                ScrollView:
+                    do_scroll_x: False
+                    do_scroll_y: False
                     size_hint_y: None
                     height: dp(20) if root.pending_model in ("PID", "DRL") else 0
                     opacity: 1 if root.pending_model in ("PID", "DRL") else 0
+                    disabled: root.pending_model not in ("PID", "DRL")
 
-                    MDIcon:
-                        icon: "information-outline"
-                        theme_text_color: "Custom"
-                        text_color: AMBER_FG
-                        font_size: "16sp"
-                        size_hint: None, None
-                        size: dp(16), dp(20)
-                        pos_hint: {"center_y": 0.5}
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(6)
+                        padding: dp(16), 0
+                        size_hint_y: None
+                        height: dp(20)
 
-                    MDLabel:
-                        text: "Ce mode nécessite un signal FC valide pour fonctionner"
-                        theme_text_color: "Custom"
-                        text_color: AMBER_FG
-                        font_style: "Caption"
-                        halign: "left"
-                        valign: "center"
+                        MDIcon:
+                            icon: "information-outline"
+                            theme_text_color: "Custom"
+                            text_color: AMBER_FG
+                            font_size: "16sp"
+                            size_hint: None, None
+                            size: dp(16), dp(20)
+                            pos_hint: {"center_y": 0.5}
+
+                        MDLabel:
+                            text: "Ce mode nécessite un signal FC valide pour fonctionner"
+                            theme_text_color: "Custom"
+                            text_color: AMBER_FG
+                            font_style: "Caption"
+                            halign: "left"
+                            valign: "center"
 
             # ==== OPTIONS GÉNÉRALES (indépendantes du mode de jeu) ====
             MDBoxLayout:
