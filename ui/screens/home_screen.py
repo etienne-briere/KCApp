@@ -324,6 +324,16 @@ class HomeScreen(MDScreen):
             else:
                 toast("❌ Échec du retour au menu")
 
+    # Recentrage désactivé en attendant le handler côté Unity (recenterView)
+    # def recenter_view(self):
+    #     """Recentre l'orientation du joueur dans le jeu"""
+    #     if self.udp_controller:
+    #         success = self.udp_controller.recenter_view()
+    #         if success:
+    #             logger.info("🧭 Recentrage de la vue demandé")
+    #         else:
+    #             toast("❌ Échec de la demande de recentrage")
+
     def confirm_quit_game(self):
         """Bouton « Quitter » : demande confirmation avant de fermer le jeu"""
         if not hasattr(self, "_dialog_confirm_quit") or self._dialog_confirm_quit is None:

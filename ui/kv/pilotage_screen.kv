@@ -87,6 +87,21 @@
                             disabled: root.game_state == "Menu"
                             on_release: root.restart_game()
 
+                    # ---- Recentrer la vue : désactivé en attendant le handler Unity (recenterView) ----
+                    # MDBoxLayout:
+                    #     orientation: "horizontal"
+                    #     size_hint_y: None
+                    #     height: dp(48)
+                    #
+                    #     MDRectangleFlatIconButton:
+                    #         text: "Recentrer la vue"
+                    #         icon: "compass-outline"
+                    #         size_hint_x: 1
+                    #         size_hint_y: None
+                    #         height: dp(48)
+                    #         disabled: root.game_state == "Menu"
+                    #         on_release: root.recenter_view()
+
                     # ---- Retour au menu (actif hors Menu) ----
                     MDBoxLayout:
                         orientation: "horizontal"
