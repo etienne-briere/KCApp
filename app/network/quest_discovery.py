@@ -37,6 +37,8 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
+from kivy.utils import platform
+
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -111,13 +113,25 @@ async def decouvrir_casque(chemin_cle: Path, port: int = 5555,
     N'effectue jamais de connexion ADB à l'aveugle : chaque candidat est
     validé par une authentification réelle + vérification du modèle avant
     d'être retenu.
+
+    Le balayage réseau (transport_android/QuestAndroid, qui ouvre une
+    connexion TCP indépendante par IP candidate) n'a de sens que sur
+    Android — la version desktop (Quest, adb.exe) ne cible qu'un seul
+    appareil connecté à la fois. Sur desktop, on se contente de retester
+    la dernière IP connue ; sans casque déjà appairé, l'IP se saisit
+    manuellement dans l'écran Casque VR.
     """
-    from transport_android import QuestAndroid
     from quest import ErreurAdb
 
     async def est_le_casque(ip: str) -> bool:
         def verifier() -> bool:
-            quest = QuestAndroid(ip=ip, chemin_cle=chemin_cle)
+            if platform == "android":
+                from transport_android import QuestAndroid
+                quest = QuestAndroid(ip=ip, chemin_cle=chemin_cle)
+            else:
+                from quest import Quest
+                quest = Quest()
+                quest.connecter_wifi(ip)
             quest.verifier_connexion()
             return "quest" in quest.modele().lower()
 
@@ -133,6 +147,10 @@ async def decouvrir_casque(chemin_cle: Path, port: int = 5555,
     if derniere_ip and await est_le_casque(derniere_ip):
         logger.info(f"✅ Casque retrouvé à la dernière IP connue : {derniere_ip}")
         return derniere_ip
+
+    if platform != "android":
+        logger.info("🔍 Balayage réseau non disponible sur desktop — saisissez l'IP manuellement")
+        return None
 
     logger.info("🔍 Balayage du réseau local pour trouver le casque...")
     candidats = await _balayer_port(port)

@@ -105,21 +105,34 @@ class QuestClient:
 
     async def se_connecter(self, ip: str) -> bool:
         """Ouvre (ou ré-ouvre) la connexion ADB vers le casque à `ip`."""
-        from transport_android import QuestAndroid
         from quest import ErreurAdb
 
-        if not self._chemin_cle.exists():
-            message = f"Clé ADB introuvable : {self._chemin_cle}"
-            logger.error(f"❌ {message}")
-            event_bus.emit("casque_erreur", {"message": message})
-            return False
+        # Android : transport pur Python (adb-shell), avec sa propre clé
+        # déposée par push_adb_key.py. Desktop : Quest "classique", qui
+        # passe par le binaire adb.exe déjà configuré sur le poste — pas
+        # besoin de charger explicitement une clé ici, adb.exe gère la
+        # sienne lui-même.
+        if platform == "android":
+            if not self._chemin_cle.exists():
+                message = f"Clé ADB introuvable : {self._chemin_cle}"
+                logger.error(f"❌ {message}")
+                event_bus.emit("casque_erreur", {"message": message})
+                return False
 
-        def connecter():
-            quest = QuestAndroid(ip=ip, chemin_cle=self._chemin_cle)
-            # connecter_wifi (pas verifier_connexion) : mémorise aussi l'IP
-            # dans quest_control/config.json, réutilisée par se_connecter_auto.
-            quest.connecter_wifi(ip)
-            return quest
+            def connecter():
+                from transport_android import QuestAndroid
+                quest = QuestAndroid(ip=ip, chemin_cle=self._chemin_cle)
+                # connecter_wifi (pas verifier_connexion) : mémorise aussi
+                # l'IP dans quest_control/config.json, réutilisée par
+                # se_connecter_auto.
+                quest.connecter_wifi(ip)
+                return quest
+        else:
+            def connecter():
+                from quest import Quest
+                quest = Quest()
+                quest.connecter_wifi(ip)
+                return quest
 
         try:
             self._quest = await self._en_arriere_plan(connecter)
