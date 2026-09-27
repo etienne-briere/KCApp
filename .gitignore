@@ -134,3 +134,4 @@ config.local.json
 .buildozer/
 bin/
 __pycache__/
+*:Zone.Identifier
