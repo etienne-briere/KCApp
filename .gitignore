@@ -131,3 +131,6 @@ UserSettings/
 *.json
 secrets.json
 config.local.json
+.buildozer/
+bin/
+__pycache__/
