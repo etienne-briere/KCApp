@@ -50,15 +50,14 @@ requirements = python3,kivy==2.3.1,filetype, kivymd==1.2.0, matplotlib, kivy_mat
 # requirements.source.kivy = ../../kivy
 
 # (str) Presplash of the application
-#presplash.filename = %(source.dir)s/data/presplash.png
-presplash.filename = assets/splash.png
+presplash.filename = %(source.dir)s/data/presplash.png
 
 # (str) Icon of the application
-#icon.filename = %(source.dir)s/data/icon.png
+icon.filename = %(source.dir)s/data/icon.png
 
 # (list) Supported orientations
 # Valid options are: landscape, portrait, portrait-reverse or landscape-reverse
-orientation = portrait
+orientation = portrait, landscape
 
 # (list) List of service to declare
 # "foreground" fait générer par p4a le code Java startForeground() avec une
@@ -93,7 +92,7 @@ fullscreen = 0
 # red, blue, green, black, white, gray, cyan, magenta, yellow, lightgray,
 # darkgray, grey, lightgrey, darkgrey, aqua, fuchsia, lime, maroon, navy,
 # olive, purple, silver, teal.
-#android.presplash_color = #FFFFFF
+android.presplash_color = #36155E
 
 # (string) Presplash animation using Lottie format.
 # see https://lottiefiles.com/ for examples and https://airbnb.design/lottie/
@@ -102,8 +101,8 @@ fullscreen = 0
 #android.presplash_lottie = "path/to/lottie/file.json"
 
 # (str) Adaptive icon of the application (used if Android API level is 26+ at runtime)
-#icon.adaptive_foreground.filename = %(source.dir)s/data/icon_fg.png
-#icon.adaptive_background.filename = %(source.dir)s/data/icon_bg.png
+icon.adaptive_foreground.filename = %(source.dir)s/data/icon_fg.png
+icon.adaptive_background.filename = %(source.dir)s/data/icon_bg.png
 
 # (list) Permissions
 # (See https://python-for-android.readthedocs.io/en/latest/buildoptions/#build-options-1 for all the supported syntaxes and properties)
@@ -363,7 +362,8 @@ android.allow_backup = True
 #p4a.source_dir = .buildozer/android/platform/python-for-android
 
 # (str) The directory in which python-for-android should look for your own build recipes (if any)
-p4a.local_recipes =  ../bleak/backends/p4android/recipes
+#p4a.local_recipes =  ../bleak/backends/p4android/recipes
+p4a.local_recipes = ./p4a-recipes
 
 # (str) Filename to the hook for p4a
 #p4a.hook = p4a/hook.py
