@@ -9,6 +9,7 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.metrics import Metrics
 from kivy.uix.scrollview import ScrollView
+from kivy.utils import platform
 
 # Custom modules
 import matplotlib.pyplot as plt
@@ -18,6 +19,11 @@ import numpy as np
 
 # Standard library
 import asyncio
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "csv_export_kit"))
+from csv_export.platform_io import share_file_android  # noqa: E402
 
 from pyparsing import line
 from utils.event_bus import event_bus
@@ -514,19 +520,28 @@ class TrackingScreen(MDScreen):
         self.ax1.set_ylim(0, 100)
         self.fig.canvas.draw_idle()
 
-    # Export désactivé pour la version Android (voir game_session.py)
-    # def export_session(self):
-    #     """Exporte la session en cours en CSV, sans la réinitialiser"""
-    #     path = self.session.export_csv(
-    #         include_target=self.show_target,
-    #         include_cpm=self.show_cpm,
-    #         include_state=self.show_game_state,
-    #     )
-    #
-    #     if path:
-    #         toast(f"Session exportée : {path}")
-    #     else:
-    #         toast("Aucune donnée à exporter")
+    def export_session(self):
+        """Exporte la session en cours en CSV, sans la réinitialiser"""
+        path = self.session.export_csv(
+            include_target=self.show_target,
+            include_cpm=self.show_cpm,
+            include_state=self.show_game_state,
+        )
+
+        if path:
+            self._finish_export(path)
+        else:
+            toast("Aucune donnée à exporter")
+
+    def _finish_export(self, path):
+        """
+        Confirme l'export, et partage le fichier via la feuille de partage
+        Android — sur Android le fichier est écrit dans le stockage
+        applicatif, inaccessible autrement à l'utilisateur.
+        """
+        toast(f"Session exportée : {path}")
+        if platform == "android":
+            share_file_android(path)
 
     # ========== SESSIONS EN ATTENTE D'EXPORT/SUPPRESSION ==========
 
@@ -540,7 +555,7 @@ class TrackingScreen(MDScreen):
         row = SessionRow(
             record=record,
             delete_callback=self._delete_pending_session,
-            # export_callback=self._export_pending_session,  # Export désactivé pour la version Android
+            export_callback=self._export_pending_session,
         )
         self.ids.pending_sessions_list.add_widget(row)
         self.has_pending_sessions = True
@@ -556,13 +571,12 @@ class TrackingScreen(MDScreen):
         self._remove_session_row(row)
         toast("Session supprimée")
 
-    # Export désactivé pour la version Android (voir game_session.py)
-    # def _export_pending_session(self, row):
-    #     """Exporte une session en attente en CSV, puis la retire de la liste"""
-    #     path = row.record.export_csv(
-    #         include_target=self.show_target,
-    #         include_cpm=self.show_cpm,
-    #         include_state=self.show_game_state,
-    #     )
-    #     toast(f"Session exportée : {path}")
-    #     self._remove_session_row(row)
+    def _export_pending_session(self, row):
+        """Exporte une session en attente en CSV, puis la retire de la liste"""
+        path = row.record.export_csv(
+            include_target=self.show_target,
+            include_cpm=self.show_cpm,
+            include_state=self.show_game_state,
+        )
+        self._finish_export(path)
+        self._remove_session_row(row)
