@@ -477,12 +477,17 @@ class TrackingScreen(MDScreen):
 
     def center_graph(self):
         '''Recentrer le graphique à partir du début de la partie'''
-        
+
         # Moment du slice du 1er cube
         game_start_time = self.session.metrics.cpm_time[0] if self.session.metrics.cpm_time else 0
-        
+
+        # Durée totale de la session configurée (Pilotage) plutôt que les
+        # 10 minutes fixes par défaut — None tant qu'Unity ne l'a pas
+        # encore envoyée (avant toute connexion), auquel cas on garde 600s.
+        duration = self.session.config.session_duration or 600
+
         # MAJ UI
-        self.ax1.set_xlim(game_start_time, game_start_time + 600)
+        self.ax1.set_xlim(game_start_time, game_start_time + duration)
         self.ax1.set_ylim(0, 100)
 
         # Redessiner graphe
