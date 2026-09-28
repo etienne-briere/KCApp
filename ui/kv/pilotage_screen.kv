@@ -20,13 +20,27 @@
                 size_hint_y: None
                 height: self.minimum_height
 
-                MDLabel:
-                    text: "ACTIONS DU JEU"
-                    font_style: "Overline"
-                    theme_text_color: "Secondary"
-                    halign: "left"
-                    padding: dp(16), 0
-                    adaptive_size: True
+                MDBoxLayout:
+                    orientation: "horizontal"
+                    size_hint_y: None
+                    height: self.minimum_height
+
+                    MDLabel:
+                        text: "ACTIONS DU JEU"
+                        font_style: "Overline"
+                        theme_text_color: "Secondary"
+                        halign: "left"
+                        padding: dp(16), 0
+                        adaptive_size: True
+
+                    Widget:
+
+                    MDSpinner:
+                        size_hint: None, None
+                        size: dp(18), dp(18)
+                        pos_hint: {"center_y": 0.5}
+                        active: root.action_en_cours
+                        opacity: 1 if root.action_en_cours else 0
 
                 MDCard:
                     orientation: "vertical"
@@ -87,20 +101,20 @@
                             disabled: root.game_state == "Menu"
                             on_release: root.restart_game()
 
-                    # ---- Recentrer la vue : désactivé en attendant le handler Unity (recenterView) ----
-                    # MDBoxLayout:
-                    #     orientation: "horizontal"
-                    #     size_hint_y: None
-                    #     height: dp(48)
-                    #
-                    #     MDRectangleFlatIconButton:
-                    #         text: "Recentrer la vue"
-                    #         icon: "compass-outline"
-                    #         size_hint_x: 1
-                    #         size_hint_y: None
-                    #         height: dp(48)
-                    #         disabled: root.game_state == "Menu"
-                    #         on_release: root.recenter_view()
+                    # ---- Recentrer la vue (actif hors Menu) ----
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        size_hint_y: None
+                        height: dp(48)
+
+                        MDRectangleFlatIconButton:
+                            text: "Recentrer la vue"
+                            icon: "compass-outline"
+                            size_hint_x: 1
+                            size_hint_y: None
+                            height: dp(48)
+                            disabled: root.game_state == "Menu"
+                            on_release: root.recenter_view()
 
                     # ---- Retour au menu (actif hors Menu) ----
                     MDBoxLayout:

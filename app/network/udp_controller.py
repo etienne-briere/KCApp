@@ -54,16 +54,9 @@ class UDPController:
         """Quitte le jeu Unity"""
         return self.send_command("quitGame", "true")
 
-    # Recentrage désactivé en attendant le handler côté Unity (recenterView)
-    # def recenter_view(self) -> bool:
-    #     """
-    #     Recentre l'orientation du joueur dans le jeu (équivalent à l'appui
-    #     long sur le bouton Oculus) — nécessite un handler côté Unity qui
-    #     appelle l'API de recentrage XR à la réception de cette commande,
-    #     pas encore confirmé/implémenté côté jeu au moment où ce commentaire
-    #     est écrit.
-    #     """
-    #     return self.send_command("recenterView", "true")
+    def recenter_view(self) -> bool:
+        """Recentre l'orientation du joueur dans le jeu (équivalent à l'appui long sur le bouton Oculus)"""
+        return self.send_command("resetView", "true")
 
     def set_target_hr(self, target_hr: float) -> bool:
         """Envoie la FC cible à Unity"""

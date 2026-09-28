@@ -47,6 +47,13 @@ class PilotageScreen(MDScreen):
     brick_speed = NumericProperty(8) # vitesse des briques (tous modes)
     player_name = StringProperty("") # nom du profil joueur actif
     game_state = StringProperty("Menu") # état de partie reçu de Unity (Menu/Ready/Playing/Paused/Finished)
+    # Spinner de la Card "Actions du jeu" pendant le délai UDP normal entre
+    # un clic et la confirmation que Unity a changé d'état — voir
+    # on_session_updated, qui l'arrête dès qu'un nouvel état arrive, et
+    # _ACTION_TIMEOUT, le filet de sécurité si rien ne revient jamais
+    # (même mécanisme que home_screen.py).
+    action_en_cours = BooleanProperty(False)
+    _ACTION_TIMEOUT = 8
 
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
@@ -134,6 +141,10 @@ class PilotageScreen(MDScreen):
          # Mise à jour UI
         self.player_name = session.user_profile.name
         self.game_state = session.game_state.capitalize()
+        # Un nouvel état confirme que Unity a bien traité la dernière
+        # commande envoyée (voir _lancer_action_jeu) — inutile d'attendre
+        # le timeout de secours.
+        self._arreter_indicateur_action()
         if session.config.target_hr_percent is not None:
             self.target_hr = session.config.target_hr_percent
         if session.config.obs_enabled is not None:
@@ -505,60 +516,56 @@ class PilotageScreen(MDScreen):
 
     # ========== GAME ACTIONS ==========
 
+    def _lancer_action_jeu(self, envoyer, message_reussite, message_echec):
+        """
+        Envoie une commande de jeu et affiche le spinner "Actions du jeu"
+        jusqu'à confirmation (prochain game_state reçu, voir
+        on_session_updated) ou timeout de secours — voir action_en_cours.
+        """
+        if not self.udp_controller:
+            return
+        success = envoyer()
+        if success:
+            logger.info(message_reussite)
+            self.action_en_cours = True
+            Clock.unschedule(self._arreter_indicateur_action)
+            Clock.schedule_once(self._arreter_indicateur_action, self._ACTION_TIMEOUT)
+        else:
+            toast(message_echec)
+
+    def _arreter_indicateur_action(self, *_):
+        Clock.unschedule(self._arreter_indicateur_action)
+        self.action_en_cours = False
+
     def pause_game(self):
         """Met le jeu en pause"""
-        if self.udp_controller:
-            success = self.udp_controller.pause_game()
-            if success:
-                logger.info("⏸️ Jeu en pause")
-            else:
-                toast("❌ Échec de la mise en pause")
+        self._lancer_action_jeu(lambda: self.udp_controller.pause_game(),
+                                 "⏸️ Jeu en pause", "❌ Échec de la mise en pause")
 
     def resume_game(self):
         """Reprend le jeu"""
-        if self.udp_controller:
-            success = self.udp_controller.resume_game()
-            if success:
-                logger.info("▶️ Jeu repris")
-            else:
-                toast("❌ Échec de la reprise")
+        self._lancer_action_jeu(lambda: self.udp_controller.resume_game(),
+                                 "▶️ Jeu repris", "❌ Échec de la reprise")
 
     def restart_game(self):
         """Redémarre le jeu"""
-        if self.udp_controller:
-            success = self.udp_controller.restart_game()
-            if success:
-                logger.info("🔄 Jeu redémarré")
-            else:
-                toast("❌ Échec du redémarrage")
+        self._lancer_action_jeu(lambda: self.udp_controller.restart_game(),
+                                 "🔄 Jeu redémarré", "❌ Échec du redémarrage")
 
     def launch_game(self):
         """Lance la scène de jeu depuis le menu"""
-        if self.udp_controller:
-            success = self.udp_controller.launch_game()
-            if success:
-                logger.info("🚀 Partie lancée")
-            else:
-                toast("❌ Échec du lancement de la partie")
+        self._lancer_action_jeu(lambda: self.udp_controller.launch_game(),
+                                 "🚀 Partie lancée", "❌ Échec du lancement de la partie")
 
     def return_to_menu(self):
         """Retourne au menu principal depuis la scène de jeu"""
-        if self.udp_controller:
-            success = self.udp_controller.return_to_menu()
-            if success:
-                logger.info("↩️ Retour au menu")
-            else:
-                toast("❌ Échec du retour au menu")
+        self._lancer_action_jeu(lambda: self.udp_controller.return_to_menu(),
+                                 "↩️ Retour au menu", "❌ Échec du retour au menu")
 
-    # Recentrage désactivé en attendant le handler côté Unity (recenterView)
-    # def recenter_view(self):
-    #     """Recentre l'orientation du joueur dans le jeu"""
-    #     if self.udp_controller:
-    #         success = self.udp_controller.recenter_view()
-    #         if success:
-    #             logger.info("🧭 Recentrage de la vue demandé")
-    #         else:
-    #             toast("❌ Échec de la demande de recentrage")
+    def recenter_view(self):
+        """Recentre l'orientation du joueur dans le jeu"""
+        self._lancer_action_jeu(lambda: self.udp_controller.recenter_view(),
+                                 "🧭 Recentrage de la vue demandé", "❌ Échec de la demande de recentrage")
 
     def confirm_quit_game(self):
         """Bouton « Quitter » : demande confirmation avant de fermer le jeu"""
