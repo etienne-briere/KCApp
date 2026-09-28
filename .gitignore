@@ -129,6 +129,7 @@ UserSettings/
 
 *.env
 *.json
+!player_profiles.json
 secrets.json
 config.local.json
 .buildozer/
