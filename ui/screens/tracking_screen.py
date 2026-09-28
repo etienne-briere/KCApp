@@ -7,6 +7,7 @@ from kivymd.toast import toast
 from kivy.properties import StringProperty, NumericProperty, BooleanProperty, ListProperty, ObjectProperty
 from kivy.app import App
 from kivy.clock import Clock
+from kivy.metrics import Metrics
 from kivy.uix.scrollview import ScrollView
 
 # Custom modules
@@ -215,9 +216,14 @@ class TrackingScreen(MDScreen):
 
     def init_graph(self):
         """Initialise le graphique Matplotlib"""
-        
-        # Créer la figure et les axes
-        self.fig, self.ax1 = plt.subplots()
+
+        # dpi = celui réel de l'appareil (Metrics.dpi), pas la valeur par
+        # défaut de matplotlib (100) : les tailles de police sont en points
+        # (unité physique), donc sans ça elles restent minuscules sur un
+        # écran à plus haute densité qu'un moniteur de bureau classique —
+        # voir kivy_matplotlib_widget/uix/graph_widget.py::_onSize, qui
+        # dimensionne la figure à partir de ce dpi.
+        self.fig, self.ax1 = plt.subplots(dpi=Metrics.dpi)
 
         # Axe secondaire (CPM)
         self.ax2 = self.ax1.twinx()
