@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "csv_export_kit"))
-from csv_export.platform_io import share_file_android  # noqa: E402
+from csv_export.platform_io import default_export_dir, pick_export_folder, share_file_android  # noqa: E402
 
 from pyparsing import line
 from utils.event_bus import event_bus
@@ -118,9 +118,18 @@ class TrackingScreen(MDScreen):
     # Sessions passées en attente d'export ou de suppression
     has_pending_sessions = BooleanProperty(False)
 
+    # Le choix du dossier (plyer.filechooser) n'a d'effet que sur desktop —
+    # sur Android le fichier va toujours dans le stockage applicatif puis
+    # est partagé via la feuille de partage (voir _finish_export).
+    can_choose_export_folder = BooleanProperty(platform != "android")
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
+
+        # Dossier d'export courant, modifiable via choose_export_folder()
+        # sur desktop. Reste au défaut sur Android (non affiché dans l'UI).
+        self.export_folder = default_export_dir("KCApp")
+
         # Configuration Matplotlib
         self.fig = None
         self.line_hr = None
@@ -520,9 +529,24 @@ class TrackingScreen(MDScreen):
         self.ax1.set_ylim(0, 100)
         self.fig.canvas.draw_idle()
 
+    def choose_export_folder(self):
+        """
+        Ouvre le sélecteur de dossier desktop (plyer). Sans effet sur
+        Android — le bouton correspondant y est masqué (voir
+        can_choose_export_folder).
+        """
+        pick_export_folder(self._on_export_folder_selected)
+
+    def _on_export_folder_selected(self, selection):
+        if not selection:
+            return
+        self.export_folder = selection[0]
+        toast(f"Dossier d'export : {self.export_folder}")
+
     def export_session(self):
         """Exporte la session en cours en CSV, sans la réinitialiser"""
         path = self.session.export_csv(
+            folder=self.export_folder,
             include_target=self.show_target,
             include_cpm=self.show_cpm,
             include_state=self.show_game_state,
@@ -574,6 +598,7 @@ class TrackingScreen(MDScreen):
     def _export_pending_session(self, row):
         """Exporte une session en attente en CSV, puis la retire de la liste"""
         path = row.record.export_csv(
+            folder=self.export_folder,
             include_target=self.show_target,
             include_cpm=self.show_cpm,
             include_state=self.show_game_state,

@@ -169,6 +169,18 @@
                     Widget:  # pousse les boutons à droite
 
                     MDIconButton:
+                        icon: "folder-edit-outline"
+                        theme_text_color: "Custom"
+                        text_color: "grey"
+                        size_hint: None, None
+                        size: dp(32), dp(32)
+                        icon_size: "20sp"
+                        pos_hint: {"center_y": 0.5}
+                        opacity: 1 if root.can_choose_export_folder else 0
+                        disabled: not root.can_choose_export_folder
+                        on_release: root.choose_export_folder()
+
+                    MDIconButton:
                         icon: "image-filter-center-focus-weak"
                         theme_text_color: "Custom"
                         text_color: "grey"

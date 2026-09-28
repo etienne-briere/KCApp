@@ -174,7 +174,8 @@ android.minapi = 28
 # (str) Extra xml to write directly inside the <manifest><application> tag of AndroidManifest.xml
 # use that parameter to provide a filename from where to load your custom XML arguments:
 #android.extra_manifest_application_arguments = ./src/android/extra_manifest_application_arguments.xml
-#android.extra_manifest_application_arguments = src/android/extra_manifest_application_arguments.xml
+# non utilisé : le FileProvider est injecté par p4a/hook.py (voir p4a.hook)
+#android.extra_manifest_application_arguments = src/android/file_provider.xml
 
 # (str) Full name including package path of the Java class that implements Python Service
 # use that parameter to set custom Java class which extends PythonService
@@ -226,8 +227,11 @@ android.add_src = src
 # each of a resource kind:  drawable, xml, etc...
 # android.add_resources = legal_resources
 #android.add_resources = res/xml/file_paths.xml
-# copie de file_paths.xml vers res/xml
-#android.add_resources = src/android/file_paths.xml:xml/file_paths.xml
+# copie de file_paths.xml vers res/xml — requis par le <provider> FileProvider
+# injecté dans l'AndroidManifest par p4a/hook.py (voir p4a.hook), pour que
+# csv_export.platform_io.share_file_android() puisse partager le CSV
+# exporté (stockage applicatif Android non accessible autrement).
+android.add_resources = src/android/file_paths.xml:xml/file_paths.xml
 
 
 # (list) Gradle dependencies to add
@@ -366,7 +370,7 @@ android.allow_backup = True
 p4a.local_recipes = ./p4a-recipes
 
 # (str) Filename to the hook for p4a
-#p4a.hook = p4a/hook.py
+p4a.hook = p4a/hook.py
 
 # (str) Bootstrap to use for android builds
 # p4a.bootstrap = sdl2
