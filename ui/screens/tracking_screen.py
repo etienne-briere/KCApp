@@ -217,13 +217,16 @@ class TrackingScreen(MDScreen):
     def init_graph(self):
         """Initialise le graphique Matplotlib"""
 
-        # dpi = celui réel de l'appareil (Metrics.dpi), pas la valeur par
-        # défaut de matplotlib (100) : les tailles de police sont en points
-        # (unité physique), donc sans ça elles restent minuscules sur un
-        # écran à plus haute densité qu'un moniteur de bureau classique —
-        # voir kivy_matplotlib_widget/uix/graph_widget.py::_onSize, qui
+        # dpi = 100 (défaut desktop) mis à l'échelle par Metrics.density,
+        # PAS Metrics.dpi (le DPI physique brut de l'écran, qui peut
+        # dépasser 300 sur une tablette récente — bien trop pour la taille
+        # visuelle voulue). Metrics.density est le facteur qu'utilise déjà
+        # tout le reste de l'app via dp() ; s'y aligner ici garde le texte
+        # du graphique à une taille cohérente avec le reste de l'UI, quel
+        # que soit l'appareil — voir
+        # kivy_matplotlib_widget/uix/graph_widget.py::_onSize, qui
         # dimensionne la figure à partir de ce dpi.
-        self.fig, self.ax1 = plt.subplots(dpi=Metrics.dpi)
+        self.fig, self.ax1 = plt.subplots(dpi=100 * Metrics.density)
 
         # Axe secondaire (CPM)
         self.ax2 = self.ax1.twinx()
