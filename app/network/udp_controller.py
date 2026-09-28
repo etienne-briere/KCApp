@@ -58,6 +58,10 @@ class UDPController:
         """Recentre l'orientation du joueur dans le jeu (équivalent à l'appui long sur le bouton Oculus)"""
         return self.send_command("resetView", "true")
 
+    def restore_view(self) -> bool:
+        """Restaure la vue d'origine du jeu"""
+        return self.send_command("restoreView", "true")
+
     def set_target_hr(self, target_hr: float) -> bool:
         """Envoie la FC cible à Unity"""
         return self.send_command("target_hr", str(target_hr))

@@ -83,6 +83,9 @@ class HomeScreen(MDScreen):
     # (ex. Unity déconnecté juste après l'envoi).
     action_en_cours = BooleanProperty(False)
     _ACTION_TIMEOUT = 8
+    # "Restaurer la vue d'origine" n'a de sens qu'après un "Recentrer la
+    # vue" — voir recenter_view()/restore_view().
+    vue_recentree = BooleanProperty(False)
 
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
@@ -215,7 +218,7 @@ class HomeScreen(MDScreen):
         secours — voir action_en_cours.
         """
         if not self.udp_controller:
-            return
+            return False
         success = envoyer()
         if success:
             logger.info(message_reussite)
@@ -224,6 +227,7 @@ class HomeScreen(MDScreen):
             Clock.schedule_once(self._arreter_indicateur_action, self._ACTION_TIMEOUT)
         else:
             toast(message_echec)
+        return success
 
     def _arreter_indicateur_action(self, *_):
         Clock.unschedule(self._arreter_indicateur_action)
@@ -339,8 +343,17 @@ class HomeScreen(MDScreen):
 
     def recenter_view(self):
         """Recentre l'orientation du joueur dans le jeu"""
-        self._lancer_action_jeu(lambda: self.udp_controller.recenter_view(),
-                                 "🧭 Recentrage de la vue demandé", "❌ Échec de la demande de recentrage")
+        if self._lancer_action_jeu(lambda: self.udp_controller.recenter_view(),
+                                    "🧭 Recentrage de la vue demandé", "❌ Échec de la demande de recentrage"):
+            # "Restaurer la vue d'origine" n'a de sens que s'il y a
+            # effectivement quelque chose à restaurer.
+            self.vue_recentree = True
+
+    def restore_view(self):
+        """Restaure la vue d'origine du jeu"""
+        if self._lancer_action_jeu(lambda: self.udp_controller.restore_view(),
+                                    "🔙 Restauration de la vue demandée", "❌ Échec de la restauration de la vue"):
+            self.vue_recentree = False
 
     def confirm_quit_game(self):
         """Bouton « Quitter » : demande confirmation avant de fermer le jeu"""

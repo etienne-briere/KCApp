@@ -52,9 +52,10 @@
                     elevation: 0
                     disabled: not root.unity_connected
 
-                    # ---- Recentrer la vue (actif hors Menu) ----
+                    # ---- Recentrer la vue / Restaurer la vue d'origine ----
                     MDBoxLayout:
                         orientation: "horizontal"
+                        spacing: dp(10)
                         size_hint_y: None
                         height: dp(48)
 
@@ -65,6 +66,15 @@
                             size_hint_y: None
                             height: dp(48)
                             on_release: root.recenter_view()
+
+                        MDRectangleFlatIconButton:
+                            text: "Restaurer la vue d'origine"
+                            icon: "backup-restore"
+                            size_hint_x: 1
+                            size_hint_y: None
+                            height: dp(48)
+                            disabled: not root.vue_recentree
+                            on_release: root.restore_view()
 
                     # ---- Pause / reprendre / restart (actifs hors Menu) ----
                     MDBoxLayout:
