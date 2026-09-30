@@ -4,7 +4,7 @@
 title = APEX Control
 
 # (str) Package name
-package.name = APEX_control
+package.name = apex_control
 
 # (str) Package domain (needed for android/ios packaging)
 package.domain = org.m2s.apex
