@@ -31,7 +31,7 @@ source.include_exts = py,png,jpg,kv,atlas,xml,gif,json
 source.exclude_patterns = quest_control/test_*.py,quest_control/essai_*.py,quest_control/simulateur.py,quest_control/donnees_recuperees/*
 
 # (str) Application versioning (method 1)
-version = 2
+version = 2.2
 
 # (str) Application versioning (method 2)
 # version.regex = __version__ = ['"](.*)['"]
