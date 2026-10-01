@@ -261,7 +261,7 @@ class PlayerProfileScreen(MDScreen):
         # retire aussi de l'affichage (ex. Home) — sans redémarrer un envoi
         # UDP, il n'y a rien de plus pertinent à pousser à Unity ici.
         if self.session.user_profile.name == name:
-            self.session.user_profile.name = ""
+            self.session.user_profile.set_name_locally("")
 
         toast(f"Profil « {name} » supprimé")
 
@@ -269,8 +269,8 @@ class PlayerProfileScreen(MDScreen):
 
     def _apply_active_profile(self, name, age):
         """Fait de ce profil le profil actif de la session, et le pousse à Unity"""
-        self.session.user_profile.name = name
-        self.session.user_profile.age = age
+        self.session.user_profile.set_name_locally(name)
+        self.session.user_profile.set_age_locally(age)
         self.player_name = name
         self.player_age = str(age)
         logger.info(f"👤 Profil joueur actif : {name}, {age} ans")
@@ -279,3 +279,9 @@ class PlayerProfileScreen(MDScreen):
             self.udp_controller.set_player_name(name)
             self.udp_controller.set_age_player(age)
             logger.info(f"📤 Profil joueur envoyé : {name}, {age} ans")
+
+        # user_profile n'est pas une Kivy Property : sans cet évènement,
+        # les autres écrans (Home, Pilotage, Tracking) ne rafraîchissent
+        # leur âge affiché qu'au prochain message UDP reçu de Unity, pas
+        # immédiatement — et pas du tout si Unity est déconnecté.
+        event_bus.emit("session_updated", self.session)

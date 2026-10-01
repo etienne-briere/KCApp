@@ -73,11 +73,22 @@
                         size_hint_x: None
                         width: dp(30)
 
-                    MDLabel:
-                        text: "Fréquence cardiaque"
-                        font_style: "Body1"
-                        halign: "left"
-                        valign: "middle"
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        spacing: dp(2)
+
+                        MDLabel:
+                            text: "Fréquence cardiaque"
+                            font_style: "Body1"
+                            halign: "left"
+                            valign: "bottom"
+
+                        MDLabel:
+                            text: f"{root.hrmax_percent_label} % FCmax · {root.patient_age} ans"
+                            font_style: "Caption"
+                            theme_text_color: "Secondary"
+                            halign: "left"
+                            valign: "top"
 
                     MDBoxLayout:
                         orientation: "horizontal"

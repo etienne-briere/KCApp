@@ -244,8 +244,8 @@ class PilotageScreen(MDScreen):
         if not profile:
             return
 
-        self.session.user_profile.name = profile["name"]
-        self.session.user_profile.age = profile["age"]
+        self.session.user_profile.set_name_locally(profile["name"])
+        self.session.user_profile.set_age_locally(profile["age"])
         self.player_name = profile["name"]
         logger.info(f"👤 Profil joueur actif : {profile['name']}, {profile['age']} ans")
 
@@ -253,6 +253,12 @@ class PilotageScreen(MDScreen):
             self.udp_controller.set_player_name(profile["name"])
             self.udp_controller.set_age_player(profile["age"])
             logger.info(f"📤 Profil joueur envoyé : {profile['name']}, {profile['age']} ans")
+
+        # user_profile n'est pas une Kivy Property : sans cet évènement,
+        # les autres écrans (Home, Tracking) ne rafraîchissent leur âge
+        # affiché qu'au prochain message UDP reçu de Unity, pas
+        # immédiatement — et pas du tout si Unity est déconnecté.
+        event_bus.emit("session_updated", self.session)
 
     # ========== MODE DE JEU ==========
 

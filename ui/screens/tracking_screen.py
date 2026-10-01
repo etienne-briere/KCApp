@@ -101,7 +101,11 @@ class TrackingScreen(MDScreen):
     '''
     # Properties pour l'UI
     heart_rate_label = StringProperty("--")
+    hrmax_percent_label = StringProperty("--")
+    patient_age = StringProperty("--")
     cpm_label = StringProperty("--")
+    # %FCmax/âge n'ont pas de sens sans profil actif — voir tracking_screen.kv
+    player_selected = BooleanProperty(False)
 
     # Affichage du graphique (activé par défaut)
     show_target = BooleanProperty(True)
@@ -165,6 +169,7 @@ class TrackingScreen(MDScreen):
             self.target_received = True
 
         self._sync_model(self.session.config.model)
+        self._sync_player_age(self.session.user_profile)
 
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC et de CPM
         event_bus.subscribe("heart_rate_received", self.on_hr_received)
@@ -186,6 +191,7 @@ class TrackingScreen(MDScreen):
 
     def on_session_updated(self, session):
         self._sync_model(session.config.model)
+        self._sync_player_age(session.user_profile)
 
     def _sync_model(self, model):
         """
@@ -198,6 +204,18 @@ class TrackingScreen(MDScreen):
             self.show_target = False
             self.update_graph()
 
+    def _sync_player_age(self, user_profile):
+        """
+        Reflète user_profile.age/name (pas des propriétés Kivy) dans
+        patient_age/player_selected. %FCmax et âge n'ont pas de sens sans
+        profil actif — on garde le label visible ("-- % FCmax · -- ans")
+        plutôt que de le masquer, voir hrmax_percent_label.
+        """
+        self.player_selected = bool(user_profile.name)
+        self.patient_age = str(user_profile.age) if self.player_selected else "--"
+        if not self.player_selected:
+            self.hrmax_percent_label = "--"
+
     # ========== GESTION DES DONNÉES EXISTANTES ==========
 
     def load_existing_data(self):
@@ -207,6 +225,9 @@ class TrackingScreen(MDScreen):
         # Réafficher la dernière valeur connue de chaque métrique
         if self.session.hr_session.hr_history:
             self.heart_rate_label = str(self.session.hr_session.hr_history[-1])
+        if self.player_selected and self.session.hr_session.hrmax_percent_history:
+            self.hrmax_percent_label = self._format_percent(
+                self.session.hr_session.hrmax_percent_history[-1])
         if self.session.metrics.cpm_history:
             self.cpm_label = str(int(self.session.metrics.cpm_history[-1]))
 
@@ -322,11 +343,19 @@ class TrackingScreen(MDScreen):
 
         # UI label
         self.heart_rate_label = str(bpm)
+        if self.player_selected and self.session.hr_session.hrmax_percent_history:
+            self.hrmax_percent_label = self._format_percent(
+                self.session.hr_session.hrmax_percent_history[-1])
 
         # forcer la mise à jour du graphique avec la cible actuelle
         self.session.config.update_target(self.session.config.target_hr_percent)
 
         self.update_graph()
+
+    @staticmethod
+    def _format_percent(value):
+        """None si FCmax non calculable (âge inconnu) — voir HRSession._compute_percent"""
+        return f"{int(round(value))}" if value is not None else "--"
 
     def on_cpm_received(self, value):
 
