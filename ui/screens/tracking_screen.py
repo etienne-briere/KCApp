@@ -83,7 +83,9 @@ class GraphAwareScrollView(ScrollView):
 
 class SessionRow(MDBoxLayout):
     '''
-    Ligne de la liste "Sessions à exporter" : nom de fichier + actions
+    Carte de la liste "Sessions à exporter" : nom de fichier, cases à
+    cocher propres à CETTE session (indépendantes des cases d'affichage du
+    graphique) pour choisir quelles données inclure, et actions
     supprimer/exporter. Le kv correspondant est défini dans
     tracking_screen.kv (<SessionRow>:).
     '''
@@ -93,36 +95,14 @@ class SessionRow(MDBoxLayout):
     # ainsi ne reçoit jamais la valeur passée au constructeur.
     delete_callback = ObjectProperty(None)
     export_callback = ObjectProperty(None)
-    # Pour lire les cases à cocher du graphique tant que la session n'a pas
-    # encore été exportée — voir sync_exported_badges.
-    screen = ObjectProperty(None)
 
-    # Badges toujours visibles (voir tracking_screen.kv) : avant export,
-    # aperçu basé sur les cases à cocher actuelles du graphique (sauf FC,
-    # toujours incluse) ; une fois exportée (record.exported_columns
-    # renseigné), figés sur ce qui a été réellement inclus à cet instant —
-    # voir sync_exported_badges, appelée à la création de la ligne, à
-    # chaque bascule d'une case à cocher, et juste après un export réussi.
-    exported = BooleanProperty(False)
-    has_fc = BooleanProperty(False)
-    has_target = BooleanProperty(False)
-    has_cpm = BooleanProperty(False)
-    has_state = BooleanProperty(False)
-
-    def sync_exported_badges(self):
-        columns = self.record.exported_columns if self.record else None
-        if columns is not None:
-            self.exported = True
-            self.has_fc = bool(columns.get("fc"))
-            self.has_target = bool(columns.get("target"))
-            self.has_cpm = bool(columns.get("cpm"))
-            self.has_state = bool(columns.get("state"))
-        else:
-            self.exported = False
-            self.has_fc = True
-            self.has_target = bool(self.screen and self.screen.show_target)
-            self.has_cpm = bool(self.screen and self.screen.show_cpm)
-            self.has_state = bool(self.screen and self.screen.show_game_state)
+    # Ce que CETTE session inclura à son prochain export — indépendant des
+    # cases d'affichage du graphique (show_target/show_cpm/show_game_state
+    # sur TrackingScreen, qui ne contrôlent plus que l'affichage du
+    # graphique). FC n'a pas de case : toujours incluse.
+    include_target = BooleanProperty(True)
+    include_cpm = BooleanProperty(True)
+    include_state = BooleanProperty(True)
 
 
 class TrackingScreen(MDScreen):
@@ -398,19 +378,16 @@ class TrackingScreen(MDScreen):
         """Afficher/masquer la %FC cible sur le graphique"""
         self.show_target = active
         self.update_graph()
-        self._refresh_pending_rows_badges()
 
     def on_toggle_cpm(self, active):
         """Afficher/masquer les cubes/min sur le graphique"""
         self.show_cpm = active
         self.update_graph()
-        self._refresh_pending_rows_badges()
 
     def on_toggle_game_state(self, active):
         """Afficher/masquer les bandes idle/paused sur le graphique"""
         self.show_game_state = active
         self.update_graph()
-        self._refresh_pending_rows_badges()
 
     #==== GRAPHIQUE =====#
 
@@ -642,16 +619,9 @@ class TrackingScreen(MDScreen):
             record=record,
             delete_callback=self._delete_pending_session,
             export_callback=self._export_pending_session,
-            screen=self,
         )
-        row.sync_exported_badges()
         self.ids.pending_sessions_list.add_widget(row)
         self.has_pending_sessions = True
-
-    def _refresh_pending_rows_badges(self):
-        """Rafraîchit l'aperçu des badges (non exportées) sur toutes les lignes en attente"""
-        for row in self.ids.pending_sessions_list.children:
-            row.sync_exported_badges()
 
     def _remove_session_row(self, row):
         if row.record in self.session.pending_sessions:
@@ -666,16 +636,15 @@ class TrackingScreen(MDScreen):
 
     def _export_pending_session(self, row):
         """
-        Exporte une session en attente en CSV. La ligne reste dans la liste
-        (contrairement à avant) : seuls les badges reflétant les données
-        incluses se mettent à jour — voir SessionRow.sync_exported_badges.
-        Suppression toujours manuelle via le bouton "Supprimer".
+        Exporte une session en attente en CSV, selon les cases à cocher
+        propres à CETTE ligne (row.include_*) — indépendantes des cases
+        d'affichage du graphique. La ligne reste dans la liste ; suppression
+        toujours manuelle via le bouton "Supprimer".
         """
         path = row.record.export_csv(
             folder=self.export_folder,
-            include_target=self.show_target,
-            include_cpm=self.show_cpm,
-            include_state=self.show_game_state,
+            include_target=row.include_target,
+            include_cpm=row.include_cpm,
+            include_state=row.include_state,
         )
         self._finish_export(path)
-        row.sync_exported_badges()

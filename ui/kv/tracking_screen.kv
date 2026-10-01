@@ -5,9 +5,10 @@
 
 <SessionRow>:
     orientation: "horizontal"
-    spacing: dp(10)
+    spacing: dp(8)
+    padding: 0, dp(8)
     size_hint_y: None
-    height: dp(56)
+    height: dp(40)
     canvas.before:
         Color:
             rgba: app.theme_cls.divider_color
@@ -20,55 +21,91 @@
         halign: "left"
         valign: "center"
 
-    # ---- Badges des données incluses (aperçu des cases à cocher du
-    # graphique avant export, figé sur l'export réel une fois fait) — voir
-    # SessionRow.sync_exported_badges ----
-    MDBoxLayout:
-        orientation: "horizontal"
-        spacing: dp(2)
-        size_hint_x: None
-        width: self.minimum_width
+    # ---- Cases à cocher, centrées horizontalement dans la Card : ce que
+    # CETTE session inclura à son prochain export ----
+    AnchorLayout:
+        anchor_x: "center"
+        anchor_y: "center"
+
+        MDBoxLayout:
+            orientation: "horizontal"
+            spacing: dp(10)
+            size_hint: None, None
+            size: self.minimum_size
+
+            MDBoxLayout:
+                orientation: "horizontal"
+                spacing: dp(2)
+                size_hint_x: None
+                width: self.minimum_width
+
+                MDCheckbox:
+                    active: root.include_target
+                    on_active: root.include_target = self.active
+                    size_hint: None, None
+                    size: dp(24), dp(24)
+                    pos_hint: {"center_y": 0.5}
+
+                MDIcon:
+                    icon: "target"
+                    theme_text_color: "Custom"
+                    text_color: GREEN_FG
+                    font_size: "16sp"
+                    size_hint: None, None
+                    size: dp(20), dp(20)
+                    pos_hint: {"center_y": 0.5}
+
+            MDBoxLayout:
+                orientation: "horizontal"
+                spacing: dp(2)
+                size_hint_x: None
+                width: self.minimum_width
+
+                MDCheckbox:
+                    active: root.include_cpm
+                    on_active: root.include_cpm = self.active
+                    size_hint: None, None
+                    size: dp(24), dp(24)
+                    pos_hint: {"center_y": 0.5}
+
+                MDIcon:
+                    icon: "cube-outline"
+                    theme_text_color: "Custom"
+                    text_color: BLUE_FG
+                    font_size: "16sp"
+                    size_hint: None, None
+                    size: dp(20), dp(20)
+                    pos_hint: {"center_y": 0.5}
+
+            MDBoxLayout:
+                orientation: "horizontal"
+                spacing: dp(2)
+                size_hint_x: None
+                width: self.minimum_width
+
+                MDCheckbox:
+                    active: root.include_state
+                    on_active: root.include_state = self.active
+                    size_hint: None, None
+                    size: dp(24), dp(24)
+                    pos_hint: {"center_y": 0.5}
+
+                MDIcon:
+                    icon: "flag-variant-outline"
+                    theme_text_color: "Custom"
+                    text_color: PURPLE_FG
+                    font_size: "16sp"
+                    size_hint: None, None
+                    size: dp(20), dp(20)
+                    pos_hint: {"center_y": 0.5}
+
+    MDIconButton:
+        icon: "file-download-outline"
+        theme_text_color: "Custom"
+        text_color: app.theme_cls.primary_color
+        icon_size: "22sp"
         pos_hint: {"center_y": 0.5}
-
-        MDIcon:
-            icon: "heart-pulse"
-            theme_text_color: "Custom"
-            text_color: RED_FG
-            font_size: "16sp"
-            size_hint: None, None
-            size: dp(20), dp(20)
-            pos_hint: {"center_y": 0.5}
-            opacity: 1 if root.has_fc else 0
-
-        MDIcon:
-            icon: "target"
-            theme_text_color: "Custom"
-            text_color: GREEN_FG
-            font_size: "16sp"
-            size_hint: None, None
-            size: dp(20), dp(20)
-            pos_hint: {"center_y": 0.5}
-            opacity: 1 if root.has_target else 0
-
-        MDIcon:
-            icon: "cube-outline"
-            theme_text_color: "Custom"
-            text_color: BLUE_FG
-            font_size: "16sp"
-            size_hint: None, None
-            size: dp(20), dp(20)
-            pos_hint: {"center_y": 0.5}
-            opacity: 1 if root.has_cpm else 0
-
-        MDIcon:
-            icon: "flag-variant-outline"
-            theme_text_color: "Custom"
-            text_color: PURPLE_FG
-            font_size: "16sp"
-            size_hint: None, None
-            size: dp(20), dp(20)
-            pos_hint: {"center_y": 0.5}
-            opacity: 1 if root.has_state else 0
+        on_release: root.export_callback(root)
 
     MDIconButton:
         icon: "trash-can-outline"
@@ -77,14 +114,6 @@
         icon_size: "22sp"
         pos_hint: {"center_y": 0.5}
         on_release: root.delete_callback(root)
-
-    MDIconButton:
-        icon: "download-circle-outline"
-        theme_text_color: "Custom"
-        text_color: app.theme_cls.primary_color
-        icon_size: "22sp"
-        pos_hint: {"center_y": 0.5}
-        on_release: root.export_callback(root)
 
 <TrackingScreen>:
 
@@ -262,7 +291,7 @@
                         on_release: root.reset_graph()
 
                     MDIconButton:
-                        icon: "download-circle-outline"
+                        icon: "download-box-outline"
                         theme_text_color: "Custom"
                         text_color: "grey"
                         size_hint: None, None
@@ -310,6 +339,16 @@
                                     size: dp(30), dp(30)
                                     pos_hint: {"center_y": 0.5}
 
+                                MDIcon:
+                                    icon: "target"
+                                    theme_text_color: "Custom"
+                                    text_color: GREEN_FG
+                                    font_size: "16sp"
+                                    opacity: 0.5 if root.current_model in root.MODELS_WITHOUT_TARGET else 1
+                                    size_hint: None, None
+                                    size: dp(20), dp(20)
+                                    pos_hint: {"center_y": 0.5}
+
                                 MDLabel:
                                     text: "%FC cible"
                                     font_style: "Caption"
@@ -330,6 +369,15 @@
                                     size: dp(30), dp(30)
                                     pos_hint: {"center_y": 0.5}
 
+                                MDIcon:
+                                    icon: "cube-outline"
+                                    theme_text_color: "Custom"
+                                    text_color: BLUE_FG
+                                    font_size: "16sp"
+                                    size_hint: None, None
+                                    size: dp(20), dp(20)
+                                    pos_hint: {"center_y": 0.5}
+
                                 MDLabel:
                                     text: "Cubes/min"
                                     font_style: "Caption"
@@ -347,6 +395,15 @@
                                     on_active: root.on_toggle_game_state(self.active)
                                     size_hint: None, None
                                     size: dp(30), dp(30)
+                                    pos_hint: {"center_y": 0.5}
+
+                                MDIcon:
+                                    icon: "flag-variant-outline"
+                                    theme_text_color: "Custom"
+                                    text_color: PURPLE_FG
+                                    font_size: "16sp"
+                                    size_hint: None, None
+                                    size: dp(20), dp(20)
                                     pos_hint: {"center_y": 0.5}
 
                                 MDLabel:
