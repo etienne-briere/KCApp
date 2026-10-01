@@ -47,6 +47,11 @@ class SessionRecord:
         self.model = model
         self.duration = duration
 
+        # Colonnes effectivement incluses lors du dernier export réussi —
+        # None tant qu'aucun export n'a eu lieu. Alimente les badges de la
+        # liste "Sessions à exporter" (voir tracking_screen.py/SessionRow).
+        self.exported_columns = None
+
     def export_csv(self, folder: str = None,
                     include_target: bool = True, include_cpm: bool = True,
                     include_state: bool = True) -> str:
@@ -120,6 +125,13 @@ class SessionRecord:
             rows.append(row)
 
         write_annotated_csv(path, metadata, header, rows)
+
+        self.exported_columns = {
+            "fc": True,
+            "target": include_target,
+            "cpm": include_cpm,
+            "state": include_state,
+        }
 
         logger.info(f"💾 Session exportée : {path}")
         return path
