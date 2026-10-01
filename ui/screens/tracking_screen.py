@@ -557,12 +557,12 @@ class TrackingScreen(MDScreen):
         self.fig.canvas.draw_idle()
     
     def reset_graph(self):
-        # Archiver la session dans la liste "à exporter" (voir
-        # GameSession.reset()) plutôt que de forcer un export immédiat :
-        # l'utilisateur choisit ensuite de l'exporter ou de la supprimer.
-        record = self.session.reset()
-        if record:
-            self._add_session_row(record)
+        """
+        Réinitialise la session en cours (voir GameSession.clear()) sans
+        l'archiver — la mise en attente pour export se fait maintenant via
+        le bouton dédié (voir queue_session_for_export).
+        """
+        self.session.clear()
 
         self.ax1.set_xlim(0, 600)
         self.ax1.set_ylim(0, 100)
@@ -582,19 +582,18 @@ class TrackingScreen(MDScreen):
         self.export_folder = selection[0]
         toast(f"Dossier d'export : {self.export_folder}")
 
-    def export_session(self):
-        """Exporte la session en cours en CSV, sans la réinitialiser"""
-        path = self.session.export_csv(
-            folder=self.export_folder,
-            include_target=self.show_target,
-            include_cpm=self.show_cpm,
-            include_state=self.show_game_state,
-        )
-
-        if path:
-            self._finish_export(path)
+    def queue_session_for_export(self):
+        """
+        Met la session en cours en attente d'export (voir
+        GameSession.archive_current_session) sans la réinitialiser : le
+        graphique continue d'afficher les données en cours.
+        """
+        record = self.session.archive_current_session()
+        if record:
+            self._add_session_row(record)
+            toast("Session mise en attente d'export")
         else:
-            toast("Aucune donnée à exporter")
+            toast("Aucune donnée à mettre en attente")
 
     def _finish_export(self, path):
         """

@@ -300,7 +300,7 @@
                         size: dp(32), dp(32)
                         icon_size: "20sp"
                         pos_hint: {"center_y": 0.5}
-                        on_release: root.export_session()
+                        on_release: root.queue_session_for_export()
 
                 MDCard:
                     orientation: "vertical"

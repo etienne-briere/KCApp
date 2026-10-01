@@ -309,11 +309,13 @@ class GameSession:
 
         logger.info(f"⏹️ Recording stopped ({self.get_duration():.1f}s)")
 
-    def reset(self):
+    def archive_current_session(self):
         """
-        Archive la session courante (si elle contient des données de FC)
-        dans pending_sessions pour export/suppression différés, puis la
-        réinitialise.
+        Capture un instantané de la session courante (si elle contient des
+        données de FC) et l'ajoute à pending_sessions pour export/
+        suppression différés — SANS réinitialiser la session en cours, qui
+        continue de s'enregistrer normalement (voir l'écran HR Tracking,
+        bouton "Mettre en attente pour export").
 
         Returns:
             SessionRecord: l'instantané archivé, ou None si la session
@@ -322,14 +324,19 @@ class GameSession:
         record = self.snapshot()
         if record:
             self.pending_sessions.append(record)
+        return record
 
+    def clear(self):
+        """
+        Réinitialise la session en cours (graphique HR Tracking) sans
+        l'archiver — les données en cours sont perdues. Voir l'écran HR
+        Tracking, bouton "Réinitialiser la vue".
+        """
         self.start_time = time.time()
         self.hr_session.reset()
         self.metrics.reset()
         self.config.reset()
         self._open_segment_at_zero()
-
-        return record
 
     # ========== EXPORT ==========
 
@@ -356,20 +363,3 @@ class GameSession:
             state_values=state_values,
         )
 
-    def export_csv(self, folder: str = None,
-                    include_target: bool = True, include_cpm: bool = True,
-                    include_state: bool = True):
-        """
-        Exporte immédiatement la session en cours (sans la réinitialiser
-        ni l'archiver dans pending_sessions).
-
-        Returns:
-            str: chemin du fichier créé, ou None si aucune donnée de FC
-        """
-        record = self.snapshot()
-        if not record:
-            logger.info("📊 Aucune donnée de FC à exporter")
-            return None
-
-        return record.export_csv(folder, include_target=include_target, include_cpm=include_cpm,
-                                  include_state=include_state)
