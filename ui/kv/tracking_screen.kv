@@ -6,9 +6,9 @@
 <SessionRow>:
     orientation: "horizontal"
     spacing: dp(8)
-    padding: 0, dp(8)
+    padding: 0, dp(4)
     size_hint_y: None
-    height: dp(40)
+    height: dp(56)
     canvas.before:
         Color:
             rgba: app.theme_cls.divider_color
@@ -16,10 +16,12 @@
             pos: self.x, self.y
             size: self.width, dp(1)
 
-    MDLabel:
+    MDTextField:
+        id: filename_field
         text: root.record.filename if root.record else ""
-        halign: "left"
-        valign: "center"
+        multiline: False
+        font_size: "14sp"
+        on_text: root.record.rename(self.text) if root.record else None
 
     # ---- Cases à cocher, centrées horizontalement dans la Card : ce que
     # CETTE session inclura à son prochain export ----

@@ -5,6 +5,7 @@ from app.data.user_profile import UserProfile
 from app.data.game_metrics import GameMetrics
 
 import os
+import re
 import sys
 import time
 from datetime import datetime
@@ -24,6 +25,11 @@ class SessionRecord:
     GameSession.reset()), en attente d'export CSV ou de suppression par
     l'utilisateur — voir l'écran HR Tracking.
     """
+
+    # Caractères interdits dans un nom de fichier — le séparateur de chemin
+    # est volontairement inclus pour empêcher toute sortie du dossier
+    # d'export via le champ de renommage (voir rename()).
+    _INVALID_FILENAME_CHARS = re.compile(r'[\\/:*?"<>|]')
 
     def __init__(self, hr_times, hr_values, hrmax_values,
                  target_times, target_values, cpm_times, cpm_values,
@@ -46,6 +52,17 @@ class SessionRecord:
         self.hr_max = hr_max
         self.model = model
         self.duration = duration
+
+    def rename(self, text: str) -> None:
+        """
+        Renomme le fichier avant export, depuis le champ éditable de la
+        liste "Sessions à exporter" (voir tracking_screen.py/SessionRow).
+        Une saisie vide ou entièrement invalide est ignorée, pour ne jamais
+        se retrouver sans nom de fichier.
+        """
+        cleaned = self._INVALID_FILENAME_CHARS.sub("", text).strip()
+        if cleaned:
+            self.filename = cleaned
 
     def export_csv(self, folder: str = None,
                     include_target: bool = True, include_cpm: bool = True,

@@ -641,6 +641,11 @@ class TrackingScreen(MDScreen):
         d'affichage du graphique. La ligne reste dans la liste ; suppression
         toujours manuelle via le bouton "Supprimer".
         """
+        if row.record and not row.record.filename.lower().endswith(".csv"):
+            row.record.filename += ".csv"
+            if "filename_field" in row.ids:
+                row.ids.filename_field.text = row.record.filename
+
         path = row.record.export_csv(
             folder=self.export_folder,
             include_target=row.include_target,
