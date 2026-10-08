@@ -8,6 +8,7 @@ from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.menu import MDDropdownMenu
 
+from app.data.user_profile import SEX_LABELS, format_weight
 from utils.event_bus import event_bus
 from utils.logger import get_logger
 
@@ -15,22 +16,27 @@ logger = get_logger(__name__)
 
 
 class PlayerProfileScreen(MDScreen):
-    """Écran de gestion du profil joueur (nom, âge) accessible depuis le menu Contrôle"""
+    """Écran de gestion du profil joueur (nom, âge, poids, sexe) accessible depuis le menu Contrôle"""
 
     unity_connected = BooleanProperty(False) # connexion Unity
     game_state = StringProperty("Menu") # état de partie reçu de Unity (Menu/Ready/Playing/Paused/Finished)
     player_name = StringProperty("") # nom du profil actif (affiché sur le sélecteur)
     player_age = StringProperty("") # âge du profil actif (affiché sous le sélecteur)
+    player_details = StringProperty("") # « 30 ans · 72 kg · Homme » (affiché sous le sélecteur)
 
     # Card "Nouveau joueur"
     show_new_form = BooleanProperty(False)
     new_name_field_text = StringProperty("")
     new_age_field_text = StringProperty("25")
+    new_weight_field_text = StringProperty("")
+    new_sex = StringProperty("") # "M", "F" ou "" (non renseigné)
 
     # Card "Modification du joueur"
     show_edit_form = BooleanProperty(False)
     edit_name_field_text = StringProperty("")
     edit_age_field_text = StringProperty("25")
+    edit_weight_field_text = StringProperty("")
+    edit_sex = StringProperty("")
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -74,6 +80,7 @@ class PlayerProfileScreen(MDScreen):
         event_bus.unsubscribe("session_updated", self.on_session_updated)
         event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
         self._close_player_menu()
+        self._close_sex_menu()
 
     def on_session_updated(self, session):
         self.game_state = session.game_state.capitalize()
@@ -92,6 +99,7 @@ class PlayerProfileScreen(MDScreen):
         """
         self.player_name = user_profile.name
         self.player_age = str(user_profile.age) if user_profile.name else ""
+        self.player_details = self._details_text(user_profile.age, user_profile.weight, user_profile.sex) if user_profile.name else ""
 
         # Le profil actif n'est reconnu comme "existant" (modifiable) que
         # s'il correspond à un profil réellement enregistré dans le store.
@@ -143,7 +151,8 @@ class PlayerProfileScreen(MDScreen):
         self._active_profile_name = profile["name"]
         self.show_new_form = False
         self.show_edit_form = False
-        self._apply_active_profile(profile["name"], profile["age"])
+        self._apply_active_profile(profile["name"], profile["age"],
+                                   self.player_store.weight_of(profile), self.player_store.sex_of(profile))
 
     # ========== NOUVEAU JOUEUR ==========
 
@@ -151,6 +160,11 @@ class PlayerProfileScreen(MDScreen):
         """Icône « account-plus » : affiche la card Nouveau joueur (vide)"""
         self.new_name_field_text = ""
         self.new_age_field_text = "25"
+        self.new_weight_field_text = ""
+        self.new_sex = ""
+        # Le champ garde sinon une saisie précédente si la propriété ne change pas de valeur.
+        if "new_weight_field" in self.ids:
+            self.ids.new_weight_field.text = ""
         self.show_edit_form = False
         self.show_new_form = True
 
@@ -168,11 +182,16 @@ class PlayerProfileScreen(MDScreen):
             return
         age = max(5, min(100, age))
 
-        self.player_store.add(name, age)
+        weight = self._read_weight(self.ids.new_weight_field.text)
+        if weight is None:
+            return
+        sex = self.new_sex
+
+        self.player_store.add(name, age, weight, sex)
 
         self._active_profile_name = name
         self.show_new_form = False
-        self._apply_active_profile(name, age)
+        self._apply_active_profile(name, age, weight, sex)
         toast(f"Profil « {name} » créé")
 
     # ========== MODIFICATION DU JOUEUR ==========
@@ -189,6 +208,10 @@ class PlayerProfileScreen(MDScreen):
 
         self.edit_name_field_text = profile["name"]
         self.edit_age_field_text = str(profile["age"])
+        self.edit_weight_field_text = format_weight(self.player_store.weight_of(profile))
+        self.edit_sex = self.player_store.sex_of(profile)
+        if "edit_weight_field" in self.ids:
+            self.ids.edit_weight_field.text = self.edit_weight_field_text
         self.show_new_form = False
         self.show_edit_form = True
 
@@ -206,14 +229,19 @@ class PlayerProfileScreen(MDScreen):
             return
         age = max(5, min(100, age))
 
+        weight = self._read_weight(self.ids.edit_weight_field.text)
+        if weight is None:
+            return
+        sex = self.edit_sex
+
         old_name = self._active_profile_name
         if old_name and old_name != name:
             self.player_store.rename(old_name, name)
-        self.player_store.add(name, age)
+        self.player_store.add(name, age, weight, sex)
 
         self._active_profile_name = name
         self.show_edit_form = False
-        self._apply_active_profile(name, age)
+        self._apply_active_profile(name, age, weight, sex)
         toast(f"Profil « {name} » mis à jour")
 
     # ========== SUPPRESSION ==========
@@ -254,6 +282,7 @@ class PlayerProfileScreen(MDScreen):
         self._active_profile_name = None
         self.player_name = ""
         self.player_age = ""
+        self.player_details = ""
         self.show_new_form = False
         self.show_edit_form = False
 
@@ -267,18 +296,85 @@ class PlayerProfileScreen(MDScreen):
 
     # ========== COMMUN ==========
 
-    def _apply_active_profile(self, name, age):
+    # ---- Poids / sexe (estimation des kcal affichée par Unity en fin de partie) ----
+
+    @staticmethod
+    def sex_label(sex):
+        """Libellé du bouton de choix du sexe"""
+        return "Sexe : " + SEX_LABELS.get(sex or "", SEX_LABELS[""])
+
+    @staticmethod
+    def _details_text(age, weight, sex):
+        parts = [f"{age} ans"]
+        w = format_weight(weight)
+        if w:
+            parts.append(f"{w} kg")
+        if sex:
+            parts.append(SEX_LABELS.get(sex, ""))
+        return " · ".join(p for p in parts if p)
+
+    @staticmethod
+    def _read_weight(text):
+        """Poids saisi en kg : 0 si vide (non renseigné), None si invalide"""
+        text = (text or "").strip().replace(",", ".")
+        if not text:
+            return 0.0
+        try:
+            weight = float(text)
+        except ValueError:
+            toast("Poids invalide")
+            return None
+        if weight <= 0:
+            return 0.0
+        if not 25 <= weight <= 250:
+            toast("Poids invalide (25 à 250 kg)")
+            return None
+        return round(weight, 1)
+
+    def open_sex_menu(self, caller, form):
+        """Menu Non renseigné / Homme / Femme pour la card « new » ou « edit »"""
+        self._close_sex_menu()
+        items = [
+            {
+                "text": label,
+                "on_release": lambda code=code: self._on_sex_select(form, code),
+            }
+            for code, label in SEX_LABELS.items()
+        ]
+        self._sex_menu = MDDropdownMenu(caller=caller, items=items, width_mult=4)
+        self._sex_menu.bind(on_dismiss=lambda *_: self._close_sex_menu())
+        self._sex_menu.open()
+
+    def _on_sex_select(self, form, code):
+        self._close_sex_menu()
+        if form == "new":
+            self.new_sex = code
+        else:
+            self.edit_sex = code
+
+    def _close_sex_menu(self):
+        menu = getattr(self, "_sex_menu", None)
+        if menu is not None:
+            self._sex_menu = None
+            Clock.schedule_once(lambda dt: Window.remove_widget(menu), 0)
+
+    def _apply_active_profile(self, name, age, weight=0.0, sex=""):
         """Fait de ce profil le profil actif de la session, et le pousse à Unity"""
         self.session.user_profile.set_name_locally(name)
         self.session.user_profile.set_age_locally(age)
+        self.session.user_profile.set_weight_locally(weight)
+        self.session.user_profile.set_sex_locally(sex)
         self.player_name = name
         self.player_age = str(age)
-        logger.info(f"👤 Profil joueur actif : {name}, {age} ans")
+        self.player_details = self._details_text(age, weight, sex)
+        logger.info(f"👤 Profil joueur actif : {name}, {self.player_details}")
 
         if self.udp_controller:
             self.udp_controller.set_player_name(name)
             self.udp_controller.set_age_player(age)
-            logger.info(f"📤 Profil joueur envoyé : {name}, {age} ans")
+            self.udp_controller.set_weight_player(weight)
+            self.udp_controller.set_sex_player(sex)
+            logger.info(f"📤 Profil joueur envoyé : {name}, {self.player_details}")
 
         # user_profile n'est pas une Kivy Property : sans cet évènement,
         # les autres écrans (Home, Pilotage, Tracking) ne rafraîchissent

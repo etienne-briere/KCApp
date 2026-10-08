@@ -7,10 +7,14 @@ logger = get_logger(__name__)
 
 DEFAULT_AGE = 25
 
+# Valeur sentinelle de add() : « ne pas toucher à ce champ » (poids, sexe).
+_KEEP = object()
+
 
 class PlayerStore:
     """
-    Gère la liste des profils joueurs (nom + âge) sauvegardée sur disque,
+    Gère la liste des profils joueurs (nom, âge, et en option poids en kg et
+    sexe "M"/"F", utilisés par Unity pour estimer les kcal) sauvegardée sur disque,
     pour le sélecteur de profil de l'écran Pilotage (section "Profil du
     joueur").
     """
@@ -42,20 +46,41 @@ class PlayerStore:
         return [p["name"] for p in self.profiles]
 
     def get(self, name):
-        """Renvoie le profil {name, age} correspondant, ou None"""
+        """Renvoie le profil {name, age[, weight, sex]} correspondant, ou None"""
         for p in self.profiles:
             if p["name"] == name:
                 return p
         return None
 
-    def add(self, name, age):
-        """Ajoute un nouveau profil, ou met à jour l'âge si le nom existe déjà"""
+    def add(self, name, age, weight=_KEEP, sex=_KEEP):
+        """
+        Ajoute un nouveau profil, ou met à jour l'âge si le nom existe déjà.
+        weight (kg, 0 = non renseigné) et sex ("M", "F" ou "") ne sont
+        modifiés que s'ils sont passés explicitement.
+        """
         existing = self.get(name)
-        if existing:
-            existing["age"] = age
-        else:
-            self.profiles.append({"name": name, "age": age})
+        if not existing:
+            existing = {"name": name, "age": age}
+            self.profiles.append(existing)
+        existing["age"] = age
+        if weight is not _KEEP:
+            existing["weight"] = float(weight or 0)
+        if sex is not _KEEP:
+            existing["sex"] = sex or ""
         self._save()
+
+    @staticmethod
+    def weight_of(profile):
+        """Poids du profil en kg, 0 si non renseigné (anciens profils sans ce champ)."""
+        try:
+            return float(profile.get("weight") or 0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    @staticmethod
+    def sex_of(profile):
+        """Sexe du profil ("M", "F" ou "" si non renseigné)."""
+        return profile.get("sex") or ""
 
     def ensure(self, name, default_age=DEFAULT_AGE):
         """

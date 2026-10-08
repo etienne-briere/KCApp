@@ -16,13 +16,42 @@ logger = get_logger(__name__)
 class PilotageScreen(MDScreen):
     """Écran de contrôle du jeu Unity"""
 
-    # Modes de jeu (index envoyé/reçu via la clé SelectedModel)
-    MODEL_ORDER = ["FIXE", "INCREMENTAL", "PID", "DRL"]
+    # Modes de jeu (index envoyé/reçu via la clé SelectedModel).
+    # DRL_RUN3 n'est pas un index Unity : c'est le mode DRL (index 3) avec le
+    # modèle Run 3 du contrôleur hybride (clé controllerSetup).
+    MODEL_ORDER = ["FIXE", "INCREMENTAL", "PID", "DRL", "DRL_RUN3"]
+    MODEL_INDEX = {"FIXE": 0, "INCREMENTAL": 1, "PID": 2, "DRL": 3, "DRL_RUN3": 3}
+    DRL_MODES = ("DRL", "DRL_RUN3")
     MODEL_LABELS = {
         "FIXE": "Fixe",
         "INCREMENTAL": "Incrémental",
         "PID": "PID (adaptatif)",
         "DRL": "DRL (adaptatif)",
+        "DRL_RUN3": "DRL Run 3 (adaptatif)",
+    }
+
+    # Contrôleur en cours de partie : libellés des états et des raisons de bascule envoyés par Unity
+    CONTROLLER_STATE_LABELS = {
+        "PID_WARMUP": "PID (échauffement)",
+        "DRL": "DRL",
+        "PID_BACKUP": "PID de secours",
+        "MANUAL": "Manuel",
+        "PID": "PID",
+        "LEGACY_DRL": "DRL (ancien contrôleur)",
+        "LEGACY_PID": "PID (ancien contrôleur)",
+        "LEGACY_FIXED": "Fixe",
+        "LEGACY_INCREMENTAL": "Incrémental",
+    }
+    SWITCH_REASON_LABELS = {
+        "start": "début de partie",
+        "warmup_end": "fin de l'échauffement",
+        "early_overshoot": "dépassement précoce",
+        "third_dive": "3e plongée (cycle limite)",
+        "floor_time": "trop de temps au plancher",
+        "pid_windup": "PID saturé",
+        "persistent_overshoot": "dépassement persistant",
+        "teacher_override": "commande tablette",
+        "model_error": "erreur du modèle",
     }
 
     # Properties pour l'UI
@@ -45,6 +74,11 @@ class PilotageScreen(MDScreen):
     warmup_duration = NumericProperty(90) # modes PID/DRL : durée du warmup (s)
     require_hr_signal = BooleanProperty(False) # modes Fixe/Incrémental : signal FC requis
     brick_speed = NumericProperty(8) # vitesse des briques (tous modes)
+    pid_warmup = BooleanProperty(False) # mode DRL : PID pendant l'échauffement (prochaine partie)
+    pid_backup = BooleanProperty(False) # mode DRL : PID de secours si cycle limite (prochaine partie)
+    controller_state_label = StringProperty("") # contrôleur actif en cours de partie (texte affiché)
+    controller_reason_label = StringProperty("") # raison de la dernière bascule
+    manual_cpm = NumericProperty(60) # cadence du mode manuel (cubes/min)
     player_name = StringProperty("") # nom du profil joueur actif
     game_state = StringProperty("Menu") # état de partie reçu de Unity (Menu/Ready/Playing/Paused/Finished)
     # Spinner de la Card "Actions du jeu" pendant le délai UDP normal entre
@@ -108,6 +142,7 @@ class PilotageScreen(MDScreen):
                 self.require_hr_signal = self.session.config.require_hr_signal
             if self.session.config.brick_speed is not None:
                 self.brick_speed = self.session.config.brick_speed
+            self._sync_controller_from_config(self.session.config)
 
         # S'abonner pour écouter les eventbus
         event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
@@ -133,6 +168,10 @@ class PilotageScreen(MDScreen):
         fréquent en jeu) redéclenche session_updated et fait revenir le menu
         à l'ancien mode avant même que l'utilisateur ait pu cliquer Appliquer.
         """
+        # Mode DRL avec le modèle Run 3 (contrôleur hybride) : affiché comme "DRL Run 3"
+        if config_model == "DRL" and self.session.config.is_drl_run3:
+            config_model = "DRL_RUN3"
+
         if config_model not in self.MODEL_ORDER or config_model == self.selected_model:
             return
 
@@ -181,6 +220,23 @@ class PilotageScreen(MDScreen):
             self.require_hr_signal = session.config.require_hr_signal
         if session.config.brick_speed is not None:
             self.brick_speed = session.config.brick_speed
+        self._sync_controller_from_config(session.config)
+
+    def _sync_controller_from_config(self, config):
+        """Cases PID d'échauffement / de secours et état du contrôleur en cours de partie"""
+        # Comme pour le mode de jeu : ne pas écraser un choix local pas encore appliqué
+        if config.controller_config is not None and self.pending_model == self.selected_model:
+            self.pid_warmup = config.effective_pid_warmup
+            self.pid_backup = config.effective_pid_backup
+
+        if self.game_state in ("Playing", "Paused", "Finished") and config.controller_state:
+            state = config.controller_state
+            self.controller_state_label = self.CONTROLLER_STATE_LABELS.get(state, state)
+            reason = config.controller_switch_reason or ""
+            self.controller_reason_label = self.SWITCH_REASON_LABELS.get(reason, reason)
+        elif self.game_state not in ("Playing", "Paused", "Finished"):
+            self.controller_state_label = ""
+            self.controller_reason_label = ""
 
     def _submit_int_field(self, text, field_id, prop_name, config_attr,
                            min_value, max_value, controller_method_name, label):
@@ -246,12 +302,18 @@ class PilotageScreen(MDScreen):
 
         self.session.user_profile.set_name_locally(profile["name"])
         self.session.user_profile.set_age_locally(profile["age"])
+        weight = self.player_store.weight_of(profile)
+        sex = self.player_store.sex_of(profile)
+        self.session.user_profile.set_weight_locally(weight)
+        self.session.user_profile.set_sex_locally(sex)
         self.player_name = profile["name"]
         logger.info(f"👤 Profil joueur actif : {profile['name']}, {profile['age']} ans")
 
         if self.udp_controller:
             self.udp_controller.set_player_name(profile["name"])
             self.udp_controller.set_age_player(profile["age"])
+            self.udp_controller.set_weight_player(weight)
+            self.udp_controller.set_sex_player(sex)
             logger.info(f"📤 Profil joueur envoyé : {profile['name']}, {profile['age']} ans")
 
         # user_profile n'est pas une Kivy Property : sans cet évènement,
@@ -334,15 +396,20 @@ class PilotageScreen(MDScreen):
         """Envoie le mode sélectionné à Unity et redémarre la partie"""
         self._dialog_confirm_model.dismiss()
 
-        index = self.MODEL_ORDER.index(self.pending_model)
+        index = self.MODEL_INDEX[self.pending_model]
         self.selected_model = self.pending_model
-        self.session.config.model = self.pending_model
+        # session.config.model garde le nom Unity (DRL), le modèle Run 3 passe par controllerSetup
+        self.session.config.model = "DRL" if self.pending_model in self.DRL_MODES else self.pending_model
         logger.info(f"🎮 Mode de jeu: {self.pending_model}")
 
         if self.udp_controller:
             success = self.udp_controller.set_selected_model(index)
             if success:
                 logger.info(f"📤 Mode de jeu envoyé: {self.pending_model} (index {index})")
+
+            # Modes DRL : modèle (actuel / Run 3) + PID d'échauffement + PID de secours
+            if self.pending_model in self.DRL_MODES:
+                self._send_controller_setup(self.pending_model)
 
             # Redémarre le jeu pour que le nouveau mode soit pris en compte
             self.restart_game()
@@ -514,6 +581,80 @@ class PilotageScreen(MDScreen):
 
         if self.udp_controller:
             self.udp_controller.set_require_hr_signal(is_active)
+
+    # ========== CONTRÔLEUR HYBRIDE : RÉGLAGES (prochaine partie) ==========
+
+    def _send_controller_setup(self, model_name):
+        """Envoie modèle DRL + PID d'échauffement + PID de secours (pris en compte au prochain lancement)"""
+        drl_model = "run3" if model_name == "DRL_RUN3" else "deployed"
+        cfg = self.session.config
+        if self.udp_controller and self.udp_controller.set_controller_setup(drl_model, self.pid_warmup, self.pid_backup):
+            logger.info(f"📤 Contrôleur : {drl_model}, PID échauffement={self.pid_warmup}, PID secours={self.pid_backup}")
+        # Miroir local de la traduction faite par Unity (HybridControllerPrefs.ApplyMenuChoice)
+        if drl_model == "deployed" and not self.pid_warmup and not self.pid_backup:
+            cfg.controller_config = "off"
+        elif drl_model == "run3" and not self.pid_backup:
+            cfg.controller_config = "drl_run3" if self.pid_warmup else "drl_run3_no_warmup"
+        else:
+            cfg.controller_config = "custom"
+        cfg.drl_model = drl_model
+        cfg.pid_warmup = self.pid_warmup
+        cfg.pid_backup = self.pid_backup
+
+    def _on_controller_option_changed(self):
+        # Envoi immédiat seulement si le mode DRL est déjà appliqué ; sinon il
+        # part avec "Appliquer" (voir _confirm_model_change).
+        if self.selected_model in self.DRL_MODES and self.pending_model == self.selected_model:
+            self._send_controller_setup(self.selected_model)
+            toast("Pris en compte au prochain lancement ou redémarrage")
+
+    def on_pid_warmup_toggle(self, is_active):
+        """Case PID d'échauffement (modes DRL)"""
+        if is_active == self.pid_warmup:
+            return
+        self.pid_warmup = is_active
+        self._on_controller_option_changed()
+
+    def on_pid_backup_toggle(self, is_active):
+        """Case PID de secours (modes DRL)"""
+        if is_active == self.pid_backup:
+            return
+        self.pid_backup = is_active
+        self._on_controller_option_changed()
+
+    # ========== CONTRÔLEUR HYBRIDE : BASCULE EN COURS DE PARTIE ==========
+
+    def switch_controller(self, state):
+        """Boutons PID / DRL / DRL Run 3 / PID secours : bascule à la seconde suivante"""
+        if not self.udp_controller:
+            return
+        label = {"PID": "PID", "DRL_DEPLOYED": "DRL", "DRL_RUN3": "DRL Run 3", "PID_BACKUP": "PID de secours"}.get(state, state)
+        if self.udp_controller.set_controller_state(state):
+            toast(f"Bascule demandée : {label}")
+            logger.info(f"📤 Bascule contrôleur demandée : {state}")
+        else:
+            toast("❌ Échec de l'envoi")
+
+    def on_manual_cpm_submit(self, text):
+        """Champ cadence manuelle validé (n'envoie rien : le bouton Manuel applique)"""
+        try:
+            value = int(text)
+        except ValueError:
+            toast("Valeur invalide")
+            self.ids.manual_cpm_field.text = str(int(self.manual_cpm))
+            return
+        value = max(30, min(200, value))
+        self.manual_cpm = value
+        self.ids.manual_cpm_field.text = str(value)
+
+    def apply_manual_cpm(self):
+        """Bouton Manuel : passe en cadence manuelle (ou change la cadence)"""
+        self.on_manual_cpm_submit(self.ids.manual_cpm_field.text)
+        if self.udp_controller and self.udp_controller.set_manual_cpm(self.manual_cpm):
+            toast(f"Cadence manuelle : {int(self.manual_cpm)} cubes/min")
+            logger.info(f"📤 Cadence manuelle : {self.manual_cpm}")
+        else:
+            toast("❌ Échec de l'envoi")
 
     # ========== VITESSE DES BRIQUES ==========
 

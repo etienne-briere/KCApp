@@ -386,9 +386,9 @@
                         do_scroll_x: False
                         do_scroll_y: False
                         size_hint_y: None
-                        height: pid_drl_options_content.height if root.pending_model in ("PID", "DRL") else 0
-                        opacity: 1 if root.pending_model in ("PID", "DRL") else 0
-                        disabled: root.pending_model not in ("PID", "DRL")
+                        height: pid_drl_options_content.height if root.pending_model in ("PID", "DRL", "DRL_RUN3") else 0
+                        opacity: 1 if root.pending_model in ("PID", "DRL", "DRL_RUN3") else 0
+                        disabled: root.pending_model not in ("PID", "DRL", "DRL_RUN3")
 
                         MDBoxLayout:
                             id: pid_drl_options_content
@@ -462,7 +462,7 @@
                                     pos_hint: {"center_y": 0.5}
     
                                 MDLabel:
-                                    text: "Warmup"
+                                    text: "Warmup (rampe de la cible)"
                                     font_style: "Body1"
                                     halign: "left"
                                     valign: "center"
@@ -503,6 +503,102 @@
                                         icon_left_color_focus: app.theme_cls.primary_color
                                         on_text_validate: root.on_warmup_duration_submit(self.text)
                                         on_focus: root.on_warmup_duration_submit(self.text) if not self.focus else None
+
+                            # ---- PID d'échauffement (modes DRL, prochaine partie) ----
+                            ScrollView:
+                                do_scroll_x: False
+                                do_scroll_y: False
+                                size_hint_y: None
+                                height: dp(36) if root.pending_model in root.DRL_MODES else 0
+                                opacity: 1 if root.pending_model in root.DRL_MODES else 0
+                                disabled: root.pending_model not in root.DRL_MODES
+
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: dp(15)
+                                    size_hint_y: None
+                                    height: dp(36)
+
+                                    MDIcon:
+                                        icon: "sine-wave"
+                                        theme_text_color: "Custom"
+                                        text_color: app.theme_cls.primary_color
+                                        font_size: "26sp"
+                                        size_hint: None, None
+                                        size: dp(30), dp(30)
+                                        pos_hint: {"center_y": 0.5}
+
+                                    MDLabel:
+                                        text: "PID d'échauffement"
+                                        font_style: "Body1"
+                                        halign: "left"
+                                        valign: "center"
+
+                                    MDCheckbox:
+                                        id: pid_warmup_checkbox
+                                        active: root.pid_warmup
+                                        pos_hint: {"center_y": 0.5}
+                                        size_hint: None, None
+                                        size: dp(36), dp(36)
+                                        on_active: root.on_pid_warmup_toggle(self.active)
+                                        disabled: not root.unity_connected
+
+                            # ---- PID de secours (modes DRL, prochaine partie) ----
+                            ScrollView:
+                                do_scroll_x: False
+                                do_scroll_y: False
+                                size_hint_y: None
+                                height: dp(36) if root.pending_model in root.DRL_MODES else 0
+                                opacity: 1 if root.pending_model in root.DRL_MODES else 0
+                                disabled: root.pending_model not in root.DRL_MODES
+
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    spacing: dp(15)
+                                    size_hint_y: None
+                                    height: dp(36)
+
+                                    MDIcon:
+                                        icon: "shield-refresh-outline"
+                                        theme_text_color: "Custom"
+                                        text_color: app.theme_cls.primary_color
+                                        font_size: "26sp"
+                                        size_hint: None, None
+                                        size: dp(30), dp(30)
+                                        pos_hint: {"center_y": 0.5}
+
+                                    MDLabel:
+                                        text: "PID de secours (si cycle limite)"
+                                        font_style: "Body1"
+                                        halign: "left"
+                                        valign: "center"
+
+                                    MDCheckbox:
+                                        id: pid_backup_checkbox
+                                        active: root.pid_backup
+                                        pos_hint: {"center_y": 0.5}
+                                        size_hint: None, None
+                                        size: dp(36), dp(36)
+                                        on_active: root.on_pid_backup_toggle(self.active)
+                                        disabled: not root.unity_connected
+
+                            # ---- Rappel : réglages du contrôleur pris en compte au prochain lancement ----
+                            ScrollView:
+                                do_scroll_x: False
+                                do_scroll_y: False
+                                size_hint_y: None
+                                height: dp(20) if root.pending_model in root.DRL_MODES else 0
+                                opacity: 1 if root.pending_model in root.DRL_MODES else 0
+                                disabled: root.pending_model not in root.DRL_MODES
+
+                                MDLabel:
+                                    text: "PID d'échauffement / de secours : pris en compte au prochain lancement ou redémarrage"
+                                    theme_text_color: "Secondary"
+                                    font_style: "Caption"
+                                    halign: "left"
+                                    valign: "center"
+                                    size_hint_y: None
+                                    height: dp(20)
 
                     # ---- Signal FC requis (modes Fixe / Incrémental) ----
                     ScrollView:
@@ -548,9 +644,9 @@
                     do_scroll_x: False
                     do_scroll_y: False
                     size_hint_y: None
-                    height: dp(20) if root.pending_model in ("PID", "DRL") else 0
-                    opacity: 1 if root.pending_model in ("PID", "DRL") else 0
-                    disabled: root.pending_model not in ("PID", "DRL")
+                    height: dp(20) if root.pending_model in ("PID", "DRL", "DRL_RUN3") else 0
+                    opacity: 1 if root.pending_model in ("PID", "DRL", "DRL_RUN3") else 0
+                    disabled: root.pending_model not in ("PID", "DRL", "DRL_RUN3")
 
                     MDBoxLayout:
                         orientation: "horizontal"
@@ -575,6 +671,122 @@
                             font_style: "Caption"
                             halign: "left"
                             valign: "center"
+
+            # ==== CONTRÔLEUR EN COURS DE PARTIE (contrôleur hybride Unity) ====
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(8)
+                size_hint_y: None
+                height: self.minimum_height
+
+                MDLabel:
+                    text: "CONTRÔLEUR EN COURS DE PARTIE"
+                    font_style: "Overline"
+                    theme_text_color: "Secondary"
+                    halign: "left"
+                    padding: dp(16), 0
+                    adaptive_size: True
+
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(10)
+                    size_hint_y: None
+                    height: self.minimum_height
+                    elevation: 0
+                    disabled: not root.unity_connected or root.game_state not in ("Playing", "Paused")
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(15)
+                        size_hint_y: None
+                        height: dp(30)
+
+                        MDIcon:
+                            icon: "swap-horizontal-circle-outline"
+                            theme_text_color: "Custom"
+                            text_color: app.theme_cls.primary_color
+                            font_size: "30sp"
+                            size_hint_x: None
+                            width: dp(30)
+
+                        MDLabel:
+                            text: ("Actif : " + root.controller_state_label + ((" (" + root.controller_reason_label + ")") if root.controller_reason_label else "")) if root.controller_state_label else "Aucune partie en cours"
+                            font_style: "Body1"
+                            halign: "left"
+                            valign: "center"
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(48)
+
+                        MDRectangleFlatButton:
+                            text: "PID"
+                            size_hint_x: 1
+                            size_hint_y: None
+                            height: dp(48)
+                            on_release: root.switch_controller("PID")
+
+                        MDRectangleFlatButton:
+                            text: "DRL"
+                            size_hint_x: 1
+                            size_hint_y: None
+                            height: dp(48)
+                            on_release: root.switch_controller("DRL_DEPLOYED")
+
+                        MDRectangleFlatButton:
+                            text: "DRL Run 3"
+                            size_hint_x: 1
+                            size_hint_y: None
+                            height: dp(48)
+                            on_release: root.switch_controller("DRL_RUN3")
+
+                        MDRectangleFlatButton:
+                            text: "PID secours"
+                            size_hint_x: 1
+                            size_hint_y: None
+                            height: dp(48)
+                            on_release: root.switch_controller("PID_BACKUP")
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: self.minimum_height
+
+                        MDTextField:
+                            id: manual_cpm_field
+                            text: str(int(root.manual_cpm))
+                            hint_text: "Cadence manuelle (cubes/min)"
+                            icon_left: "hand-back-right-outline"
+                            mode: "rectangle"
+                            input_filter: "int"
+                            size_hint_x: 0.7
+                            text_color_focus: app.theme_cls.primary_color
+                            hint_text_color_focus: app.theme_cls.primary_color
+                            line_color_focus: app.theme_cls.primary_color
+                            icon_left_color_focus: app.theme_cls.primary_color
+                            on_text_validate: root.on_manual_cpm_submit(self.text)
+                            on_focus: root.on_manual_cpm_submit(self.text) if not self.focus else None
+
+                        MDRaisedButton:
+                            text: "Manuel"
+                            size_hint_x: 0.3
+                            size_hint_y: None
+                            height: dp(48)
+                            pos_hint: {"center_y": 0.5}
+                            on_release: root.apply_manual_cpm()
+
+                    MDLabel:
+                        text: "Bascule appliquée à la seconde suivante (PID ou DRL : FC valide requise)"
+                        theme_text_color: "Secondary"
+                        font_style: "Caption"
+                        halign: "left"
+                        size_hint_y: None
+                        height: dp(20)
 
             # ==== OPTIONS GÉNÉRALES (indépendantes du mode de jeu) ====
             MDBoxLayout:

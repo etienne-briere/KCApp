@@ -70,6 +70,20 @@ class UDPController:
         """Envoie l'âge du joueur à Unity"""
         return self.send_command("age", str(age))
 
+    def set_weight_player(self, weight) -> bool:
+        """Poids du joueur en kg (0 = non renseigné), pour l'estimation des kcal dans Unity"""
+        try:
+            w = max(0.0, float(weight or 0))
+        except (TypeError, ValueError):
+            w = 0.0
+        value = str(int(w)) if w == int(w) else f"{w:.1f}"
+        return self.send_command("userWeight", value)
+
+    def set_sex_player(self, sex: str) -> bool:
+        """Sexe du joueur : "M", "F" ou "N" (non renseigné), pour l'estimation des kcal dans Unity"""
+        # send_command remplace une valeur vide par le nom de la commande : "N" explicite.
+        return self.send_command("userSex", sex if sex in ("M", "F") else "N")
+
     def set_player_name(self, name: str) -> bool:
         """Envoie le nom du joueur à Unity"""
         return self.send_command("playerName", name)
@@ -137,6 +151,28 @@ class UDPController:
     def set_brick_speed(self, speed: int) -> bool:
         """Paramètre la vitesse des briques (tous modes)"""
         return self.send_command("brickSpeed", str(speed))
+
+    # ========== CONTRÔLEUR HYBRIDE (Unity, branche feature/controleur-hybride-1hz) ==========
+
+    def set_controller_setup(self, drl_model: str, pid_warmup: bool, pid_backup: bool) -> bool:
+        """
+        Réglage du contrôleur pour le mode DRL, appliqué au prochain lancement
+        ou redémarrage de partie (même traduction que le menu Options du jeu) :
+        drl_model = "deployed" (DRL actuel) ou "run3", PID d'échauffement, PID de secours.
+        """
+        value = f"{drl_model},{1 if pid_warmup else 0},{1 if pid_backup else 0}"
+        return self.send_command("controllerSetup", value)
+
+    def set_controller_state(self, state: str) -> bool:
+        """
+        Bascule de contrôleur EN COURS DE PARTIE (appliquée à la seconde suivante) :
+        PID, DRL_DEPLOYED, DRL_RUN3, PID_BACKUP ou MANUAL.
+        """
+        return self.send_command("controllerState", state)
+
+    def set_manual_cpm(self, cpm: int) -> bool:
+        """Passe en cadence manuelle (ou change la cadence si déjà en manuel)"""
+        return self.send_command("manualCpm", str(int(cpm)))
 
     def request_config_refresh(self) -> bool:
         """Demande à Unity de renvoyer l'ensemble de ses réglages actuels"""

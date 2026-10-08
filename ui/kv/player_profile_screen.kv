@@ -104,7 +104,7 @@
                             on_release: root.open_player_menu(self)
 
                     MDLabel:
-                        text: f"{root.player_age} ans" if root.player_name else ""
+                        text: root.player_details if root.player_name else ""
                         font_style: "Caption"
                         theme_text_color: "Secondary"
                         halign: "left"
@@ -195,6 +195,40 @@
                             line_color_focus: app.theme_cls.primary_color
                             icon_left_color_focus: app.theme_cls.primary_color
 
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(48)
+
+                        MDTextField:
+                            id: new_weight_field
+                            text: root.new_weight_field_text
+                            hint_text: "Poids (kg)"
+                            icon_left: "scale-bathroom"
+                            mode: "rectangle"
+                            input_filter: "float"
+                            size_hint_x: 0.5
+                            text_color_focus: app.theme_cls.primary_color
+                            hint_text_color_focus: app.theme_cls.primary_color
+                            line_color_focus: app.theme_cls.primary_color
+                            icon_left_color_focus: app.theme_cls.primary_color
+
+                        MDRectangleFlatButton:
+                            text: root.sex_label(root.new_sex)
+                            size_hint_x: 0.5
+                            size_hint_y: None
+                            height: dp(48)
+                            on_release: root.open_sex_menu(self, "new")
+
+                    MDLabel:
+                        text: "Poids et sexe : facultatifs, servent à estimer les kcal affichées en fin de partie"
+                        font_style: "Caption"
+                        theme_text_color: "Secondary"
+                        halign: "left"
+                        size_hint_y: None
+                        height: self.texture_size[1]
+
                     MDRaisedButton:
                         text: "Créer"
                         size_hint_x: 1
@@ -258,6 +292,40 @@
                             hint_text_color_focus: app.theme_cls.primary_color
                             line_color_focus: app.theme_cls.primary_color
                             icon_left_color_focus: app.theme_cls.primary_color
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(48)
+
+                        MDTextField:
+                            id: edit_weight_field
+                            text: root.edit_weight_field_text
+                            hint_text: "Poids (kg)"
+                            icon_left: "scale-bathroom"
+                            mode: "rectangle"
+                            input_filter: "float"
+                            size_hint_x: 0.5
+                            text_color_focus: app.theme_cls.primary_color
+                            hint_text_color_focus: app.theme_cls.primary_color
+                            line_color_focus: app.theme_cls.primary_color
+                            icon_left_color_focus: app.theme_cls.primary_color
+
+                        MDRectangleFlatButton:
+                            text: root.sex_label(root.edit_sex)
+                            size_hint_x: 0.5
+                            size_hint_y: None
+                            height: dp(48)
+                            on_release: root.open_sex_menu(self, "edit")
+
+                    MDLabel:
+                        text: "Poids et sexe : facultatifs, servent à estimer les kcal affichées en fin de partie"
+                        font_style: "Caption"
+                        theme_text_color: "Secondary"
+                        halign: "left"
+                        size_hint_y: None
+                        height: self.texture_size[1]
 
                     MDRaisedButton:
                         text: "Enregistrer"
