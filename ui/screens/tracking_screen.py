@@ -81,6 +81,11 @@ class GraphAwareScrollView(ScrollView):
         return super().on_touch_down(touch)
 
 
+# Modes adaptatifs : seuls modes qui envoient une %FC cible à Unity (voir
+# pilotage_screen.py). Partagé par le graphique et la liste d'export.
+ADAPTIVE_MODELS = ("PID", "DRL")
+
+
 class SessionRow(MDBoxLayout):
     '''
     Carte de la liste "Sessions à exporter" : nom de fichier, cases à
@@ -97,12 +102,21 @@ class SessionRow(MDBoxLayout):
     export_callback = ObjectProperty(None)
 
     # Ce que CETTE session inclura à son prochain export — indépendant des
-    # cases d'affichage du graphique (show_target/show_cpm/show_game_state
-    # sur TrackingScreen, qui ne contrôlent plus que l'affichage du
-    # graphique). FC n'a pas de case : toujours incluse.
-    include_target = BooleanProperty(True)
-    include_cpm = BooleanProperty(True)
+    # cases d'affichage du graphique (show_game_state sur
+    # TrackingScreen, qui ne contrôle que l'affichage du graphique).
+    # FC n'a pas de case : toujours incluse. La %FC cible et les cubes/min
+    # non plus : ils suivent le contenu de la session (voir on_record).
+    include_target = BooleanProperty(False)
+    include_cpm = BooleanProperty(False)
     include_state = BooleanProperty(True)
+
+    def on_record(self, instance, record):
+        """
+        %FC cible incluse uniquement si la session était en mode adaptatif,
+        cubes/min dès que la session en contient (comme sur le graphique).
+        """
+        self.include_target = bool(record and record.model in ADAPTIVE_MODELS)
+        self.include_cpm = bool(record and record.cpm_values)
 
 
 class TrackingScreen(MDScreen):
@@ -120,17 +134,25 @@ class TrackingScreen(MDScreen):
     # %FCmax/âge n'ont pas de sens sans profil actif — voir tracking_screen.kv
     player_selected = BooleanProperty(False)
 
-    # Affichage du graphique (activé par défaut)
-    show_target = BooleanProperty(True)
-    show_cpm = BooleanProperty(True)
-    show_game_state = BooleanProperty(True)
+    # Affichage du graphique : seul l'état du jeu a une case (désactivée par
+    # défaut). La %FC cible suit target_available, les cubes/min s'affichent
+    # dès que des cpm ont été reçus de Unity (voir update_graph).
+    show_game_state = BooleanProperty(False)
 
     # Mode de jeu courant — mirroir de session.config.model (pas une
-    # propriété Kivy) pour permettre au kv de réagir à son changement, ex.
-    # désactiver la case "%FC cible" en Fixe/Incrémental (pas de cible FC
-    # envoyée à Unity dans ces modes, voir pilotage_screen.kv)
+    # propriété Kivy) pour permettre au kv de réagir à son changement.
     current_model = StringProperty("Unknown")
-    MODELS_WITHOUT_TARGET = ("FIXE", "INCREMENTAL")
+    # %FC cible (courbe du graphique + Card de saisie) affichée uniquement en
+    # mode adaptatif : les autres modes n'envoient jamais de cible FC à Unity.
+    target_available = BooleanProperty(False)
+    # Card "FC cible" (modifiable ici comme dans l'écran Contrôle)
+    target_hr = NumericProperty(50)  # % FCmax
+    # Cards "Cpm minimum / maximum" des modes adaptatifs (comme l'écran Contrôle)
+    adaptive_min_cpm = NumericProperty(30)
+    adaptive_max_cpm = NumericProperty(200)
+    # Card "Cadence fixe" du mode Fixe (comme l'écran Contrôle)
+    fixed_cpm = NumericProperty(60)
+    unity_connected = BooleanProperty(False)
 
     # Sessions passées en attente d'export ou de suppression
     has_pending_sessions = BooleanProperty(False)
@@ -183,12 +205,16 @@ class TrackingScreen(MDScreen):
 
         self._sync_model(self.session.config.model)
         self._sync_player_age(self.session.user_profile)
+        self._sync_target_hr(self.session.config.target_hr_percent)
+        self._sync_cpm_fields(self.session.config)
+        self.unity_connected = self.udp_discovery.is_unity_connected()
 
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC et de CPM
         event_bus.subscribe("heart_rate_received", self.on_hr_received)
         event_bus.subscribe("cpm_received", self.on_cpm_received)
         event_bus.subscribe("session_updated", self.on_session_updated)
         event_bus.subscribe("hr_sensor_status_changed", self.on_hr_sensor_status_changed)
+        event_bus.subscribe("unity_connection_changed", self.handle_unity_connection)
 
         # Charger toutes les data pré-existantes dans le graphique
         self.load_existing_data()
@@ -208,20 +234,108 @@ class TrackingScreen(MDScreen):
         event_bus.unsubscribe("cpm_received", self.on_cpm_received)
         event_bus.unsubscribe("session_updated", self.on_session_updated)
         event_bus.unsubscribe("hr_sensor_status_changed", self.on_hr_sensor_status_changed)
+        event_bus.unsubscribe("unity_connection_changed", self.handle_unity_connection)
 
     def on_session_updated(self, session):
         self._sync_model(session.config.model)
         self._sync_player_age(session.user_profile)
+        self._sync_target_hr(session.config.target_hr_percent)
+        self._sync_cpm_fields(session.config)
+
+    def handle_unity_connection(self, data):
+        self.unity_connected = data["connected"]
+
+    def _sync_target_hr(self, value):
+        """Reflète la FC cible reçue de Unity, sans écraser une saisie en cours"""
+        self._sync_field("target_hr_field", "target_hr", value)
+
+    def _sync_cpm_fields(self, config):
+        self._sync_field("adaptive_min_cpm_field", "adaptive_min_cpm", config.adaptive_min_cpm)
+        self._sync_field("adaptive_max_cpm_field", "adaptive_max_cpm", config.adaptive_max_cpm)
+        self._sync_field("fixed_cpm_field", "fixed_cpm", config.cube_per_min)
+
+    def _sync_field(self, field_id, prop_name, value):
+        """Reflète une valeur reçue de Unity dans un champ, sans écraser une saisie en cours"""
+        if value is None:
+            return
+        field = self.ids.get(field_id)
+        if field is not None and field.focus:
+            return
+        setattr(self, prop_name, value)
+        if field is not None:
+            field.text = str(int(value))
+
+    def _submit_cpm_field(self, text, field_id, prop_name, config_attr,
+                          min_value, max_value, send_method_name, label):
+        """Champ cpm validé — même logique que l'écran Contrôle (_submit_int_field)"""
+        field = self.ids[field_id]
+        try:
+            value = int(text)
+        except ValueError:
+            toast("Valeur invalide")
+            field.text = str(int(getattr(self, prop_name)))
+            return
+
+        value = max(min_value, value)
+        if max_value is not None:
+            value = min(max_value, value)
+
+        field.text = str(value)
+        if value == getattr(self.session.config, config_attr):
+            return
+
+        setattr(self, prop_name, value)
+        setattr(self.session.config, config_attr, value)
+        logger.info(f"🔧 {label}: {value}")
+
+        if self.udp_controller and getattr(self.udp_controller, send_method_name)(value):
+            logger.info(f"📤 {label} envoyé: {value}")
+
+    def on_adaptive_min_cpm_submit(self, text):
+        self._submit_cpm_field(text, "adaptive_min_cpm_field", "adaptive_min_cpm", "adaptive_min_cpm",
+                               0, None, "set_adaptive_min_cpm", "Cpm min adaptatif")
+
+    def on_adaptive_max_cpm_submit(self, text):
+        self._submit_cpm_field(text, "adaptive_max_cpm_field", "adaptive_max_cpm", "adaptive_max_cpm",
+                               0, None, "set_adaptive_max_cpm", "Cpm max adaptatif")
+
+    def on_fixed_cpm_submit(self, text):
+        """Cadence du mode Fixe : mêmes bornes (30-200) que l'écran Contrôle"""
+        self._submit_cpm_field(text, "fixed_cpm_field", "fixed_cpm", "cube_per_min",
+                               30, 200, "set_cube_rate", "Cubes par minute")
+
+    def on_target_hr_submit(self, text):
+        """Champ FC cible validé (Entrée ou perte de focus) — même logique que l'écran Contrôle"""
+        try:
+            value = int(text)
+        except ValueError:
+            toast("Valeur invalide")
+            self.ids.target_hr_field.text = str(int(self.target_hr))
+            return
+
+        value = max(10, min(100, value))
+        self.ids.target_hr_field.text = str(value)
+        if value == self.session.config.target_hr_percent:
+            return
+
+        self.target_hr = value
+        self.session.config.update_target(value)
+        logger.info(f"🎯 FC cible: {value}%")
+
+        if self.udp_controller and self.udp_controller.set_target_hr(value):
+            logger.info(f"📤 Target HR envoyée: {value}%")
+        self.update_graph()
 
     def _sync_model(self, model):
         """
         Reflète session.config.model (pas une propriété Kivy) dans
-        current_model, et décoche/verrouille "%FC cible" en Fixe/Incrémental
-        — ces modes n'envoient jamais de cible FC à Unity.
+        current_model, et n'affiche la %FC cible (courbe + Card de saisie)
+        qu'en mode adaptatif (PID/DRL).
         """
         self.current_model = model
-        if model in self.MODELS_WITHOUT_TARGET and self.show_target:
-            self.show_target = False
+        target_available = model in ADAPTIVE_MODELS
+        if target_available != self.target_available:
+            self.target_available = target_available
             self.update_graph()
 
     def _sync_player_age(self, user_profile):
@@ -259,8 +373,8 @@ class TrackingScreen(MDScreen):
 
             self.line_cpm.set_data(self.session.metrics.cpm_time, self.session.metrics.cpm_history)
 
-            self.line_target.set_visible(self.show_target)
-            self.line_cpm.set_visible(self.show_cpm)
+            self.line_target.set_visible(self.target_available)
+            self.line_cpm.set_visible(bool(self.session.metrics.cpm_history))
 
             # Redessiner
             self.fig.canvas.draw()
@@ -399,16 +513,6 @@ class TrackingScreen(MDScreen):
 
         self.update_graph()
 
-    def on_toggle_target(self, active):
-        """Afficher/masquer la %FC cible sur le graphique"""
-        self.show_target = active
-        self.update_graph()
-
-    def on_toggle_cpm(self, active):
-        """Afficher/masquer les cubes/min sur le graphique"""
-        self.show_cpm = active
-        self.update_graph()
-
     def on_toggle_game_state(self, active):
         """Afficher/masquer les bandes idle/paused sur le graphique"""
         self.show_game_state = active
@@ -451,7 +555,7 @@ class TrackingScreen(MDScreen):
             _INACTIVE_STATE_STYLES.get(s, _DEFAULT_INACTIVE_STYLE) for s in ordered_states
         ]
 
-        if self.show_target and target_times and target_values:
+        if self.target_available and target_times and target_values:
             target_values = np.array(target_values, dtype=float)
 
             lower = target_values - 5
@@ -502,18 +606,18 @@ class TrackingScreen(MDScreen):
 
         # ligne %FCmax cible
         self.line_target.set_data(target_times, target_values)
-        self.line_target.set_visible(self.show_target)
+        self.line_target.set_visible(self.target_available)
 
         # ligne %FCmax
         self.line_hr.set_data(hr_times, hrmax_percents)
 
-        # ligne CPM
+        # ligne CPM : affichée dès que Unity a envoyé des cpm (partie lancée),
+        # avec son axe de droite — rien à montrer avant.
+        has_cpm = bool(cpm_values)
         self.line_cpm.set_data(cpm_times, cpm_values)
-        self.line_cpm.set_visible(self.show_cpm)
-
-        # Axe de droite (Cubes/min) masqué avec sa ligne
-        self.ax2.get_yaxis().set_visible(self.show_cpm)
-        self.ax2.spines['right'].set_visible(self.show_cpm)
+        self.line_cpm.set_visible(has_cpm)
+        self.ax2.get_yaxis().set_visible(has_cpm)
+        self.ax2.spines['right'].set_visible(has_cpm)
 
         self.update_legend()
 
