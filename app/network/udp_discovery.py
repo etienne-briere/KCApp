@@ -288,6 +288,9 @@ class UDPDiscovery:
         elif key == "brickSpeed":
             session.config.update_from_udp(key, value)
 
+        elif key == "environment":
+            session.config.update_from_udp(key, value)
+
         # --- Contrôleur hybride (Unity) ---
         elif key in ("controllerConfig", "drlModel", "warmupPid", "backupPid",
                      "controllerState", "controllerSwitchReason"):

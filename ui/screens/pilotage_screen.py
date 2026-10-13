@@ -30,6 +30,16 @@ class PilotageScreen(MDScreen):
         "DRL_RUN3": "DRL Run 3 (adaptatif)",
     }
 
+    # Environnements du jeu (valeurs de la clé environment, envoyées/reçues telles quelles)
+    ENVIRONMENT_ORDER = ["Cosmos", "Forest", "Sea", "Mountain", "Sky"]
+    ENVIRONMENT_LABELS = {
+        "Cosmos": "Cosmos",
+        "Forest": "Forêt",
+        "Sea": "Mer",
+        "Mountain": "Montagne",
+        "Sky": "Ciel",
+    }
+
     # Contrôleur en cours de partie : libellés des états et des raisons de bascule envoyés par Unity
     CONTROLLER_STATE_LABELS = {
         "PID_WARMUP": "PID (échauffement)",
@@ -80,6 +90,7 @@ class PilotageScreen(MDScreen):
     controller_reason_label = StringProperty("") # raison de la dernière bascule
     manual_cpm = NumericProperty(60) # cadence du mode manuel (cubes/min)
     player_name = StringProperty("") # nom du profil joueur actif
+    environment = StringProperty("") # environnement du jeu (Cosmos/Forest/Sea/Mountain/Sky), vide si inconnu
     game_state = StringProperty("Menu") # état de partie reçu de Unity (Menu/Ready/Playing/Paused/Finished)
     # Spinner de la Card "Actions du jeu" pendant le délai UDP normal entre
     # un clic et la confirmation que Unity a changé d'état — voir
@@ -105,6 +116,7 @@ class PilotageScreen(MDScreen):
 
         self.player_name = self.session.user_profile.name
         self.game_state = self.session.game_state.capitalize()
+        self.environment = self.session.config.environment or ""
 
         # Vérifier la connexion Unity (au cas où on arrive dans l'écran après la connexion)
         self.unity_connected = self.udp_discovery.is_unity_connected()
@@ -153,6 +165,7 @@ class PilotageScreen(MDScreen):
         event_bus.unsubscribe("session_updated", self.on_session_updated)
         self._close_model_menu()
         self._close_player_menu()
+        self._close_environment_menu()
 
     # ========== CALLBACKS ==========
 
@@ -183,6 +196,8 @@ class PilotageScreen(MDScreen):
          # Mise à jour UI
         self.player_name = session.user_profile.name
         self.game_state = session.game_state.capitalize()
+        if session.config.environment is not None:
+            self.environment = session.config.environment
         # Un nouvel état confirme que Unity a bien traité la dernière
         # commande envoyée (voir _lancer_action_jeu) — inutile d'attendre
         # le timeout de secours.
@@ -321,6 +336,49 @@ class PilotageScreen(MDScreen):
         # affiché qu'au prochain message UDP reçu de Unity, pas
         # immédiatement — et pas du tout si Unity est déconnecté.
         event_bus.emit("session_updated", self.session)
+
+    # ========== ENVIRONNEMENT ==========
+
+    def open_environment_menu(self, caller):
+        """Ouvre le menu déroulant de sélection de l'environnement"""
+        self._close_environment_menu()
+
+        items = [
+            {
+                "text": self.ENVIRONMENT_LABELS[name],
+                "on_release": lambda name=name: self.on_environment_select(name),
+            }
+            for name in self.ENVIRONMENT_ORDER
+        ]
+        self._environment_menu = MDDropdownMenu(caller=caller, items=items, width_mult=4)
+        # Voir open_model_menu : retrait immédiat pour éviter les zones
+        # mortes de clic laissées par l'animation de dismiss par défaut.
+        self._environment_menu.bind(on_dismiss=lambda *_: self._close_environment_menu())
+        self._environment_menu.open()
+
+    def _close_environment_menu(self):
+        menu = getattr(self, "_environment_menu", None)
+        if menu is not None:
+            self._environment_menu = None
+            Clock.schedule_once(lambda dt: Window.remove_widget(menu), 0)
+
+    def on_environment_select(self, name):
+        """Sélection d'un environnement : envoyé immédiatement à Unity (menu du jeu uniquement)"""
+        self._close_environment_menu()
+        if self.game_state != "Menu":
+            toast("Changement d'environnement disponible uniquement dans le menu du jeu")
+            return
+        if name == self.environment:
+            return
+
+        self.environment = name
+        self.session.config.environment = name
+        logger.info(f"🌄 Environnement : {name}")
+
+        if self.udp_controller:
+            success = self.udp_controller.set_environment(name)
+            if success:
+                logger.info(f"📤 Environnement envoyé : {name}")
 
     # ========== MODE DE JEU ==========
 

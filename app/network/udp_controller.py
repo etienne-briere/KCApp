@@ -152,6 +152,10 @@ class UDPController:
         """Paramètre la vitesse des briques (tous modes)"""
         return self.send_command("brickSpeed", str(speed))
 
+    def set_environment(self, environment: str) -> bool:
+        """Change l'environnement du jeu (Cosmos, Forest, Sea, Mountain, Sky) — uniquement dans le menu"""
+        return self.send_command("environment", environment)
+
     # ========== CONTRÔLEUR HYBRIDE (Unity, branche feature/controleur-hybride-1hz) ==========
 
     def set_controller_setup(self, drl_model: str, pid_warmup: bool, pid_backup: bool) -> bool:
