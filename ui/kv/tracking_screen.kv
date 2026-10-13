@@ -54,28 +54,8 @@
                     size: (dp(20), dp(20)) if root.include_target else (0, 0)
                     pos_hint: {"center_y": 0.5}
 
-            MDBoxLayout:
-                orientation: "horizontal"
-                spacing: dp(2)
-                padding: dp(5), 0
-                size_hint_x: None
-                width: self.minimum_width
-
-                MDCheckbox:
-                    active: root.include_cpm
-                    on_active: root.include_cpm = self.active
-                    size_hint: None, None
-                    size: dp(24), dp(24)
-                    pos_hint: {"center_y": 0.5}
-
-                MDIcon:
-                    icon: "cube-outline"
-                    theme_text_color: "Custom"
-                    text_color: BLUE_FG
-                    font_size: "16sp"
-                    size_hint: None, None
-                    size: dp(20), dp(20)
-                    pos_hint: {"center_y": 0.5}
+            # Cubes/min : ni case ni icône, inclus d'office si la session en
+            # contient (voir SessionRow.on_record)
 
             MDBoxLayout:
                 orientation: "horizontal"
@@ -466,7 +446,7 @@
                                 adaptive_height: True
 
                             MDLabel:
-                                text: "Cubes par minute (15 à 200), Entrée pour valider" if root.unity_connected else "Jeu non connecté"
+                                text: "Cubes par minute (30 à 200), Entrée pour valider" if root.unity_connected else "Jeu non connecté"
                                 font_style: "Caption"
                                 theme_text_color: "Secondary"
                                 halign: "left"
@@ -569,41 +549,14 @@
                         anchor_x: "center"
                         anchor_y: "center"
                         size_hint_y: None
-                        height: dp(36) if Window.width >= dp(500) else dp(72)
+                        height: dp(36)
 
+                        # Seule option restante : la %FC cible et les cubes/min
+                        # s'affichent d'eux-mêmes (mode adaptatif / cpm reçus)
                         MDBoxLayout:
-                            orientation: "horizontal" if Window.width >= dp(500) else "vertical"
-                            spacing: dp(20)
+                            orientation: "horizontal"
                             size_hint: None, None
                             size: self.minimum_size
-
-                            MDBoxLayout:
-                                orientation: "horizontal"
-                                spacing: dp(8)
-                                size_hint_x: None
-                                width: self.minimum_width
-
-                                MDCheckbox:
-                                    active: root.show_cpm
-                                    on_active: root.on_toggle_cpm(self.active)
-                                    size_hint: None, None
-                                    size: dp(30), dp(30)
-                                    pos_hint: {"center_y": 0.5}
-
-                                MDIcon:
-                                    icon: "cube-outline"
-                                    theme_text_color: "Custom"
-                                    text_color: BLUE_FG
-                                    font_size: "16sp"
-                                    size_hint: None, None
-                                    size: dp(20), dp(20)
-                                    pos_hint: {"center_y": 0.5}
-
-                                MDLabel:
-                                    text: "Cubes/min"
-                                    font_style: "Caption"
-                                    adaptive_size: True
-                                    pos_hint: {"center_y": 0.5}
 
                             MDBoxLayout:
                                 orientation: "horizontal"

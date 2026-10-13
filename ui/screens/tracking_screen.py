@@ -102,17 +102,21 @@ class SessionRow(MDBoxLayout):
     export_callback = ObjectProperty(None)
 
     # Ce que CETTE session inclura à son prochain export — indépendant des
-    # cases d'affichage du graphique (show_cpm/show_game_state sur
-    # TrackingScreen, qui ne contrôlent que l'affichage du graphique).
-    # FC n'a pas de case : toujours incluse. La %FC cible non plus : elle
-    # suit le mode de jeu de la session (voir on_record).
+    # cases d'affichage du graphique (show_game_state sur
+    # TrackingScreen, qui ne contrôle que l'affichage du graphique).
+    # FC n'a pas de case : toujours incluse. La %FC cible et les cubes/min
+    # non plus : ils suivent le contenu de la session (voir on_record).
     include_target = BooleanProperty(False)
-    include_cpm = BooleanProperty(True)
+    include_cpm = BooleanProperty(False)
     include_state = BooleanProperty(True)
 
     def on_record(self, instance, record):
-        """%FC cible incluse uniquement si la session était en mode adaptatif"""
+        """
+        %FC cible incluse uniquement si la session était en mode adaptatif,
+        cubes/min dès que la session en contient (comme sur le graphique).
+        """
         self.include_target = bool(record and record.model in ADAPTIVE_MODELS)
+        self.include_cpm = bool(record and record.cpm_values)
 
 
 class TrackingScreen(MDScreen):
@@ -130,9 +134,9 @@ class TrackingScreen(MDScreen):
     # %FCmax/âge n'ont pas de sens sans profil actif — voir tracking_screen.kv
     player_selected = BooleanProperty(False)
 
-    # Affichage du graphique (cubes/min activé par défaut, état du jeu désactivé).
-    # La %FC cible n'a pas de case : elle suit target_available.
-    show_cpm = BooleanProperty(True)
+    # Affichage du graphique : seul l'état du jeu a une case (désactivée par
+    # défaut). La %FC cible suit target_available, les cubes/min s'affichent
+    # dès que des cpm ont été reçus de Unity (voir update_graph).
     show_game_state = BooleanProperty(False)
 
     # Mode de jeu courant — mirroir de session.config.model (pas une
@@ -370,7 +374,7 @@ class TrackingScreen(MDScreen):
             self.line_cpm.set_data(self.session.metrics.cpm_time, self.session.metrics.cpm_history)
 
             self.line_target.set_visible(self.target_available)
-            self.line_cpm.set_visible(self.show_cpm)
+            self.line_cpm.set_visible(bool(self.session.metrics.cpm_history))
 
             # Redessiner
             self.fig.canvas.draw()
@@ -509,11 +513,6 @@ class TrackingScreen(MDScreen):
 
         self.update_graph()
 
-    def on_toggle_cpm(self, active):
-        """Afficher/masquer les cubes/min sur le graphique"""
-        self.show_cpm = active
-        self.update_graph()
-
     def on_toggle_game_state(self, active):
         """Afficher/masquer les bandes idle/paused sur le graphique"""
         self.show_game_state = active
@@ -612,13 +611,13 @@ class TrackingScreen(MDScreen):
         # ligne %FCmax
         self.line_hr.set_data(hr_times, hrmax_percents)
 
-        # ligne CPM
+        # ligne CPM : affichée dès que Unity a envoyé des cpm (partie lancée),
+        # avec son axe de droite — rien à montrer avant.
+        has_cpm = bool(cpm_values)
         self.line_cpm.set_data(cpm_times, cpm_values)
-        self.line_cpm.set_visible(self.show_cpm)
-
-        # Axe de droite (Cubes/min) masqué avec sa ligne
-        self.ax2.get_yaxis().set_visible(self.show_cpm)
-        self.ax2.spines['right'].set_visible(self.show_cpm)
+        self.line_cpm.set_visible(has_cpm)
+        self.ax2.get_yaxis().set_visible(has_cpm)
+        self.ax2.spines['right'].set_visible(has_cpm)
 
         self.update_legend()
 
