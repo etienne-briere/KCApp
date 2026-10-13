@@ -146,6 +146,8 @@ class TrackingScreen(MDScreen):
     # Cards "Cpm minimum / maximum" des modes adaptatifs (comme l'écran Contrôle)
     adaptive_min_cpm = NumericProperty(30)
     adaptive_max_cpm = NumericProperty(200)
+    # Card "Cadence fixe" du mode Fixe (comme l'écran Contrôle)
+    fixed_cpm = NumericProperty(60)
     unity_connected = BooleanProperty(False)
 
     # Sessions passées en attente d'export ou de suppression
@@ -200,7 +202,7 @@ class TrackingScreen(MDScreen):
         self._sync_model(self.session.config.model)
         self._sync_player_age(self.session.user_profile)
         self._sync_target_hr(self.session.config.target_hr_percent)
-        self._sync_adaptive_cpm(self.session.config)
+        self._sync_cpm_fields(self.session.config)
         self.unity_connected = self.udp_discovery.is_unity_connected()
 
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC et de CPM
@@ -234,7 +236,7 @@ class TrackingScreen(MDScreen):
         self._sync_model(session.config.model)
         self._sync_player_age(session.user_profile)
         self._sync_target_hr(session.config.target_hr_percent)
-        self._sync_adaptive_cpm(session.config)
+        self._sync_cpm_fields(session.config)
 
     def handle_unity_connection(self, data):
         self.unity_connected = data["connected"]
@@ -243,9 +245,10 @@ class TrackingScreen(MDScreen):
         """Reflète la FC cible reçue de Unity, sans écraser une saisie en cours"""
         self._sync_field("target_hr_field", "target_hr", value)
 
-    def _sync_adaptive_cpm(self, config):
+    def _sync_cpm_fields(self, config):
         self._sync_field("adaptive_min_cpm_field", "adaptive_min_cpm", config.adaptive_min_cpm)
         self._sync_field("adaptive_max_cpm_field", "adaptive_max_cpm", config.adaptive_max_cpm)
+        self._sync_field("fixed_cpm_field", "fixed_cpm", config.cube_per_min)
 
     def _sync_field(self, field_id, prop_name, value):
         """Reflète une valeur reçue de Unity dans un champ, sans écraser une saisie en cours"""
@@ -258,34 +261,44 @@ class TrackingScreen(MDScreen):
         if field is not None:
             field.text = str(int(value))
 
-    def _submit_adaptive_cpm(self, text, field_id, prop_name, send_method_name, label):
-        """Champ cpm min/max validé — même logique que l'écran Contrôle (_submit_int_field)"""
+    def _submit_cpm_field(self, text, field_id, prop_name, config_attr,
+                          min_value, max_value, send_method_name, label):
+        """Champ cpm validé — même logique que l'écran Contrôle (_submit_int_field)"""
         field = self.ids[field_id]
         try:
-            value = max(0, int(text))
+            value = int(text)
         except ValueError:
             toast("Valeur invalide")
             field.text = str(int(getattr(self, prop_name)))
             return
 
+        value = max(min_value, value)
+        if max_value is not None:
+            value = min(max_value, value)
+
         field.text = str(value)
-        if value == getattr(self.session.config, prop_name):
+        if value == getattr(self.session.config, config_attr):
             return
 
         setattr(self, prop_name, value)
-        setattr(self.session.config, prop_name, value)
+        setattr(self.session.config, config_attr, value)
         logger.info(f"🔧 {label}: {value}")
 
         if self.udp_controller and getattr(self.udp_controller, send_method_name)(value):
             logger.info(f"📤 {label} envoyé: {value}")
 
     def on_adaptive_min_cpm_submit(self, text):
-        self._submit_adaptive_cpm(text, "adaptive_min_cpm_field", "adaptive_min_cpm",
-                                  "set_adaptive_min_cpm", "Cpm min adaptatif")
+        self._submit_cpm_field(text, "adaptive_min_cpm_field", "adaptive_min_cpm", "adaptive_min_cpm",
+                               0, None, "set_adaptive_min_cpm", "Cpm min adaptatif")
 
     def on_adaptive_max_cpm_submit(self, text):
-        self._submit_adaptive_cpm(text, "adaptive_max_cpm_field", "adaptive_max_cpm",
-                                  "set_adaptive_max_cpm", "Cpm max adaptatif")
+        self._submit_cpm_field(text, "adaptive_max_cpm_field", "adaptive_max_cpm", "adaptive_max_cpm",
+                               0, None, "set_adaptive_max_cpm", "Cpm max adaptatif")
+
+    def on_fixed_cpm_submit(self, text):
+        """Cadence du mode Fixe : mêmes bornes (15-200) que l'écran Contrôle"""
+        self._submit_cpm_field(text, "fixed_cpm_field", "fixed_cpm", "cube_per_min",
+                               15, 200, "set_cube_rate", "Cubes par minute")
 
     def on_target_hr_submit(self, text):
         """Champ FC cible validé (Entrée ou perte de focus) — même logique que l'écran Contrôle"""
