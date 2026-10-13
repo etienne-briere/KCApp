@@ -233,7 +233,7 @@ class UDPDiscovery:
             return
 
         # --- ROUTAGE ---
-        if key == "userAge":
+        if key in ("userAge", "userWeight", "userSex"):
             session.user_profile.update_from_udp(key, value)
 
         elif key == "playerName":
@@ -286,6 +286,14 @@ class UDPDiscovery:
             session.config.update_from_udp(key, value)
 
         elif key == "brickSpeed":
+            session.config.update_from_udp(key, value)
+
+        elif key == "environment":
+            session.config.update_from_udp(key, value)
+
+        # --- Contrôleur hybride (Unity) ---
+        elif key in ("controllerConfig", "drlModel", "warmupPid", "backupPid",
+                     "controllerState", "controllerSwitchReason"):
             session.config.update_from_udp(key, value)
 
         elif key == "cpm":
