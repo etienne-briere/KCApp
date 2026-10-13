@@ -8,6 +8,7 @@ from kivymd.toast import toast
 from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.clock import Clock
+from kivy.metrics import dp
 from kivy.utils import platform
 
 # Custom modules
@@ -45,6 +46,10 @@ class KCApp(MDApp):
         self.quest_client = None
         # self.status_bar = None
 
+        # Navigation courante (écran, titre, flèche retour, cible du retour)
+        # — voir change_screen/go_back/open_player_profile
+        self._current_nav = ("home", "Accueil", False, None)
+
         logger.info("Initialisation de l'application KCApp")
 
     def build(self):
@@ -78,6 +83,7 @@ class KCApp(MDApp):
         # Builder.load_file("ui/kv/game_screen.kv")
 
         Builder.load_file(resource_path("ui/kv/status_bar.kv"))
+        Builder.load_file(resource_path("ui/kv/player_chip.kv"))
         Builder.load_file(resource_path("ui/kv/home_screen.kv"))
         Builder.load_file(resource_path("ui/kv/scan_screen.kv"))
         Builder.load_file(resource_path("ui/kv/control_menu_screen.kv"))
@@ -101,6 +107,8 @@ class KCApp(MDApp):
 
         # ScreenManager
         self.sm = self.root.ids.screen_manager
+
+        self._add_player_chip_to_top_bar()
 
         # Démarrer la découverte Unity automatiquement
         self.udp_discovery.start_discovery()
@@ -177,22 +185,78 @@ class KCApp(MDApp):
         
         logger.info("Nettoyage terminé")
     
-    def change_screen(self, screen_name, title, show_back=False):
+    def _add_player_chip_to_top_bar(self):
+        """
+        Insère l'encadré joueur (PlayerChip) dans la MDTopAppBar, juste
+        après ses icônes de gauche et avant le titre. On garde la top bar
+        KivyMD (style, titre) plutôt que d'en réécrire une : seul cet ajout
+        est nécessaire. La boîte des icônes (left_actions) est reconstruite
+        à chaque changement de left_action_items, mais pas sa boîte parente,
+        donc l'encadré n'est jamais retiré.
+        """
+        from ui.widgets.player_chip import PlayerChip
+
+        top_bar = self.root.ids.top_bar
+        left_actions = top_bar.ids.left_actions
+        right_actions = top_bar.ids.right_actions
+        title = top_bar.ids.label_title
+        row = left_actions.parent
+        chip = PlayerChip()
+        # children est en ordre inverse : index de left_actions = juste après elle
+        row.add_widget(chip, index=row.children.index(left_actions))
+
+        # L'encadré décale le titre vers la droite : on compense avec un
+        # padding asymétrique pour qu'il reste centré sur toute la largeur de
+        # la barre (et non sur l'espace restant entre l'encadré et la droite).
+        def center_title(*_):
+            offset = left_actions.width + chip.width - right_actions.width
+            base = dp(12)
+            title.padding = [base + max(0, -offset), 0, base + max(0, offset), 0]
+
+        for widget in (left_actions, chip, right_actions):
+            widget.bind(width=center_title)
+        center_title()
+
+    def change_screen(self, screen_name, title, show_back=False, back_target=None):
         """Change l'écran actif et met à jour le titre de la top bar
 
         Args:
             screen_name: Nom de l'écran à afficher
             title: Nouveau titre pour la top bar
-            show_back: Si True, affiche une flèche retour vers le menu
-                Contrôle au lieu de l'icône par défaut (sous-écrans
-                Casque VR / Contrôle du jeu, voir control_menu_screen.kv)
+            show_back: Si True, affiche une flèche retour avant l'encadré
+                joueur (sous-écrans Casque VR / Contrôle du jeu / Profil
+                du joueur, voir control_menu_screen.kv)
+            back_target: Arguments de change_screen pour la flèche retour
+                (par défaut le menu Contrôle) — voir open_player_profile
         """
         self.root.ids.screen_manager.current = screen_name
         self.root.ids.top_bar.title = title
+        self._current_nav = (screen_name, title, show_back, back_target)
 
         if show_back:
+            target = back_target or ("control_menu", "Contrôle")
             self.root.ids.top_bar.left_action_items = [
-                ["arrow-left", lambda x: self.change_screen("control_menu", "Contrôle")]
+                ["arrow-left", lambda x: self.change_screen(*target)]
             ]
         else:
-            self.root.ids.top_bar.left_action_items = [["account-circle", lambda x: None]]
+            # Pas d'icône : l'encadré joueur (PlayerChip) sert de bouton profil
+            self.root.ids.top_bar.left_action_items = []
+
+    def open_player_profile(self, edit=False):
+        """
+        Ouvre le Profil du joueur depuis n'importe quel écran (encadré joueur
+        de la top bar, icône profil, crayon de Home) : la flèche retour
+        ramène à l'écran d'où l'on vient, avec son propre titre et retour.
+
+        Args:
+            edit: Ouvrir directement le formulaire de modification du joueur
+        """
+        screen = self.root.ids.screen_manager.get_screen("player_profile")
+        if self._current_nav[0] == "player_profile":
+            if edit:
+                screen.open_edit_form()
+            return
+
+        if edit:
+            screen.request_edit_on_enter()
+        self.change_screen("player_profile", "Profil du joueur", True, back_target=self._current_nav)

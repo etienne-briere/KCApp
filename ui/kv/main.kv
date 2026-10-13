@@ -28,7 +28,9 @@ BoxLayout:
         id: top_bar
         title: "Accueil"
         md_bg_color: app.theme_cls.primary_color
-        left_action_items: [["account-circle", lambda x: print(x)]]
+        # Pas d'icône à gauche : l'encadré joueur ajouté par KCApp.on_start
+        # (ui/widgets/player_chip.py) sert de bouton profil
+        left_action_items: []
         right_action_items: [["", lambda x: print(x)]]
     
     # -------- SUIVI BLE / Wi-Fi / FC ------

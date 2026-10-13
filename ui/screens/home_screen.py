@@ -1,5 +1,5 @@
 from kivymd.uix.screen import MDScreen
-from kivy.properties import StringProperty, BooleanProperty, NumericProperty, ListProperty
+from kivy.properties import StringProperty, BooleanProperty, NumericProperty
 from kivy.app import App
 from utils.logger import get_logger
 from kivy.clock import Clock
@@ -14,36 +14,9 @@ from app.network.connectivity import is_wifi_enabled, get_wifi_ssid
 
 logger = get_logger(__name__)
 
-# Traduction française des états de partie envoyés par Unity (bannière Home).
-# "disconnected" n'est pas envoyé par Unity : posé localement dès qu'Unity
-# n'est plus joignable (voir udp_discovery.py/_check_unity_connection), pour
-# le distinguer de "menu" dans le badge, le graphique et l'export CSV.
-_GAME_STATE_LABELS = {
-    "menu": "Menu",
-    "ready": "Prêt",
-    "playing": "En cours",
-    "paused": "En pause",
-    "finished": "Terminé",
-    "disconnected": "Jeu déconnecté",
-}
-
-# Couleurs du badge d'état de partie (mêmes valeurs que GREEN/AMBER/BLUE/
-# PURPLE/RED _FG/_BG dans status_bar.kv) — calculées ici plutôt qu'avec un
-# ternaire en kv sur root.game_state.lower(), qui ne se rebindait pas de
-# façon fiable. "ready" n'a pas d'entrée dédiée : il retombe sur le gris
-# par défaut (état neutre, en attente).
-_GAME_STATE_COLORS = {
-    "playing": {"fg": (0.176, 0.490, 0.196, 1), "bg": (0.906, 0.961, 0.914, 1)},
-    "paused": {"fg": (0.780, 0.518, 0.047, 1), "bg": (1, 0.976, 0.882, 1)},
-    # "Menu" : le joueur est connecté mais pas encore dans la scène de jeu.
-    "menu": {"fg": (0.098, 0.463, 0.824, 1), "bg": (0.890, 0.949, 0.992, 1)},
-    # "Finished" : la session est terminée.
-    "finished": {"fg": (0.482, 0.122, 0.635, 1), "bg": (0.953, 0.898, 0.961, 1)},
-    # "Jeu déconnecté" : mêmes couleurs que les autres indicateurs de
-    # déconnexion de l'app (RED_FG/RED_BG dans status_bar.kv).
-    "disconnected": {"fg": (0.776, 0.157, 0.157, 1), "bg": (0.988, 0.910, 0.906, 1)},
-}
-_GAME_STATE_DEFAULT_COLOR = {"fg": (0.459, 0.459, 0.459, 1), "bg": (0.925, 0.925, 0.925, 1)}
+# Libellés des états de partie : partagés avec l'encadré joueur de la top
+# bar, qui affiche désormais le joueur et l'état (voir ui/game_state_style.py).
+from ui.game_state_style import GAME_STATE_LABELS as _GAME_STATE_LABELS  # noqa: E402
 
 
 class HomeScreen(MDScreen):
@@ -58,7 +31,6 @@ class HomeScreen(MDScreen):
     hr_sensor_name = StringProperty("")
     heart_rate_text = StringProperty("--")
     selected_model = StringProperty("Unknown")
-    age_user = StringProperty("Unknown")
     # Feedback spécifique au mode de jeu en cours (voir _update_mode_feedback) :
     # cpm en Fixe, paliers + plage cpm en Incrémental, %FC cible en PID/DRL.
     mode_feedback_icon = StringProperty("target")
@@ -70,10 +42,7 @@ class HomeScreen(MDScreen):
     # verticalement le BoxLayout qui l'englobe (adaptive_size sur une
     # hauteur jamais recalculée). Ne pas remettre "" ici.
     mode_feedback_subtext = StringProperty("Unknown")
-    player_name = StringProperty("")
     game_state = StringProperty("Menu")
-    game_state_fg = ListProperty(_GAME_STATE_DEFAULT_COLOR["fg"])
-    game_state_bg = ListProperty(_GAME_STATE_DEFAULT_COLOR["bg"])
     session_remaining_text = StringProperty("--:--")
     # Affiche un spinner dans la Card "Actions du jeu" pendant le délai UDP
     # normal entre un clic (ex. "Lancer la partie") et la confirmation que
@@ -123,16 +92,14 @@ class HomeScreen(MDScreen):
 
         # Reflète l'état de partie réel même hors connexion (ex.
         # "disconnected" posé par GameSession dès le lancement de l'app, ou
-        # après une coupure) — la section "Session en cours" masque de toute
-        # façon ce badge tant qu'Unity n'est pas connecté, mais on garde la
-        # propriété correcte au cas où.
+        # après une coupure) — les actions du jeu sont de toute façon masquées
+        # tant qu'Unity n'est pas connecté, mais on garde la propriété
+        # correcte au cas où.
         self._set_game_state(self.session.game_state)
 
         if self.unity_connected :
             self.selected_model = self.session.config.model
-            self.age_user = str(self.session.user_profile.age)
             self._update_mode_feedback(self.session.config)
-            self.player_name = self.session.user_profile.name
             self._refresh_session_remaining()
 
         # S'abonner pour écouter les eventbus
@@ -192,20 +159,14 @@ class HomeScreen(MDScreen):
     def on_session_updated(self, session):
          # Mise à jour UI
         self.selected_model = session.config.model
-        self.age_user = str(session.user_profile.age)
         self._update_mode_feedback(session.config)
-        self.player_name = session.user_profile.name
         self._set_game_state(session.game_state)
         self._refresh_session_remaining()
 
     def _set_game_state(self, raw_state):
-        """Met à jour le label d'état (traduit en français) ET les couleurs du badge associées."""
+        """Met à jour le label d'état (traduit en français), qui active/désactive les actions du jeu."""
         raw_state = raw_state or "Menu"
-        state_key = raw_state.lower()
-        self.game_state = _GAME_STATE_LABELS.get(state_key, raw_state.capitalize())
-        colors = _GAME_STATE_COLORS.get(state_key, _GAME_STATE_DEFAULT_COLOR)
-        self.game_state_fg = colors["fg"]
-        self.game_state_bg = colors["bg"]
+        self.game_state = _GAME_STATE_LABELS.get(raw_state.lower(), raw_state.capitalize())
         # Un nouvel état confirme que Unity a bien traité la dernière
         # commande envoyée (voir _lancer_action_jeu) — inutile d'attendre
         # le timeout de secours.

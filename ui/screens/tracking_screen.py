@@ -32,7 +32,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 # Couleurs/labels des bandes d'état inactif (mêmes valeurs FG que la
-# bannière Home, voir home_screen.py _GAME_STATE_COLORS/_GAME_STATE_LABELS)
+# bannière Home, voir ui/game_state_style.py)
 # — cohérence visuelle entre l'écran d'accueil et le graphique de suivi.
 _INACTIVE_STATE_STYLES = {
     "menu": {"color": (0.098, 0.463, 0.824, 1), "label": "Menu"},
