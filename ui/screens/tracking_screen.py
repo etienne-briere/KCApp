@@ -300,9 +300,9 @@ class TrackingScreen(MDScreen):
                                0, None, "set_adaptive_max_cpm", "Cpm max adaptatif")
 
     def on_fixed_cpm_submit(self, text):
-        """Cadence du mode Fixe : mêmes bornes (15-200) que l'écran Contrôle"""
+        """Cadence du mode Fixe : mêmes bornes (30-200) que l'écran Contrôle"""
         self._submit_cpm_field(text, "fixed_cpm_field", "fixed_cpm", "cube_per_min",
-                               15, 200, "set_cube_rate", "Cubes par minute")
+                               30, 200, "set_cube_rate", "Cubes par minute")
 
     def on_target_hr_submit(self, text):
         """Champ FC cible validé (Entrée ou perte de focus) — même logique que l'écran Contrôle"""
