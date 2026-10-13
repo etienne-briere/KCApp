@@ -147,7 +147,7 @@
                     elevation: 0
 
                     MDIcon:
-                        icon: "heart"
+                        icon: "heart-off" if root.hr_signal_lost else "heart"
                         theme_text_color: "Custom"
                         text_color: "red"
                         font_size: "30sp"
@@ -164,10 +164,12 @@
                             halign: "left"
                             valign: "bottom"
 
+                        # Signal perdu : le capteur s'est déconnecté tout seul
                         MDLabel:
-                            text: f"{root.hrmax_percent_label} % FCmax · {root.patient_age} ans"
+                            text: "Signal perdu — reconnectez le capteur" if root.hr_signal_lost else f"{root.hrmax_percent_label} % FCmax · {root.patient_age} ans"
                             font_style: "Caption"
-                            theme_text_color: "Secondary"
+                            theme_text_color: "Custom" if root.hr_signal_lost else "Secondary"
+                            text_color: 0.776, 0.157, 0.157, 1
                             halign: "left"
                             valign: "top"
 
@@ -182,7 +184,7 @@
                             id: heart_rate_label
                             text: root.heart_rate_label
                             font_style: "H5"
-                            theme_text_color: "Primary"
+                            theme_text_color: "Secondary" if root.hr_signal_lost else "Primary"
                             adaptive_size: True
                             pos_hint: {"center_y": 0.5}
 

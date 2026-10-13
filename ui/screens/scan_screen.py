@@ -41,6 +41,10 @@ class ScanScreen(MDScreen):
     connected_address = StringProperty("")
     connected_has_heart_rate = BooleanProperty(True)
     connected_has_battery = BooleanProperty(True)
+    # Appareil toujours « connecté » côté BLE mais plus aucune FC reçue
+    # (même critère que l'icône cœur barré de la status bar, qui émet
+    # hr_sensor_status_changed) : le capteur s'est déconnecté tout seul.
+    hr_signal_lost = BooleanProperty(False)
     # Propriété réactive (et non un simple attribut) pour que le kv puisse
     # afficher/masquer la card des résultats selon qu'elle est vide ou non.
     devices_found = ListProperty([])
@@ -73,6 +77,12 @@ class ScanScreen(MDScreen):
         event_bus.subscribe("battery_received", self.on_battery_received)
         event_bus.subscribe("connection_changed", self.on_connection_changed)
         event_bus.subscribe("scan_completed", self.on_scan_complete)
+        event_bus.subscribe("hr_sensor_status_changed", self.on_hr_sensor_status_changed)
+
+        # L'évènement n'est reçu que sur cet écran : resynchroniser avec la
+        # status bar au cas où le capteur aurait décroché entre-temps.
+        if app.root and self.connected_address:
+            self._set_hr_signal_lost(not app.root.ids.status_bar.hr_sensor_connected)
     
     def on_leave(self):
         """Sortie de l'écran"""
@@ -82,6 +92,7 @@ class ScanScreen(MDScreen):
         event_bus.unsubscribe("battery_received", self.on_battery_received)
         event_bus.unsubscribe("connection_changed", self.on_connection_changed)
         event_bus.unsubscribe("scan_completed", self.on_scan_complete)
+        event_bus.unsubscribe("hr_sensor_status_changed", self.on_hr_sensor_status_changed)
 
     # ========== SCAN ==========
     
@@ -168,12 +179,14 @@ class ScanScreen(MDScreen):
             self.connected_address = device.address
             self.connected_has_heart_rate = data.get("has_heart_rate", True)
             self.connected_has_battery = data.get("has_battery", True)
+            self.hr_signal_lost = False
             # Démarrer l'enregistrement des données FC
             self.session.start_recording()
             # Déjà visible sur la ligne de l'appareil (vert, ou rouge si
             # pas de capteur FC), inutile de le répéter ici.
         else:
             self.connected_address = ""
+            self.hr_signal_lost = False
 
             # BLEManager déconnecte l'appareil précédent avant de se
             # connecter au nouveau (device=None ici) : si on est déjà en
@@ -200,7 +213,22 @@ class ScanScreen(MDScreen):
     
     def on_heart_rate_received(self, bpm):
         """Callback quand FC reçue"""
-        self.heart_rate_text = f"{bpm}"   
+        self.heart_rate_text = f"{bpm}"
+        self._set_hr_signal_lost(False)
+
+    def on_hr_sensor_status_changed(self, data):
+        """Callback de la status bar : FC reçue récemment ou non"""
+        self._set_hr_signal_lost(not data["connected"])
+
+    def _set_hr_signal_lost(self, lost):
+        # Sans service FC, aucune trame n'est attendue : rien à signaler de plus.
+        lost = bool(lost and self.connected_address and self.connected_has_heart_rate)
+        if lost == self.hr_signal_lost:
+            return
+        self.hr_signal_lost = lost
+        if lost:
+            self.heart_rate_text = "--"
+        self._refresh_device_status_labels()
     
     def on_battery_received(self, level):
         """Callback batterie"""
@@ -219,7 +247,10 @@ class ScanScreen(MDScreen):
         """Met à jour le texte de statut (2e ligne) de chaque appareil de la liste"""
         for address, item in self.device_status_items.items():
             if address == self.connected_address:
-                if self.connected_has_heart_rate:
+                if self.hr_signal_lost:
+                    item.secondary_text = "Déconnecté — FC non reçue"
+                    item.secondary_text_color = RED_FG
+                elif self.connected_has_heart_rate:
                     if self.connected_has_battery:
                         item.secondary_text = f"Connecté — {self.battery_text}"
                     else:
