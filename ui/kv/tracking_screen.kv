@@ -23,30 +23,27 @@
         font_size: "14sp"
         on_text: root.record.rename(self.text) if root.record else None
 
-    # ---- Cases à cocher, centrées horizontalement dans la Card : ce que
-    # CETTE session inclura à son prochain export ----
+    # ---- Données incluses, centrées horizontalement dans la Card : ce que
+    # CETTE session inclura à son prochain export. L'écart entre éléments
+    # est porté par leur padding (et non par spacing) pour que l'icône
+    # cible, masquée hors mode adaptatif, ne laisse pas de trou. ----
     AnchorLayout:
         anchor_x: "center"
         anchor_y: "center"
 
         MDBoxLayout:
             orientation: "horizontal"
-            spacing: dp(10)
             size_hint: None, None
             size: self.minimum_size
 
+            # %FC cible : pas de case, incluse d'office si la session était
+            # en mode adaptatif (voir SessionRow.on_record)
             MDBoxLayout:
                 orientation: "horizontal"
-                spacing: dp(2)
+                padding: (dp(5), 0) if root.include_target else (0, 0)
                 size_hint_x: None
-                width: self.minimum_width
-
-                MDCheckbox:
-                    active: root.include_target
-                    on_active: root.include_target = self.active
-                    size_hint: None, None
-                    size: dp(24), dp(24)
-                    pos_hint: {"center_y": 0.5}
+                width: self.minimum_width if root.include_target else 0
+                opacity: 1 if root.include_target else 0
 
                 MDIcon:
                     icon: "target"
@@ -54,12 +51,13 @@
                     text_color: GREEN_FG
                     font_size: "16sp"
                     size_hint: None, None
-                    size: dp(20), dp(20)
+                    size: (dp(20), dp(20)) if root.include_target else (0, 0)
                     pos_hint: {"center_y": 0.5}
 
             MDBoxLayout:
                 orientation: "horizontal"
                 spacing: dp(2)
+                padding: dp(5), 0
                 size_hint_x: None
                 width: self.minimum_width
 
@@ -82,6 +80,7 @@
             MDBoxLayout:
                 orientation: "horizontal"
                 spacing: dp(2)
+                padding: dp(5), 0
                 size_hint_x: None
                 width: self.minimum_width
 
@@ -131,113 +130,298 @@
             size_hint_y: None
             height: self.minimum_height
 
-            # ==== Valeurs en direct (FC + Cubes/min) ====
+            # ==== Valeurs en direct (FC + Cubes/min) + FC cible ====
             MDBoxLayout:
-                orientation: "horizontal" if Window.width >= dp(600) else "vertical"
-                spacing: dp(15)
+                orientation: "vertical"
                 size_hint_y: None
-                height: dp(70) if Window.width >= dp(600) else dp(155)
+                height: self.minimum_height
 
-                MDCard:
-                    orientation: "horizontal"
-                    padding: dp(16)
-                    radius: [12]
+                MDBoxLayout:
+                    orientation: "horizontal" if Window.width >= dp(600) else "vertical"
                     spacing: dp(15)
-                    size_hint: (0.5, 1) if Window.width >= dp(600) else (1, 0.5)
-                    elevation: 0
+                    size_hint_y: None
+                    height: dp(70) if Window.width >= dp(600) else dp(155)
 
-                    MDIcon:
-                        icon: "heart-off" if root.hr_signal_lost else "heart"
-                        theme_text_color: "Custom"
-                        text_color: "red"
-                        font_size: "30sp"
-                        size_hint_x: None
-                        width: dp(30)
+                    MDCard:
+                        orientation: "horizontal"
+                        padding: dp(16)
+                        radius: [12]
+                        spacing: dp(15)
+                        size_hint: (0.5, 1) if Window.width >= dp(600) else (1, 0.5)
+                        elevation: 0
 
-                    MDBoxLayout:
-                        orientation: "vertical"
-                        spacing: dp(2)
+                        MDIcon:
+                            icon: "heart-off" if root.hr_signal_lost else "heart"
+                            theme_text_color: "Custom"
+                            text_color: "red"
+                            font_size: "30sp"
+                            size_hint_x: None
+                            width: dp(30)
+
+                        MDBoxLayout:
+                            orientation: "vertical"
+                            spacing: dp(2)
+
+                            MDLabel:
+                                text: "Fréquence cardiaque"
+                                font_style: "Body1"
+                                halign: "left"
+                                valign: "bottom"
+
+                            # Signal perdu : le capteur s'est déconnecté tout seul
+                            MDLabel:
+                                text: "Signal perdu — reconnectez le capteur" if root.hr_signal_lost else f"{root.hrmax_percent_label} % FCmax · {root.patient_age} ans"
+                                font_style: "Caption"
+                                theme_text_color: "Custom" if root.hr_signal_lost else "Secondary"
+                                text_color: 0.776, 0.157, 0.157, 1
+                                halign: "left"
+                                valign: "top"
+
+                        MDBoxLayout:
+                            orientation: "horizontal"
+                            spacing: dp(4)
+                            size_hint_x: None
+                            width: self.minimum_width
+                            pos_hint: {"center_y": 0.5}
+
+                            MDLabel:
+                                id: heart_rate_label
+                                text: root.heart_rate_label
+                                font_style: "H5"
+                                theme_text_color: "Secondary" if root.hr_signal_lost else "Primary"
+                                adaptive_size: True
+                                pos_hint: {"center_y": 0.5}
+
+                            MDLabel:
+                                text: "bpm"
+                                font_style: "Caption"
+                                theme_text_color: "Secondary"
+                                adaptive_size: True
+                                pos_hint: {"center_y": 0.4}
+
+                    MDCard:
+                        orientation: "horizontal"
+                        padding: dp(16)
+                        radius: [12]
+                        spacing: dp(15)
+                        size_hint: (0.5, 1) if Window.width >= dp(600) else (1, 0.5)
+                        elevation: 0
+
+                        MDIcon:
+                            icon: "cube-outline"
+                            theme_text_color: "Custom"
+                            text_color: app.theme_cls.primary_color
+                            font_size: "30sp"
+                            size_hint_x: None
+                            width: dp(30)
 
                         MDLabel:
-                            text: "Fréquence cardiaque"
+                            text: "Cubes par minute"
                             font_style: "Body1"
                             halign: "left"
-                            valign: "bottom"
+                            valign: "middle"
 
-                        # Signal perdu : le capteur s'est déconnecté tout seul
-                        MDLabel:
-                            text: "Signal perdu — reconnectez le capteur" if root.hr_signal_lost else f"{root.hrmax_percent_label} % FCmax · {root.patient_age} ans"
-                            font_style: "Caption"
-                            theme_text_color: "Custom" if root.hr_signal_lost else "Secondary"
-                            text_color: 0.776, 0.157, 0.157, 1
-                            halign: "left"
-                            valign: "top"
-
-                    MDBoxLayout:
-                        orientation: "horizontal"
-                        spacing: dp(4)
-                        size_hint_x: None
-                        width: self.minimum_width
-                        pos_hint: {"center_y": 0.5}
-
-                        MDLabel:
-                            id: heart_rate_label
-                            text: root.heart_rate_label
-                            font_style: "H5"
-                            theme_text_color: "Secondary" if root.hr_signal_lost else "Primary"
-                            adaptive_size: True
+                        MDBoxLayout:
+                            orientation: "horizontal"
+                            spacing: dp(4)
+                            size_hint_x: None
+                            width: self.minimum_width
                             pos_hint: {"center_y": 0.5}
 
-                        MDLabel:
-                            text: "bpm"
-                            font_style: "Caption"
-                            theme_text_color: "Secondary"
-                            adaptive_size: True
-                            pos_hint: {"center_y": 0.4}
+                            MDLabel:
+                                id: cpm_label
+                                text: root.cpm_label
+                                font_style: "H5"
+                                theme_text_color: "Primary"
+                                adaptive_size: True
+                                pos_hint: {"center_y": 0.5}
 
-                MDCard:
-                    orientation: "horizontal"
-                    padding: dp(16)
-                    radius: [12]
+                            MDLabel:
+                                text: "cpm"
+                                font_style: "Caption"
+                                theme_text_color: "Secondary"
+                                adaptive_size: True
+                                pos_hint: {"center_y": 0.4}
+
+                # ---- FC cible + cpm min/max : uniquement en mode adaptatif (PID/DRL) ----
+                # Enveloppe à hauteur 0 quand masquée : l'espacement est porté
+                # par son padding (et non par le spacing du parent), pour ne
+                # pas laisser de trou dans les autres modes.
+                MDBoxLayout:
+                    orientation: "vertical"
+                    padding: 0, dp(20), 0, 0
                     spacing: dp(15)
-                    size_hint: (0.5, 1) if Window.width >= dp(600) else (1, 0.5)
-                    elevation: 0
+                    size_hint_y: None
+                    height: self.minimum_height if root.target_available else 0
+                    opacity: 1 if root.target_available else 0
+                    disabled: not root.target_available
 
-                    MDIcon:
-                        icon: "cube-outline"
-                        theme_text_color: "Custom"
-                        text_color: app.theme_cls.primary_color
-                        font_size: "30sp"
-                        size_hint_x: None
-                        width: dp(30)
-
-                    MDLabel:
-                        text: "Cubes par minute"
-                        font_style: "Body1"
-                        halign: "left"
-                        valign: "middle"
-
-                    MDBoxLayout:
+                    MDCard:
                         orientation: "horizontal"
-                        spacing: dp(4)
-                        size_hint_x: None
-                        width: self.minimum_width
-                        pos_hint: {"center_y": 0.5}
+                        padding: dp(16), dp(12)
+                        radius: [12]
+                        spacing: dp(15)
+                        size_hint_y: None
+                        # Assez haute pour le champ "rectangle" (contour + libellé flottant)
+                        height: dp(84)
+                        elevation: 0
+                        disabled: not root.unity_connected
 
-                        MDLabel:
-                            id: cpm_label
-                            text: root.cpm_label
-                            font_style: "H5"
-                            theme_text_color: "Primary"
-                            adaptive_size: True
+                        MDIcon:
+                            icon: "target"
+                            theme_text_color: "Custom"
+                            text_color: GREEN_FG
+                            font_size: "30sp"
+                            size_hint_x: None
+                            width: dp(30)
                             pos_hint: {"center_y": 0.5}
 
-                        MDLabel:
-                            text: "cpm"
-                            font_style: "Caption"
-                            theme_text_color: "Secondary"
-                            adaptive_size: True
-                            pos_hint: {"center_y": 0.4}
+                        # Titre + sous-titre groupés et centrés verticalement
+                        MDBoxLayout:
+                            orientation: "vertical"
+                            spacing: dp(2)
+                            size_hint_y: None
+                            height: self.minimum_height
+                            pos_hint: {"center_y": 0.5}
+
+                            MDLabel:
+                                text: "FC cible"
+                                font_style: "Body1"
+                                halign: "left"
+                                adaptive_height: True
+
+                            MDLabel:
+                                text: "Valeur envoyée au jeu, Entrée pour valider" if root.unity_connected else "Jeu non connecté"
+                                font_style: "Caption"
+                                theme_text_color: "Secondary"
+                                halign: "left"
+                                adaptive_height: True
+
+                        MDTextField:
+                            id: target_hr_field
+                            text: str(int(root.target_hr))
+                            hint_text: "% FCmax"
+                            mode: "rectangle"
+                            input_filter: "int"
+                            size_hint_x: None
+                            width: dp(110)
+                            pos_hint: {"center_y": 0.5}
+                            text_color_focus: app.theme_cls.primary_color
+                            hint_text_color_focus: app.theme_cls.primary_color
+                            line_color_focus: app.theme_cls.primary_color
+                            on_text_validate: root.on_target_hr_submit(self.text)
+                            on_focus: root.on_target_hr_submit(self.text) if not self.focus else None
+
+                    # Cpm minimum / maximum côte à côte (l'un sous l'autre sur écran étroit)
+                    MDBoxLayout:
+                        orientation: "horizontal" if Window.width >= dp(600) else "vertical"
+                        spacing: dp(15)
+                        size_hint_y: None
+                        height: dp(84) if Window.width >= dp(600) else dp(183)
+
+                        MDCard:
+                            orientation: "horizontal"
+                            padding: dp(16), dp(12)
+                            radius: [12]
+                            spacing: dp(15)
+                            elevation: 0
+                            disabled: not root.unity_connected
+
+                            MDIcon:
+                                icon: "arrow-collapse-down"
+                                theme_text_color: "Custom"
+                                text_color: BLUE_FG
+                                font_size: "30sp"
+                                size_hint_x: None
+                                width: dp(30)
+                                pos_hint: {"center_y": 0.5}
+
+                            MDBoxLayout:
+                                orientation: "vertical"
+                                spacing: dp(2)
+                                size_hint_y: None
+                                height: self.minimum_height
+                                pos_hint: {"center_y": 0.5}
+
+                                MDLabel:
+                                    text: "Cpm minimum"
+                                    font_style: "Body1"
+                                    halign: "left"
+                                    adaptive_height: True
+
+                                MDLabel:
+                                    text: "Cubes par minute"
+                                    font_style: "Caption"
+                                    theme_text_color: "Secondary"
+                                    halign: "left"
+                                    adaptive_height: True
+
+                            MDTextField:
+                                id: adaptive_min_cpm_field
+                                text: str(int(root.adaptive_min_cpm))
+                                hint_text: "cpm"
+                                mode: "rectangle"
+                                input_filter: "int"
+                                size_hint_x: None
+                                width: dp(90)
+                                pos_hint: {"center_y": 0.5}
+                                text_color_focus: app.theme_cls.primary_color
+                                hint_text_color_focus: app.theme_cls.primary_color
+                                line_color_focus: app.theme_cls.primary_color
+                                on_text_validate: root.on_adaptive_min_cpm_submit(self.text)
+                                on_focus: root.on_adaptive_min_cpm_submit(self.text) if not self.focus else None
+
+                        MDCard:
+                            orientation: "horizontal"
+                            padding: dp(16), dp(12)
+                            radius: [12]
+                            spacing: dp(15)
+                            elevation: 0
+                            disabled: not root.unity_connected
+
+                            MDIcon:
+                                icon: "arrow-collapse-up"
+                                theme_text_color: "Custom"
+                                text_color: BLUE_FG
+                                font_size: "30sp"
+                                size_hint_x: None
+                                width: dp(30)
+                                pos_hint: {"center_y": 0.5}
+
+                            MDBoxLayout:
+                                orientation: "vertical"
+                                spacing: dp(2)
+                                size_hint_y: None
+                                height: self.minimum_height
+                                pos_hint: {"center_y": 0.5}
+
+                                MDLabel:
+                                    text: "Cpm maximum"
+                                    font_style: "Body1"
+                                    halign: "left"
+                                    adaptive_height: True
+
+                                MDLabel:
+                                    text: "Cubes par minute"
+                                    font_style: "Caption"
+                                    theme_text_color: "Secondary"
+                                    halign: "left"
+                                    adaptive_height: True
+
+                            MDTextField:
+                                id: adaptive_max_cpm_field
+                                text: str(int(root.adaptive_max_cpm))
+                                hint_text: "cpm"
+                                mode: "rectangle"
+                                input_filter: "int"
+                                size_hint_x: None
+                                width: dp(90)
+                                pos_hint: {"center_y": 0.5}
+                                text_color_focus: app.theme_cls.primary_color
+                                hint_text_color_focus: app.theme_cls.primary_color
+                                line_color_focus: app.theme_cls.primary_color
+                                on_text_validate: root.on_adaptive_max_cpm_submit(self.text)
+                                on_focus: root.on_adaptive_max_cpm_submit(self.text) if not self.focus else None
 
             # ==== Graphique de l'évolution de la séance (titre + actions + card) ====
             MDBoxLayout:
@@ -321,44 +505,13 @@
                         anchor_x: "center"
                         anchor_y: "center"
                         size_hint_y: None
-                        height: dp(36) if Window.width >= dp(500) else dp(108)
+                        height: dp(36) if Window.width >= dp(500) else dp(72)
 
                         MDBoxLayout:
                             orientation: "horizontal" if Window.width >= dp(500) else "vertical"
                             spacing: dp(20)
                             size_hint: None, None
                             size: self.minimum_size
-
-                            MDBoxLayout:
-                                orientation: "horizontal"
-                                spacing: dp(8)
-                                size_hint_x: None
-                                width: self.minimum_width
-
-                                MDCheckbox:
-                                    active: root.show_target
-                                    on_active: root.on_toggle_target(self.active)
-                                    disabled: root.current_model in root.MODELS_WITHOUT_TARGET
-                                    size_hint: None, None
-                                    size: dp(30), dp(30)
-                                    pos_hint: {"center_y": 0.5}
-
-                                MDIcon:
-                                    icon: "target"
-                                    theme_text_color: "Custom"
-                                    text_color: GREEN_FG
-                                    font_size: "16sp"
-                                    opacity: 0.5 if root.current_model in root.MODELS_WITHOUT_TARGET else 1
-                                    size_hint: None, None
-                                    size: dp(20), dp(20)
-                                    pos_hint: {"center_y": 0.5}
-
-                                MDLabel:
-                                    text: "%FC cible"
-                                    font_style: "Caption"
-                                    opacity: 0.5 if root.current_model in root.MODELS_WITHOUT_TARGET else 1
-                                    adaptive_size: True
-                                    pos_hint: {"center_y": 0.5}
 
                             MDBoxLayout:
                                 orientation: "horizontal"
