@@ -95,7 +95,7 @@
                     elevation: 0
 
                     MDIcon:
-                        icon: "heart"
+                        icon: "heart-off" if root.hr_signal_lost else "heart"
                         theme_text_color: "Custom"
                         text_color: "red"
                         font_size: "30sp"
@@ -103,11 +103,27 @@
                         size: dp(30), dp(30)
                         pos_hint: {"center_y": 0.5}
 
-                    MDLabel:
-                        text: "Fréquence cardiaque"
-                        font_style: "Body1"
-                        halign: "left"
-                        valign: "middle"
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        spacing: dp(2)
+
+                        MDLabel:
+                            text: "Fréquence cardiaque"
+                            font_style: "Body1"
+                            halign: "left"
+                            valign: "bottom" if root.hr_signal_lost else "middle"
+
+                        # ---- Signal perdu : le capteur s'est déconnecté tout seul ----
+                        MDLabel:
+                            text: "Signal perdu — relancez un scan"
+                            theme_text_color: "Custom"
+                            text_color: 0.776, 0.157, 0.157, 1
+                            font_style: "Caption"
+                            halign: "left"
+                            valign: "top"
+                            size_hint_y: 1 if root.hr_signal_lost else None
+                            height: self.texture_size[1] if root.hr_signal_lost else 0
+                            opacity: 1 if root.hr_signal_lost else 0
 
                     MDBoxLayout:
                         orientation: "horizontal"
@@ -120,7 +136,11 @@
                             id: heart_rate_label
                             text: root.heart_rate_text
                             font_style: "H5"
-                            theme_text_color: "Primary"
+                            # Couleur explicite plutôt que theme_text_color "Secondary"/"Primary" :
+                            # KivyMD ne recalcule cette dernière qu'à son changement, en gris si
+                            # le bloc est alors désactivé (rescan), et ne la rétablit pas ensuite.
+                            theme_text_color: "Custom"
+                            text_color: app.theme_cls.secondary_text_color if root.hr_signal_lost else app.theme_cls.text_color
                             adaptive_size: True
                             pos_hint: {"center_y": 0.5}
 

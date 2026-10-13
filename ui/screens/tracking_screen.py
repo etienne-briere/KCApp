@@ -114,6 +114,9 @@ class TrackingScreen(MDScreen):
     hrmax_percent_label = StringProperty("--")
     patient_age = StringProperty("--")
     cpm_label = StringProperty("--")
+    # Capteur toujours connecté côté BLE mais plus aucune FC reçue (même
+    # critère que l'icône cœur barré de la status bar) — voir scan_screen.py.
+    hr_signal_lost = BooleanProperty(False)
     # %FCmax/âge n'ont pas de sens sans profil actif — voir tracking_screen.kv
     player_selected = BooleanProperty(False)
 
@@ -185,9 +188,15 @@ class TrackingScreen(MDScreen):
         event_bus.subscribe("heart_rate_received", self.on_hr_received)
         event_bus.subscribe("cpm_received", self.on_cpm_received)
         event_bus.subscribe("session_updated", self.on_session_updated)
+        event_bus.subscribe("hr_sensor_status_changed", self.on_hr_sensor_status_changed)
 
         # Charger toutes les data pré-existantes dans le graphique
         self.load_existing_data()
+
+        # L'évènement n'est reçu que sur cet écran : resynchroniser avec la
+        # status bar au cas où le capteur aurait décroché entre-temps.
+        if app.root:
+            self._set_hr_signal_lost(not app.root.ids.status_bar.hr_sensor_connected)
 
         # Reconstruire la liste des sessions en attente d'export/suppression
         self._rebuild_pending_sessions_ui()
@@ -198,6 +207,7 @@ class TrackingScreen(MDScreen):
         event_bus.unsubscribe("heart_rate_received", self.on_hr_received)
         event_bus.unsubscribe("cpm_received", self.on_cpm_received)
         event_bus.unsubscribe("session_updated", self.on_session_updated)
+        event_bus.unsubscribe("hr_sensor_status_changed", self.on_hr_sensor_status_changed)
 
     def on_session_updated(self, session):
         self._sync_model(session.config.model)
@@ -353,6 +363,7 @@ class TrackingScreen(MDScreen):
 
         # UI label
         self.heart_rate_label = str(bpm)
+        self._set_hr_signal_lost(False)
         if self.player_selected and self.session.hr_session.hrmax_percent_history:
             self.hrmax_percent_label = self._format_percent(
                 self.session.hr_session.hrmax_percent_history[-1])
@@ -361,6 +372,20 @@ class TrackingScreen(MDScreen):
         self.session.config.update_target(self.session.config.target_hr_percent)
 
         self.update_graph()
+
+    def on_hr_sensor_status_changed(self, data):
+        """Callback de la status bar : FC reçue récemment ou non"""
+        self._set_hr_signal_lost(not data["connected"])
+
+    def _set_hr_signal_lost(self, lost):
+        # Signal "perdu" seulement si un capteur FC est censé émettre : pas
+        # de capteur connecté (ou sans service FC) n'est pas une perte.
+        ble = self.ble_manager
+        lost = bool(lost and ble.is_connected and ble._has_heart_rate_service())
+        self.hr_signal_lost = lost
+        if lost:
+            self.heart_rate_label = "--"
+            self.hrmax_percent_label = "--"
 
     @staticmethod
     def _format_percent(value):
