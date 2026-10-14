@@ -123,6 +123,30 @@ class TrackingScreen(MDScreen):
     '''
     ECRAN DE SUIVI DE LA FC
     '''
+    # Contrôleur en cours de partie : libellés des états et des raisons de bascule envoyés par Unity
+    CONTROLLER_STATE_LABELS = {
+        "PID_WARMUP": "PID (échauffement)",
+        "DRL": "DRL",
+        "PID_BACKUP": "PID de secours",
+        "MANUAL": "Manuel",
+        "PID": "PID",
+        "LEGACY_DRL": "DRL (ancien contrôleur)",
+        "LEGACY_PID": "PID (ancien contrôleur)",
+        "LEGACY_FIXED": "Fixe",
+        "LEGACY_INCREMENTAL": "Incrémental",
+    }
+    SWITCH_REASON_LABELS = {
+        "start": "début de partie",
+        "warmup_end": "fin de l'échauffement",
+        "early_overshoot": "dépassement précoce",
+        "third_dive": "3e plongée (cycle limite)",
+        "floor_time": "trop de temps au plancher",
+        "pid_windup": "PID saturé",
+        "persistent_overshoot": "dépassement persistant",
+        "teacher_override": "commande tablette",
+        "model_error": "erreur du modèle",
+    }
+
     # Properties pour l'UI
     heart_rate_label = StringProperty("--")
     hrmax_percent_label = StringProperty("--")
@@ -153,6 +177,14 @@ class TrackingScreen(MDScreen):
     # Card "Cadence fixe" du mode Fixe (comme l'écran Contrôle)
     fixed_cpm = NumericProperty(60)
     unity_connected = BooleanProperty(False)
+
+    # État de partie reçu de Unity (Menu/Ready/Playing/Paused/Finished) —
+    # la Card "Contrôleur en cours de partie" n'est affichée que pendant
+    # une partie en cours (game_state == "Playing").
+    game_state = StringProperty("Menu")
+    controller_state_label = StringProperty("") # contrôleur actif en cours de partie (texte affiché)
+    controller_reason_label = StringProperty("") # raison de la dernière bascule
+    manual_cpm = NumericProperty(60) # cadence du mode manuel (cubes/min)
 
     # Sessions passées en attente d'export ou de suppression
     has_pending_sessions = BooleanProperty(False)
@@ -208,6 +240,8 @@ class TrackingScreen(MDScreen):
         self._sync_target_hr(self.session.config.target_hr_percent)
         self._sync_cpm_fields(self.session.config)
         self.unity_connected = self.udp_discovery.is_unity_connected()
+        self.game_state = self.session.game_state.capitalize()
+        self._sync_controller_state(self.session.config)
 
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC et de CPM
         event_bus.subscribe("heart_rate_received", self.on_hr_received)
@@ -241,6 +275,19 @@ class TrackingScreen(MDScreen):
         self._sync_player_age(session.user_profile)
         self._sync_target_hr(session.config.target_hr_percent)
         self._sync_cpm_fields(session.config)
+        self.game_state = session.game_state.capitalize()
+        self._sync_controller_state(session.config)
+
+    def _sync_controller_state(self, config):
+        """État du contrôleur en cours de partie — uniquement pendant une partie en cours"""
+        if self.game_state == "Playing" and config.controller_state:
+            state = config.controller_state
+            self.controller_state_label = self.CONTROLLER_STATE_LABELS.get(state, state)
+            reason = config.controller_switch_reason or ""
+            self.controller_reason_label = self.SWITCH_REASON_LABELS.get(reason, reason)
+        elif self.game_state != "Playing":
+            self.controller_state_label = ""
+            self.controller_reason_label = ""
 
     def handle_unity_connection(self, data):
         self.unity_connected = data["connected"]
@@ -325,6 +372,40 @@ class TrackingScreen(MDScreen):
         if self.udp_controller and self.udp_controller.set_target_hr(value):
             logger.info(f"📤 Target HR envoyée: {value}%")
         self.update_graph()
+
+    # ========== CONTRÔLEUR HYBRIDE : BASCULE EN COURS DE PARTIE ==========
+
+    def switch_controller(self, state):
+        """Boutons PID / DRL / DRL Run 3 / PID secours : bascule à la seconde suivante"""
+        if not self.udp_controller:
+            return
+        label = {"PID": "PID", "DRL_DEPLOYED": "DRL", "DRL_RUN3": "DRL Run 3", "PID_BACKUP": "PID de secours"}.get(state, state)
+        if self.udp_controller.set_controller_state(state):
+            toast(f"Bascule demandée : {label}")
+            logger.info(f"📤 Bascule contrôleur demandée : {state}")
+        else:
+            toast("❌ Échec de l'envoi")
+
+    def on_manual_cpm_submit(self, text):
+        """Champ cadence manuelle validé (n'envoie rien : le bouton Manuel applique)"""
+        try:
+            value = int(text)
+        except ValueError:
+            toast("Valeur invalide")
+            self.ids.manual_cpm_field.text = str(int(self.manual_cpm))
+            return
+        value = max(30, min(200, value))
+        self.manual_cpm = value
+        self.ids.manual_cpm_field.text = str(value)
+
+    def apply_manual_cpm(self):
+        """Bouton Manuel : passe en cadence manuelle (ou change la cadence)"""
+        self.on_manual_cpm_submit(self.ids.manual_cpm_field.text)
+        if self.udp_controller and self.udp_controller.set_manual_cpm(self.manual_cpm):
+            toast(f"Cadence manuelle : {int(self.manual_cpm)} cubes/min")
+            logger.info(f"📤 Cadence manuelle : {self.manual_cpm}")
+        else:
+            toast("❌ Échec de l'envoi")
 
     def _sync_model(self, model):
         """

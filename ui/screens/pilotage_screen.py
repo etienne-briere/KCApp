@@ -40,30 +40,6 @@ class PilotageScreen(MDScreen):
         "Sky": "Ciel",
     }
 
-    # Contrôleur en cours de partie : libellés des états et des raisons de bascule envoyés par Unity
-    CONTROLLER_STATE_LABELS = {
-        "PID_WARMUP": "PID (échauffement)",
-        "DRL": "DRL",
-        "PID_BACKUP": "PID de secours",
-        "MANUAL": "Manuel",
-        "PID": "PID",
-        "LEGACY_DRL": "DRL (ancien contrôleur)",
-        "LEGACY_PID": "PID (ancien contrôleur)",
-        "LEGACY_FIXED": "Fixe",
-        "LEGACY_INCREMENTAL": "Incrémental",
-    }
-    SWITCH_REASON_LABELS = {
-        "start": "début de partie",
-        "warmup_end": "fin de l'échauffement",
-        "early_overshoot": "dépassement précoce",
-        "third_dive": "3e plongée (cycle limite)",
-        "floor_time": "trop de temps au plancher",
-        "pid_windup": "PID saturé",
-        "persistent_overshoot": "dépassement persistant",
-        "teacher_override": "commande tablette",
-        "model_error": "erreur du modèle",
-    }
-
     # Properties pour l'UI
     unity_connected = BooleanProperty(False) # connexion Unity
     selected_model = StringProperty("FIXE") # mode de jeu appliqué (confirmé)
@@ -86,9 +62,6 @@ class PilotageScreen(MDScreen):
     brick_speed = NumericProperty(8) # vitesse des briques (tous modes)
     pid_warmup = BooleanProperty(False) # mode DRL : PID pendant l'échauffement (prochaine partie)
     pid_backup = BooleanProperty(False) # mode DRL : PID de secours si cycle limite (prochaine partie)
-    controller_state_label = StringProperty("") # contrôleur actif en cours de partie (texte affiché)
-    controller_reason_label = StringProperty("") # raison de la dernière bascule
-    manual_cpm = NumericProperty(60) # cadence du mode manuel (cubes/min)
     player_name = StringProperty("") # nom du profil joueur actif
     environment = StringProperty("") # environnement du jeu (Cosmos/Forest/Sea/Mountain/Sky), vide si inconnu
     game_state = StringProperty("Menu") # état de partie reçu de Unity (Menu/Ready/Playing/Paused/Finished)
@@ -238,20 +211,11 @@ class PilotageScreen(MDScreen):
         self._sync_controller_from_config(session.config)
 
     def _sync_controller_from_config(self, config):
-        """Cases PID d'échauffement / de secours et état du contrôleur en cours de partie"""
+        """Cases PID d'échauffement / de secours (réglages pris en compte au prochain lancement)"""
         # Comme pour le mode de jeu : ne pas écraser un choix local pas encore appliqué
         if config.controller_config is not None and self.pending_model == self.selected_model:
             self.pid_warmup = config.effective_pid_warmup
             self.pid_backup = config.effective_pid_backup
-
-        if self.game_state in ("Playing", "Paused", "Finished") and config.controller_state:
-            state = config.controller_state
-            self.controller_state_label = self.CONTROLLER_STATE_LABELS.get(state, state)
-            reason = config.controller_switch_reason or ""
-            self.controller_reason_label = self.SWITCH_REASON_LABELS.get(reason, reason)
-        elif self.game_state not in ("Playing", "Paused", "Finished"):
-            self.controller_state_label = ""
-            self.controller_reason_label = ""
 
     def _submit_int_field(self, text, field_id, prop_name, config_attr,
                            min_value, max_value, controller_method_name, label):
@@ -679,40 +643,6 @@ class PilotageScreen(MDScreen):
             return
         self.pid_backup = is_active
         self._on_controller_option_changed()
-
-    # ========== CONTRÔLEUR HYBRIDE : BASCULE EN COURS DE PARTIE ==========
-
-    def switch_controller(self, state):
-        """Boutons PID / DRL / DRL Run 3 / PID secours : bascule à la seconde suivante"""
-        if not self.udp_controller:
-            return
-        label = {"PID": "PID", "DRL_DEPLOYED": "DRL", "DRL_RUN3": "DRL Run 3", "PID_BACKUP": "PID de secours"}.get(state, state)
-        if self.udp_controller.set_controller_state(state):
-            toast(f"Bascule demandée : {label}")
-            logger.info(f"📤 Bascule contrôleur demandée : {state}")
-        else:
-            toast("❌ Échec de l'envoi")
-
-    def on_manual_cpm_submit(self, text):
-        """Champ cadence manuelle validé (n'envoie rien : le bouton Manuel applique)"""
-        try:
-            value = int(text)
-        except ValueError:
-            toast("Valeur invalide")
-            self.ids.manual_cpm_field.text = str(int(self.manual_cpm))
-            return
-        value = max(30, min(200, value))
-        self.manual_cpm = value
-        self.ids.manual_cpm_field.text = str(value)
-
-    def apply_manual_cpm(self):
-        """Bouton Manuel : passe en cadence manuelle (ou change la cadence)"""
-        self.on_manual_cpm_submit(self.ids.manual_cpm_field.text)
-        if self.udp_controller and self.udp_controller.set_manual_cpm(self.manual_cpm):
-            toast(f"Cadence manuelle : {int(self.manual_cpm)} cubes/min")
-            logger.info(f"📤 Cadence manuelle : {self.manual_cpm}")
-        else:
-            toast("❌ Échec de l'envoi")
 
     # ========== VITESSE DES BRIQUES ==========
 
