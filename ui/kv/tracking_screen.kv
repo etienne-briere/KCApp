@@ -586,6 +586,39 @@
                                     adaptive_size: True
                                     pos_hint: {"center_y": 0.5}
 
+                            # ---- PID de secours : visible seulement en mode DRL ----
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: dp(8)
+                                padding: (dp(20), 0, 0, 0) if root.current_model == "DRL" else (0, 0, 0, 0)
+                                size_hint_x: None
+                                width: self.minimum_width if root.current_model == "DRL" else 0
+                                opacity: 1 if root.current_model == "DRL" else 0
+                                disabled: root.current_model != "DRL"
+
+                                MDCheckbox:
+                                    active: root.pid_backup
+                                    on_active: root.on_pid_backup_toggle(self.active)
+                                    size_hint: None, None
+                                    size: dp(30), dp(30)
+                                    pos_hint: {"center_y": 0.5}
+                                    disabled: not root.unity_connected
+
+                                MDIcon:
+                                    icon: "shield-refresh-outline"
+                                    theme_text_color: "Custom"
+                                    text_color: app.theme_cls.primary_color
+                                    font_size: "16sp"
+                                    size_hint: None, None
+                                    size: dp(20), dp(20)
+                                    pos_hint: {"center_y": 0.5}
+
+                                MDLabel:
+                                    text: "PID de secours"
+                                    font_style: "Caption"
+                                    adaptive_size: True
+                                    pos_hint: {"center_y": 0.5}
+
             # ==== CONTRÔLEUR EN COURS DE PARTIE (contrôleur hybride Unity) — uniquement en mode adaptatif (PID/DRL), pendant une partie en cours ====
             MDBoxLayout:
                 orientation: "vertical"

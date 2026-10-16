@@ -211,7 +211,7 @@ class PilotageScreen(MDScreen):
         self._sync_controller_from_config(session.config)
 
     def _sync_controller_from_config(self, config):
-        """Cases PID d'échauffement / de secours (réglages pris en compte au prochain lancement)"""
+        """Cases PID d'échauffement (prochain lancement) / de secours (applicable en cours de partie)"""
         # Comme pour le mode de jeu : ne pas écraser un choix local pas encore appliqué
         if config.controller_config is not None and self.pending_model == self.selected_model:
             self.pid_warmup = config.effective_pid_warmup
@@ -393,8 +393,16 @@ class PilotageScreen(MDScreen):
         self._close_model_menu()
 
     def apply_model_change(self):
-        """Bouton « Appliquer » : demande confirmation avant de changer de mode"""
+        """
+        Bouton « Appliquer » : ne demande confirmation (et ne redémarre la
+        partie) que si une session est réellement en cours — en Menu/Prêt/
+        Terminé, il n'y a rien à perdre, donc on applique directement.
+        """
         if self.pending_model == self.selected_model:
+            return
+
+        if self.game_state not in ("Playing", "Paused"):
+            self._apply_model_change(restart=False)
             return
 
         if not hasattr(self, "_dialog_confirm_model") or self._dialog_confirm_model is None:
@@ -415,9 +423,12 @@ class PilotageScreen(MDScreen):
         self._dialog_confirm_model.open()
 
     def _confirm_model_change(self):
-        """Envoie le mode sélectionné à Unity et redémarre la partie"""
+        """Dialogue confirmé : applique le mode et redémarre la partie"""
         self._dialog_confirm_model.dismiss()
+        self._apply_model_change(restart=True)
 
+    def _apply_model_change(self, restart):
+        """Envoie le mode sélectionné (+ réglages du contrôleur hybride) à Unity"""
         index = self.MODEL_INDEX[self.pending_model]
         self.selected_model = self.pending_model
         # session.config.model garde le nom Unity (DRL), le modèle Run 3 passe par controllerSetup
@@ -433,8 +444,9 @@ class PilotageScreen(MDScreen):
             if self.pending_model in self.DRL_MODES:
                 self._send_controller_setup(self.pending_model)
 
-            # Redémarre le jeu pour que le nouveau mode soit pris en compte
-            self.restart_game()
+            # Redémarre le jeu seulement si une partie était effectivement en cours
+            if restart:
+                self.restart_game()
 
     # ========== DURÉE DE SESSION ==========
 
@@ -623,26 +635,27 @@ class PilotageScreen(MDScreen):
         cfg.pid_warmup = self.pid_warmup
         cfg.pid_backup = self.pid_backup
 
-    def _on_controller_option_changed(self):
+    def _on_controller_option_changed(self, show_restart_reminder=True):
         # Envoi immédiat seulement si le mode DRL est déjà appliqué ; sinon il
         # part avec "Appliquer" (voir _confirm_model_change).
         if self.selected_model in self.DRL_MODES and self.pending_model == self.selected_model:
             self._send_controller_setup(self.selected_model)
-            toast("Pris en compte au prochain lancement ou redémarrage")
+            if show_restart_reminder:
+                toast("Pris en compte au prochain lancement ou redémarrage")
 
     def on_pid_warmup_toggle(self, is_active):
-        """Case PID d'échauffement (modes DRL)"""
+        """Case PID d'échauffement (modes DRL) : pris en compte au prochain lancement"""
         if is_active == self.pid_warmup:
             return
         self.pid_warmup = is_active
         self._on_controller_option_changed()
 
     def on_pid_backup_toggle(self, is_active):
-        """Case PID de secours (modes DRL)"""
+        """Case PID de secours (modes DRL) : applicable en cours de partie"""
         if is_active == self.pid_backup:
             return
         self.pid_backup = is_active
-        self._on_controller_option_changed()
+        self._on_controller_option_changed(show_restart_reminder=False)
 
     # ========== VITESSE DES BRIQUES ==========
 

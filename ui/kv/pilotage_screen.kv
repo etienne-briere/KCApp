@@ -662,7 +662,7 @@
                                         on_active: root.on_pid_backup_toggle(self.active)
                                         disabled: not root.unity_connected
 
-                            # ---- Rappel : réglages du contrôleur pris en compte au prochain lancement ----
+                            # ---- Rappel : le warmup PID n'a de sens qu'au prochain lancement (le PID de secours, lui, s'applique en direct) ----
                             ScrollView:
                                 do_scroll_x: False
                                 do_scroll_y: False
@@ -672,7 +672,7 @@
                                 disabled: root.pending_model not in root.DRL_MODES
 
                                 MDLabel:
-                                    text: "PID d'échauffement / de secours : pris en compte au prochain lancement ou redémarrage"
+                                    text: "PID d'échauffement : pris en compte au prochain lancement ou redémarrage"
                                     theme_text_color: "Secondary"
                                     font_style: "Caption"
                                     halign: "left"
