@@ -376,10 +376,10 @@ class TrackingScreen(MDScreen):
     # ========== CONTRÔLEUR HYBRIDE : BASCULE EN COURS DE PARTIE ==========
 
     def switch_controller(self, state):
-        """Boutons PID / DRL / DRL Run 3 / PID secours : bascule à la seconde suivante"""
+        """Boutons PID / DRL / DRL Run 3 : bascule à la seconde suivante"""
         if not self.udp_controller:
             return
-        label = {"PID": "PID", "DRL_DEPLOYED": "DRL", "DRL_RUN3": "DRL Run 3", "PID_BACKUP": "PID de secours"}.get(state, state)
+        label = {"PID": "PID", "DRL_DEPLOYED": "DRL", "DRL_RUN3": "DRL Run 3"}.get(state, state)
         if self.udp_controller.set_controller_state(state):
             toast(f"Bascule demandée : {label}")
             logger.info(f"📤 Bascule contrôleur demandée : {state}")
