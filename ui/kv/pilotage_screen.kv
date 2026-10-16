@@ -348,28 +348,14 @@
                             halign: "left"
                             valign: "center"
 
-                    MDBoxLayout:
-                        orientation: "horizontal"
-                        spacing: dp(10)
+                    MDRectangleFlatIconButton:
+                        id: model_selector_button
+                        text: root.MODEL_LABELS[root.pending_model]
+                        icon: "menu-swap"
+                        size_hint_x: 1
                         size_hint_y: None
                         height: dp(48)
-
-                        MDRectangleFlatIconButton:
-                            id: model_selector_button
-                            text: root.MODEL_LABELS[root.pending_model]
-                            icon: "menu-swap"
-                            size_hint_x: 0.75
-                            size_hint_y: None
-                            height: dp(48)
-                            on_release: root.open_model_menu(self)
-
-                        MDRaisedButton:
-                            text: "Appliquer"
-                            size_hint_x: 0.25
-                            size_hint_y: None
-                            height: dp(48)
-                            disabled: root.pending_model == root.selected_model
-                            on_release: root.apply_model_change()
+                        on_release: root.open_model_menu(self)
 
                     # ---- Options du mode Fixe ----
                     ScrollView:

@@ -43,7 +43,7 @@ class PilotageScreen(MDScreen):
     # Properties pour l'UI
     unity_connected = BooleanProperty(False) # connexion Unity
     selected_model = StringProperty("FIXE") # mode de jeu appliqué (confirmé)
-    pending_model = StringProperty("FIXE") # mode sélectionné dans le menu (pas encore appliqué)
+    pending_model = StringProperty("FIXE") # mode sélectionné dans le menu (appliqué tout de suite, sauf confirmation de redémarrage en attente)
     session_duration_min = NumericProperty(10) # durée de session (min)
     obs_enabled = BooleanProperty(False) # obtacles
     obstacle_probability = NumericProperty(25) # % probabilité d'apparition
@@ -388,16 +388,16 @@ class PilotageScreen(MDScreen):
             Clock.schedule_once(lambda dt: Window.remove_widget(menu), 0)
 
     def on_model_select(self, model_name):
-        """Sélection d'un mode dans le menu (pas encore envoyé à Unity)"""
+        """
+        Sélection d'un mode dans le menu : appliqué tout de suite — sauf si
+        une partie est Playing/Paused, où une confirmation est demandée
+        d'abord puisque ça va la redémarrer (voir _apply_or_confirm_model_change).
+        """
         self.pending_model = model_name
         self._close_model_menu()
+        self._apply_or_confirm_model_change()
 
-    def apply_model_change(self):
-        """
-        Bouton « Appliquer » : ne demande confirmation (et ne redémarre la
-        partie) que si une session est réellement en cours — en Menu/Prêt/
-        Terminé, il n'y a rien à perdre, donc on applique directement.
-        """
+    def _apply_or_confirm_model_change(self):
         if self.pending_model == self.selected_model:
             return
 
@@ -412,7 +412,7 @@ class PilotageScreen(MDScreen):
                 buttons=[
                     MDFlatButton(
                         text="ANNULER",
-                        on_release=lambda *_: self._dialog_confirm_model.dismiss(),
+                        on_release=lambda *_: self._cancel_model_change(),
                     ),
                     MDFlatButton(
                         text="CONFIRMER",
@@ -421,6 +421,11 @@ class PilotageScreen(MDScreen):
                 ],
             )
         self._dialog_confirm_model.open()
+
+    def _cancel_model_change(self):
+        """Dialogue annulé : revient au mode réellement appliqué (le sélecteur affiche pending_model)"""
+        self._dialog_confirm_model.dismiss()
+        self.pending_model = self.selected_model
 
     def _confirm_model_change(self):
         """Dialogue confirmé : applique le mode et redémarre la partie"""
