@@ -89,6 +89,17 @@ class SessionConfig:
         elif key == "warmupDuration":
             self.warmup_duration = int(value)
 
+        elif key == "warmupTargetRamp":
+            # Monte progressivement vers la cible pendant le warmup — ajouté
+            # directement dans target_time/target_history (comme
+            # update_target), SANS passer par target_hr_percent : le champ
+            # éditable "FC cible" reste sur l'objectif configuré, seul
+            # l'historique (graphique + export CSV "cible_pct") voit la rampe.
+            self.session.start_recording()
+            t = time.time() - self.session.start_time
+            self.target_time.append(t)
+            self.target_history.append(float(value))
+
         elif key == "requireHRSignal":
             self.require_hr_signal = value.strip().lower() == "true"
 
@@ -142,7 +153,23 @@ class SessionConfig:
         t = time.time() - self.session.start_time
         self.target_time.append(t)
         self.target_history.append(target_percent)
-    
+
+    def refresh_target_now(self):
+        """
+        Réétire la DERNIÈRE valeur de l'historique (pas forcément
+        target_hr_percent, qui reste sur l'objectif configuré pendant la
+        rampe de warmup — voir update_from_udp/"warmupTargetRamp") jusqu'à
+        l'instant présent, pour que la courbe du graphique ne s'arrête pas
+        tant qu'aucun nouveau point n'arrive. Appelé à chaque FC reçue (voir
+        tracking_screen.py/on_hr_received) : utiliser target_hr_percent ici
+        à la place écraserait la rampe en cours avec la valeur finale.
+        """
+        if not self.target_history:
+            return
+        t = time.time() - self.session.start_time
+        self.target_time.append(t)
+        self.target_history.append(self.target_history[-1])
+
     def reset(self):
         """Réinitialise les données"""
         self.target_time.clear()

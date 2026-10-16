@@ -648,24 +648,6 @@
                                         on_active: root.on_pid_backup_toggle(self.active)
                                         disabled: not root.unity_connected
 
-                            # ---- Rappel : le warmup PID n'a de sens qu'au prochain lancement (le PID de secours, lui, s'applique en direct) ----
-                            ScrollView:
-                                do_scroll_x: False
-                                do_scroll_y: False
-                                size_hint_y: None
-                                height: dp(20) if root.pending_model in root.DRL_MODES else 0
-                                opacity: 1 if root.pending_model in root.DRL_MODES else 0
-                                disabled: root.pending_model not in root.DRL_MODES
-
-                                MDLabel:
-                                    text: "PID d'échauffement : pris en compte au prochain lancement ou redémarrage"
-                                    theme_text_color: "Secondary"
-                                    font_style: "Caption"
-                                    halign: "left"
-                                    valign: "center"
-                                    size_hint_y: None
-                                    height: dp(20)
-
                     # ---- Signal FC requis (modes Fixe / Incrémental) ----
                     ScrollView:
                         do_scroll_x: False

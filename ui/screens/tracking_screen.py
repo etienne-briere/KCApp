@@ -597,8 +597,10 @@ class TrackingScreen(MDScreen):
             self.hrmax_percent_label = self._format_percent(
                 self.session.hr_session.hrmax_percent_history[-1])
 
-        # forcer la mise à jour du graphique avec la cible actuelle
-        self.session.config.update_target(self.session.config.target_hr_percent)
+        # forcer la mise à jour du graphique avec la cible actuelle (la
+        # dernière valeur connue, qui peut être un point de rampe de warmup
+        # — voir SessionConfig.refresh_target_now)
+        self.session.config.refresh_target_now()
 
         self.update_graph()
 

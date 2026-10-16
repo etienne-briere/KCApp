@@ -282,6 +282,9 @@ class UDPDiscovery:
         elif key == "warmupDuration":
             session.config.update_from_udp(key, value)
 
+        elif key == "warmupTargetRamp":
+            session.config.update_from_udp(key, value)
+
         elif key == "requireHRSignal":
             session.config.update_from_udp(key, value)
 
