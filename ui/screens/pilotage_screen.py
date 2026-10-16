@@ -405,32 +405,38 @@ class PilotageScreen(MDScreen):
             self._apply_model_change(restart=False)
             return
 
-        if not hasattr(self, "_dialog_confirm_model") or self._dialog_confirm_model is None:
-            self._dialog_confirm_model = MDDialog(
-                title="Redémarrer la session ?",
-                text="Changer de mode de jeu va redémarrer la session en cours.",
-                buttons=[
-                    MDFlatButton(
-                        text="ANNULER",
-                        on_release=lambda *_: self._cancel_model_change(),
-                    ),
-                    MDFlatButton(
-                        text="CONFIRMER",
-                        on_release=lambda *_: self._confirm_model_change(),
-                    ),
-                ],
-            )
-        self._dialog_confirm_model.open()
+        self._confirm_restart(
+            "Changer de mode de jeu va redémarrer la session en cours.",
+            on_confirm=lambda: self._apply_model_change(restart=True),
+            on_cancel=lambda: setattr(self, "pending_model", self.selected_model),
+        )
 
-    def _cancel_model_change(self):
-        """Dialogue annulé : revient au mode réellement appliqué (le sélecteur affiche pending_model)"""
-        self._dialog_confirm_model.dismiss()
-        self.pending_model = self.selected_model
+    def _confirm_restart(self, text, on_confirm, on_cancel=None):
+        """
+        Dialogue de confirmation partagé par tous les réglages qui
+        redémarrent la partie en cours (mode de jeu, warmup, PID
+        d'échauffement) : annule en rappelant on_cancel (en général pour
+        remettre l'UI dans son état précédent), confirme en rappelant
+        on_confirm (qui applique le réglage et redémarre).
+        """
+        def _confirm(*_):
+            dialog.dismiss()
+            on_confirm()
 
-    def _confirm_model_change(self):
-        """Dialogue confirmé : applique le mode et redémarre la partie"""
-        self._dialog_confirm_model.dismiss()
-        self._apply_model_change(restart=True)
+        def _cancel(*_):
+            dialog.dismiss()
+            if on_cancel:
+                on_cancel()
+
+        dialog = MDDialog(
+            title="Redémarrer la session ?",
+            text=text,
+            buttons=[
+                MDFlatButton(text="ANNULER", on_release=_cancel),
+                MDFlatButton(text="CONFIRMER", on_release=_confirm),
+            ],
+        )
+        dialog.open()
 
     def _apply_model_change(self, restart):
         """Envoie le mode sélectionné (+ réglages du contrôleur hybride) à Unity"""
@@ -598,13 +604,35 @@ class PilotageScreen(MDScreen):
                                 "Cpm max adaptatif")
 
     def on_warmup_toggle(self, is_active):
-        """Active/désactive le warmup (modes PID/DRL)"""
-        self.warmup_enabled = is_active
-        self.session.config.warmup_enabled = is_active
-        logger.info(f"🔥 Warmup: {'ON' if is_active else 'OFF'}")
+        """
+        Active/désactive le warmup (modes PID/DRL) : ne prend effet qu'au
+        prochain lancement, donc redémarre la partie (avec confirmation) si
+        elle est Playing/Paused ; sinon applique directement.
+        """
+        if is_active == self.warmup_enabled:
+            return
+        previous = self.warmup_enabled
 
-        if self.udp_controller:
-            self.udp_controller.set_warmup_enabled(is_active)
+        def _apply():
+            self.warmup_enabled = is_active
+            self.session.config.warmup_enabled = is_active
+            logger.info(f"🔥 Warmup: {'ON' if is_active else 'OFF'}")
+            if self.udp_controller:
+                self.udp_controller.set_warmup_enabled(is_active)
+
+        if self.game_state not in ("Playing", "Paused"):
+            _apply()
+            return
+
+        def _on_confirm():
+            _apply()
+            self.restart_game()
+
+        self._confirm_restart(
+            "Ce réglage ne prend effet qu'au prochain lancement : redémarrer la partie maintenant ?",
+            on_confirm=_on_confirm,
+            on_cancel=lambda: setattr(self.ids.warmup_checkbox, "active", previous),
+        )
 
     def on_warmup_duration_submit(self, text):
         """Champ durée de warmup validé"""
@@ -640,27 +668,46 @@ class PilotageScreen(MDScreen):
         cfg.pid_warmup = self.pid_warmup
         cfg.pid_backup = self.pid_backup
 
-    def _on_controller_option_changed(self, show_restart_reminder=True):
+    def _on_controller_option_changed(self):
         # Envoi immédiat seulement si le mode DRL est déjà appliqué ; sinon il
-        # part avec "Appliquer" (voir _confirm_model_change).
+        # part avec le prochain lancement (voir _apply_model_change).
         if self.selected_model in self.DRL_MODES and self.pending_model == self.selected_model:
             self._send_controller_setup(self.selected_model)
-            if show_restart_reminder:
-                toast("Pris en compte au prochain lancement ou redémarrage")
 
     def on_pid_warmup_toggle(self, is_active):
-        """Case PID d'échauffement (modes DRL) : pris en compte au prochain lancement"""
+        """
+        Case PID d'échauffement (modes DRL) : ne prend effet qu'au prochain
+        lancement, donc redémarre la partie (avec confirmation) si elle est
+        Playing/Paused ; sinon applique directement.
+        """
         if is_active == self.pid_warmup:
             return
-        self.pid_warmup = is_active
-        self._on_controller_option_changed()
+        previous = self.pid_warmup
+
+        def _apply():
+            self.pid_warmup = is_active
+            self._on_controller_option_changed()
+
+        if self.game_state not in ("Playing", "Paused"):
+            _apply()
+            return
+
+        def _on_confirm():
+            _apply()
+            self.restart_game()
+
+        self._confirm_restart(
+            "Ce réglage ne prend effet qu'au prochain lancement : redémarrer la partie maintenant ?",
+            on_confirm=_on_confirm,
+            on_cancel=lambda: setattr(self.ids.pid_warmup_checkbox, "active", previous),
+        )
 
     def on_pid_backup_toggle(self, is_active):
         """Case PID de secours (modes DRL) : applicable en cours de partie"""
         if is_active == self.pid_backup:
             return
         self.pid_backup = is_active
-        self._on_controller_option_changed(show_restart_reminder=False)
+        self._on_controller_option_changed()
 
     # ========== VITESSE DES BRIQUES ==========
 
