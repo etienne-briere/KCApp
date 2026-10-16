@@ -635,10 +635,58 @@ class PilotageScreen(MDScreen):
         )
 
     def on_warmup_duration_submit(self, text):
-        """Champ durée de warmup validé"""
-        self._submit_int_field(text, "warmup_duration_field", "warmup_duration",
-                                "warmup_duration", 0, None, "set_warmup_duration",
-                                "Durée warmup")
+        """
+        Champ durée de warmup validé : ne prend effet qu'au prochain
+        lancement, donc redémarre la partie (avec confirmation) si elle est
+        Playing/Paused ; sinon applique directement.
+        """
+        try:
+            value = int(text)
+        except ValueError:
+            toast("Valeur invalide")
+            self.ids.warmup_duration_field.text = str(int(self.warmup_duration))
+            return
+
+        value = max(0, value)
+        self.ids.warmup_duration_field.text = str(value)
+        if value == self.warmup_duration:
+            return
+
+        # Un Entrée déclenche à la fois on_text_validate et la perte de
+        # focus qui suit (voir pilotage_screen.kv) : les deux rappellent
+        # cette méthode avec le même texte avant que le dialogue ne soit
+        # confirmé/annulé (donc avant que self.warmup_duration ne change) —
+        # sans ce garde-fou, ça ouvrirait le dialogue deux fois.
+        if getattr(self, "_warmup_duration_pending", None) == value:
+            return
+        self._warmup_duration_pending = value
+        previous = self.warmup_duration
+
+        def _apply():
+            self._warmup_duration_pending = None
+            self.warmup_duration = value
+            self.session.config.warmup_duration = value
+            logger.info(f"🔧 Durée warmup: {value}")
+            if self.udp_controller and self.udp_controller.set_warmup_duration(value):
+                logger.info(f"📤 Durée warmup envoyé: {value}")
+
+        if self.game_state not in ("Playing", "Paused"):
+            _apply()
+            return
+
+        def _on_confirm():
+            _apply()
+            self.restart_game()
+
+        def _on_cancel():
+            self._warmup_duration_pending = None
+            self.ids.warmup_duration_field.text = str(previous)
+
+        self._confirm_restart(
+            "Ce réglage ne prend effet qu'au prochain lancement : redémarrer la partie maintenant ?",
+            on_confirm=_on_confirm,
+            on_cancel=_on_cancel,
+        )
 
     def on_require_hr_signal_toggle(self, is_active):
         """Active/désactive l'exigence du signal FC (modes Fixe/Incrémental)"""
