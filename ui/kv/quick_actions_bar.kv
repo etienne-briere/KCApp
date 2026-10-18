@@ -40,42 +40,62 @@
                 padding: dp(4), dp(8)
                 spacing: dp(6)
 
+                # Code couleur sémantique réservé aux actions où la
+                # distinction compte en urgence (vert = ça avance, jaune
+                # = attention, rouge = ça s'arrête) ; les autres restent
+                # en noir pour ne pas diluer le repère visuel.
                 MDIconButton:
                     icon: "rocket-launch-outline"
+                    theme_text_color: "Custom"
+                    text_color: GREEN_FG
                     disabled: root.game_state != "Menu"
                     on_release: root.launch_game()
 
                 MDIconButton:
                     icon: "pause-circle-outline"
+                    theme_text_color: "Custom"
+                    text_color: AMBER_FG
                     disabled: root.game_state != "Playing"
                     on_release: root.pause_game()
 
                 MDIconButton:
                     icon: "play-circle-outline"
+                    theme_text_color: "Custom"
+                    text_color: GREEN_FG
                     disabled: root.game_state != "Paused"
                     on_release: root.resume_game()
 
                 MDIconButton:
                     icon: "restart"
+                    theme_text_color: "Custom"
+                    text_color: 0, 0, 0, 1
                     disabled: root.game_state not in ("Playing", "Paused")
                     on_release: root.restart_game()
 
                 MDIconButton:
                     icon: "eye-refresh-outline"
+                    theme_text_color: "Custom"
+                    text_color: 0, 0, 0, 1
                     on_release: root.recenter_view()
 
                 MDIconButton:
                     icon: "backup-restore"
+                    theme_text_color: "Custom"
+                    text_color: 0, 0, 0, 1
                     disabled: not root.vue_recentree
                     on_release: root.restore_view()
 
                 MDIconButton:
                     icon: "arrow-left-circle-outline"
+                    theme_text_color: "Custom"
+                    text_color: 0, 0, 0, 1
                     disabled: root.game_state == "Menu"
                     on_release: root.return_to_menu()
 
                 MDIconButton:
                     icon: "exit-to-app"
+                    theme_text_color: "Custom"
+                    text_color: RED_FG
                     on_release: root.confirm_quit_game()
 
     # ---------- LANGUETTE (toujours visible, quel que soit l'écran) ----------
