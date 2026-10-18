@@ -83,6 +83,7 @@ class KCApp(MDApp):
         # Builder.load_file("ui/kv/game_screen.kv")
 
         Builder.load_file(resource_path("ui/kv/status_bar.kv"))
+        Builder.load_file(resource_path("ui/kv/quick_actions_bar.kv"))
         Builder.load_file(resource_path("ui/kv/player_chip.kv"))
         Builder.load_file(resource_path("ui/kv/home_screen.kv"))
         Builder.load_file(resource_path("ui/kv/scan_screen.kv"))

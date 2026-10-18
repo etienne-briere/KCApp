@@ -8,6 +8,7 @@ from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.menu import MDDropdownMenu
 
+from app.controllers.game_actions import GameActionsController
 from utils.event_bus import event_bus
 from utils.logger import get_logger
 
@@ -68,13 +69,21 @@ class PilotageScreen(MDScreen):
     # Spinner de la Card "Actions du jeu" pendant le délai UDP normal entre
     # un clic et la confirmation que Unity a changé d'état — voir
     # on_session_updated, qui l'arrête dès qu'un nouvel état arrive, et
-    # _ACTION_TIMEOUT, le filet de sécurité si rien ne revient jamais
-    # (même mécanisme que home_screen.py).
+    # GameActionsController (ACTION_TIMEOUT), le filet de sécurité si rien
+    # ne revient jamais (même mécanisme que home_screen.py).
     action_en_cours = BooleanProperty(False)
-    _ACTION_TIMEOUT = 8
     # "Restaurer la vue d'origine" n'a de sens qu'après un "Recentrer la
     # vue" — voir recenter_view()/restore_view().
     vue_recentree = BooleanProperty(False)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Partagé avec QuickActionsBar (voir ui/widgets/quick_actions_bar.py)
+        # pour que les deux UI qui exposent ces actions restent cohérentes.
+        self._game_actions = GameActionsController(
+            on_action_start=lambda: setattr(self, "action_en_cours", True),
+            on_action_end=lambda: setattr(self, "action_en_cours", False),
+        )
 
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
@@ -172,9 +181,9 @@ class PilotageScreen(MDScreen):
         if session.config.environment is not None:
             self.environment = session.config.environment
         # Un nouvel état confirme que Unity a bien traité la dernière
-        # commande envoyée (voir _lancer_action_jeu) — inutile d'attendre
-        # le timeout de secours.
-        self._arreter_indicateur_action()
+        # commande envoyée (voir GameActionsController.run) — inutile
+        # d'attendre le timeout de secours.
+        self._game_actions.stop_spinner()
         if session.config.target_hr_percent is not None:
             self.target_hr = session.config.target_hr_percent
         if session.config.obs_enabled is not None:
@@ -766,93 +775,44 @@ class PilotageScreen(MDScreen):
                                 "Vitesse des briques")
 
     # ========== GAME ACTIONS ==========
-
-    def _lancer_action_jeu(self, envoyer, message_reussite, message_echec):
-        """
-        Envoie une commande de jeu et affiche le spinner "Actions du jeu"
-        jusqu'à confirmation (prochain game_state reçu, voir
-        on_session_updated) ou timeout de secours — voir action_en_cours.
-        """
-        if not self.udp_controller:
-            return False
-        success = envoyer()
-        if success:
-            logger.info(message_reussite)
-            self.action_en_cours = True
-            Clock.unschedule(self._arreter_indicateur_action)
-            Clock.schedule_once(self._arreter_indicateur_action, self._ACTION_TIMEOUT)
-        else:
-            toast(message_echec)
-        return success
-
-    def _arreter_indicateur_action(self, *_):
-        Clock.unschedule(self._arreter_indicateur_action)
-        self.action_en_cours = False
+    # La logique commune (envoi UDP, spinner, toast d'échec, confirmation
+    # de sortie) vit dans GameActionsController (self._game_actions, voir
+    # __init__) : partagée avec QuickActionsBar.
 
     def pause_game(self):
         """Met le jeu en pause"""
-        self._lancer_action_jeu(lambda: self.udp_controller.pause_game(),
-                                 "⏸️ Jeu en pause", "❌ Échec de la mise en pause")
+        self._game_actions.pause_game()
 
     def resume_game(self):
         """Reprend le jeu"""
-        self._lancer_action_jeu(lambda: self.udp_controller.resume_game(),
-                                 "▶️ Jeu repris", "❌ Échec de la reprise")
+        self._game_actions.resume_game()
 
     def restart_game(self):
         """Redémarre le jeu"""
-        self._lancer_action_jeu(lambda: self.udp_controller.restart_game(),
-                                 "🔄 Jeu redémarré", "❌ Échec du redémarrage")
+        self._game_actions.restart_game()
 
     def launch_game(self):
         """Lance la scène de jeu depuis le menu"""
-        self._lancer_action_jeu(lambda: self.udp_controller.launch_game(),
-                                 "🚀 Partie lancée", "❌ Échec du lancement de la partie")
+        self._game_actions.launch_game()
 
     def return_to_menu(self):
         """Retourne au menu principal depuis la scène de jeu"""
-        self._lancer_action_jeu(lambda: self.udp_controller.return_to_menu(),
-                                 "↩️ Retour au menu", "❌ Échec du retour au menu")
+        self._game_actions.return_to_menu()
 
     def recenter_view(self):
         """Recentre l'orientation du joueur dans le jeu"""
-        if self._lancer_action_jeu(lambda: self.udp_controller.recenter_view(),
-                                    "🧭 Recentrage de la vue demandé", "❌ Échec de la demande de recentrage"):
+        if self._game_actions.run(lambda: self.udp_controller.recenter_view(),
+                                   "🧭 Recentrage de la vue demandé", "❌ Échec de la demande de recentrage"):
             # "Restaurer la vue d'origine" n'a de sens que s'il y a
             # effectivement quelque chose à restaurer.
             self.vue_recentree = True
 
     def restore_view(self):
         """Restaure la vue d'origine du jeu"""
-        if self._lancer_action_jeu(lambda: self.udp_controller.restore_view(),
-                                    "🔙 Restauration de la vue demandée", "❌ Échec de la restauration de la vue"):
+        if self._game_actions.run(lambda: self.udp_controller.restore_view(),
+                                   "🔙 Restauration de la vue demandée", "❌ Échec de la restauration de la vue"):
             self.vue_recentree = False
 
     def confirm_quit_game(self):
         """Bouton « Quitter » : demande confirmation avant de fermer le jeu"""
-        if not hasattr(self, "_dialog_confirm_quit") or self._dialog_confirm_quit is None:
-            self._dialog_confirm_quit = MDDialog(
-                title="Quitter le jeu ?",
-                text="Le jeu va se fermer sur le casque.",
-                buttons=[
-                    MDFlatButton(
-                        text="ANNULER",
-                        on_release=lambda *_: self._dialog_confirm_quit.dismiss(),
-                    ),
-                    MDFlatButton(
-                        text="QUITTER",
-                        on_release=lambda *_: self._confirm_quit_game(),
-                    ),
-                ],
-            )
-        self._dialog_confirm_quit.open()
-
-    def _confirm_quit_game(self):
-        """Confirmation du dialog : envoie la commande de fermeture"""
-        self._dialog_confirm_quit.dismiss()
-        if self.udp_controller:
-            success = self.udp_controller.quit_game()
-            if success:
-                logger.info("🚪 Jeu quitté")
-            else:
-                toast("❌ Échec de la fermeture du jeu")
+        self._game_actions.confirm_quit_game()

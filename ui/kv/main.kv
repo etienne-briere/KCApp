@@ -3,6 +3,7 @@
 #:import NoTransition kivy.uix.screenmanager.NoTransition
 
 #:import StatusBar ui.widgets.status_bar.StatusBar
+#:import QuickActionsBar ui.widgets.quick_actions_bar.QuickActionsBar
 #:import HomeScreen ui.screens.home_screen.HomeScreen
 #:import ScanScreen ui.screens.scan_screen.ScanScreen
 #:import TrackingScreen ui.screens.tracking_screen.TrackingScreen
@@ -37,37 +38,48 @@ BoxLayout:
     StatusBar:
         id: status_bar
 
-    # ---------- SCREEN MANAGER ----------
-    ScreenManager:
-        id: screen_manager
-        transition: NoTransition()
+    # ---------- SCREEN MANAGER + ACTIONS RAPIDES ----------
+    # FloatLayout : la barre d'actions rapides flotte par-dessus l'écran
+    # affiché (quel qu'il soit) sans redimensionner top bar / status bar /
+    # bottom nav quand elle se déplie.
+    FloatLayout:
+        id: screen_area
 
-        HomeScreen: 
-            name: "home"
-        
-        ScanScreen:
-            name: "scan"
-        
-        TrackingScreen:
-            name: "tracking"
-        
-        ProfilScreen:
-            name: "profil"
+        ScreenManager:
+            id: screen_manager
+            size_hint: 1, 1
+            pos: screen_area.pos
+            transition: NoTransition()
 
-        ControlMenuScreen:
-            name: "control_menu"
+            HomeScreen:
+                name: "home"
 
-        HeadsetScreen:
-            name: "headset"
+            ScanScreen:
+                name: "scan"
 
-        PilotageScreen:
-            name: "pilotage"
+            TrackingScreen:
+                name: "tracking"
 
-        PlayerProfileScreen:
-            name: "player_profile"
+            ProfilScreen:
+                name: "profil"
 
-        # GameScreen:
-        #     name: "game"
+            ControlMenuScreen:
+                name: "control_menu"
+
+            HeadsetScreen:
+                name: "headset"
+
+            PilotageScreen:
+                name: "pilotage"
+
+            PlayerProfileScreen:
+                name: "player_profile"
+
+            # GameScreen:
+            #     name: "game"
+
+        QuickActionsBar:
+            id: quick_actions_bar
 
     # ---------- BOTTOM NAVIGATION (FIXE) ----------
     MDBottomNavigation:
