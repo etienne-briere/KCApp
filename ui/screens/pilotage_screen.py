@@ -801,16 +801,14 @@ class PilotageScreen(MDScreen):
 
     def recenter_view(self):
         """Recentre l'orientation du joueur dans le jeu"""
-        if self._game_actions.run(lambda: self.udp_controller.recenter_view(),
-                                   "🧭 Recentrage de la vue demandé", "❌ Échec de la demande de recentrage"):
+        if self._game_actions.recenter_view():
             # "Restaurer la vue d'origine" n'a de sens que s'il y a
             # effectivement quelque chose à restaurer.
             self.vue_recentree = True
 
     def restore_view(self):
         """Restaure la vue d'origine du jeu"""
-        if self._game_actions.run(lambda: self.udp_controller.restore_view(),
-                                   "🔙 Restauration de la vue demandée", "❌ Échec de la restauration de la vue"):
+        if self._game_actions.restore_view():
             self.vue_recentree = False
 
     def confirm_quit_game(self):

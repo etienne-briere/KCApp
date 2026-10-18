@@ -194,6 +194,18 @@ class GameActionsController:
         self.run(lambda: self.udp_controller.return_to_menu(),
                   "↩️ Retour au menu", "❌ Échec du retour au menu")
 
+    def recenter_view(self):
+        """Recentre l'orientation du joueur dans le jeu. Renvoie True en
+        cas de succès, pour que l'UI hôte sache activer "restaurer la vue
+        d'origine" (qui n'a de sens qu'après un recentrage)."""
+        return self.run(lambda: self.udp_controller.recenter_view(),
+                         "🧭 Recentrage de la vue demandé", "❌ Échec de la demande de recentrage")
+
+    def restore_view(self):
+        """Restaure la vue d'origine du jeu."""
+        return self.run(lambda: self.udp_controller.restore_view(),
+                         "🔙 Restauration de la vue demandée", "❌ Échec de la restauration de la vue")
+
     def confirm_quit_game(self):
         """Demande confirmation avant de fermer le jeu"""
         if self._dialog_confirm_quit is None:
