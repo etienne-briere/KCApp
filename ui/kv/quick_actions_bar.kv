@@ -69,7 +69,7 @@
                     icon: "restart"
                     theme_text_color: "Custom"
                     text_color: 0, 0, 0, 1
-                    disabled: root.game_state not in ("Playing", "Paused")
+                    disabled: root.game_state == "Menu"
                     on_release: root.restart_game()
 
                 MDIconButton:
