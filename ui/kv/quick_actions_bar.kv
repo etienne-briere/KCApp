@@ -64,9 +64,7 @@
     # HandleToggle (ButtonBehavior + MDIcon, voir quick_actions_bar.py)
     # garde la taille donnée ci-dessous au lieu du diamètre ~dp(48) que
     # MDIconButton s'impose toujours (cible tactile Material Design) —
-    # on veut une languette volontairement étroite. Le spinner est
-    # positionné à part (center_x/center_y liés à la languette) pour ne
-    # pas entrer dans ce calcul de centrage.
+    # on veut une languette volontairement étroite.
     AnchorLayout:
         id: handle
         anchor_x: "center"
@@ -91,12 +89,3 @@
             text_color: 1, 1, 1, 1
             font_size: "20sp"
             on_release: root.toggle()
-
-    MDSpinner:
-        size_hint: None, None
-        size: dp(16), dp(16)
-        center_x: handle.center_x
-        center_y: handle.center_y + dp(28)
-        active: root.action_en_cours
-        opacity: 1 if root.action_en_cours else 0
-        color: 1, 1, 1, 1

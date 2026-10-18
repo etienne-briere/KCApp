@@ -42,16 +42,15 @@ class QuickActionsBar(MDFloatLayout):
     is_open = BooleanProperty(False)
     game_state = StringProperty("disconnected")
     unity_connected = BooleanProperty(False)
-    action_en_cours = BooleanProperty(False)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # Partagé avec PilotageScreen (voir ui/screens/pilotage_screen.py)
         # pour que les deux UI qui exposent ces actions restent cohérentes.
-        self._game_actions = GameActionsController(
-            on_action_start=lambda: setattr(self, "action_en_cours", True),
-            on_action_end=lambda: setattr(self, "action_en_cours", False),
-        )
+        # Pas de callback on_action_start/on_action_end ici : le toast
+        # "action en cours" de GameActionsController suffit, pas besoin
+        # d'un spinner propre à la languette.
+        self._game_actions = GameActionsController()
 
     def on_kv_post(self, base_widget):
         app = App.get_running_app()
