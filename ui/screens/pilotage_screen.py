@@ -8,7 +8,6 @@ from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.menu import MDDropdownMenu
 
-from app.controllers.game_actions import GameActionsController
 from utils.event_bus import event_bus
 from utils.logger import get_logger
 
@@ -66,24 +65,6 @@ class PilotageScreen(MDScreen):
     player_name = StringProperty("") # nom du profil joueur actif
     environment = StringProperty("") # environnement du jeu (Cosmos/Forest/Sea/Mountain/Sky), vide si inconnu
     game_state = StringProperty("Menu") # état de partie reçu de Unity (Menu/Ready/Playing/Paused/Finished)
-    # Spinner de la Card "Actions du jeu" pendant le délai UDP normal entre
-    # un clic et la confirmation que Unity a changé d'état — voir
-    # on_session_updated, qui l'arrête dès qu'un nouvel état arrive, et
-    # GameActionsController (ACTION_TIMEOUT), le filet de sécurité si rien
-    # ne revient jamais (même mécanisme que home_screen.py).
-    action_en_cours = BooleanProperty(False)
-    # "Restaurer la vue d'origine" n'a de sens qu'après un "Recentrer la
-    # vue" — voir recenter_view()/restore_view().
-    vue_recentree = BooleanProperty(False)
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        # Partagé avec QuickActionsBar (voir ui/widgets/quick_actions_bar.py)
-        # pour que les deux UI qui exposent ces actions restent cohérentes.
-        self._game_actions = GameActionsController(
-            on_action_start=lambda: setattr(self, "action_en_cours", True),
-            on_action_end=lambda: setattr(self, "action_en_cours", False),
-        )
 
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
@@ -180,10 +161,6 @@ class PilotageScreen(MDScreen):
         self.game_state = session.game_state.capitalize()
         if session.config.environment is not None:
             self.environment = session.config.environment
-        # Un nouvel état confirme que Unity a bien traité la dernière
-        # commande envoyée (voir GameActionsController.run) — inutile
-        # d'attendre le timeout de secours.
-        self._game_actions.stop_spinner()
         if session.config.target_hr_percent is not None:
             self.target_hr = session.config.target_hr_percent
         if session.config.obs_enabled is not None:
@@ -774,43 +751,3 @@ class PilotageScreen(MDScreen):
                                 "brick_speed", 1, None, "set_brick_speed",
                                 "Vitesse des briques")
 
-    # ========== GAME ACTIONS ==========
-    # La logique commune (envoi UDP, spinner, toast d'échec, confirmation
-    # de sortie) vit dans GameActionsController (self._game_actions, voir
-    # __init__) : partagée avec QuickActionsBar.
-
-    def pause_game(self):
-        """Met le jeu en pause"""
-        self._game_actions.pause_game()
-
-    def resume_game(self):
-        """Reprend le jeu"""
-        self._game_actions.resume_game()
-
-    def restart_game(self):
-        """Redémarre le jeu"""
-        self._game_actions.restart_game()
-
-    def launch_game(self):
-        """Lance la scène de jeu depuis le menu"""
-        self._game_actions.launch_game()
-
-    def return_to_menu(self):
-        """Retourne au menu principal depuis la scène de jeu"""
-        self._game_actions.return_to_menu()
-
-    def recenter_view(self):
-        """Recentre l'orientation du joueur dans le jeu"""
-        if self._game_actions.recenter_view():
-            # "Restaurer la vue d'origine" n'a de sens que s'il y a
-            # effectivement quelque chose à restaurer.
-            self.vue_recentree = True
-
-    def restore_view(self):
-        """Restaure la vue d'origine du jeu"""
-        if self._game_actions.restore_view():
-            self.vue_recentree = False
-
-    def confirm_quit_game(self):
-        """Bouton « Quitter » : demande confirmation avant de fermer le jeu"""
-        self._game_actions.confirm_quit_game()
