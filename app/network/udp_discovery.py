@@ -7,6 +7,7 @@ from utils.logger import get_logger
 from utils.event_bus import event_bus
 
 from kivy.app import App
+from kivy.clock import Clock
 
 from config import UDP_PORT_SEND, UDP_PORT_RECEIVE, UDP_PING_TIMEOUT
 
@@ -172,9 +173,16 @@ class UDPDiscovery:
                     data, address = sock.recvfrom(65535) # Taille max UDP (65KB)
                     
                     logger.debug(f"📥 Message UDP reçu de {address}: {data[:50]}")
-                    
-                    # Traiter le message
-                    self._handle_udp_message(data, address)
+
+                    # Traiter le message sur le thread principal (Kivy) : ce
+                    # thread de réception ne doit jamais muter directement
+                    # l'état de session (ex. target_time/target_history),
+                    # sous peine de races avec le thread UI qui lit/écrit
+                    # les mêmes listes au même moment (cause d'un crash
+                    # matplotlib "shape mismatch" observé sur Android).
+                    Clock.schedule_once(
+                        lambda dt, d=data, addr=address: self._handle_udp_message(d, addr)
+                    )
                     
                 except socket.timeout:
                     continue
