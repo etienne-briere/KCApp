@@ -45,45 +45,10 @@
                 # = attention, rouge = ça s'arrête) ; les autres restent
                 # en noir pour ne pas diluer le repère visuel.
                 MDIconButton:
-                    icon: "rocket-launch-outline"
+                    icon: "exit-to-app"
                     theme_text_color: "Custom"
-                    text_color: GREEN_FG
-                    disabled: root.game_state != "Menu"
-                    on_release: root.launch_game()
-
-                MDIconButton:
-                    icon: "pause-circle-outline"
-                    theme_text_color: "Custom"
-                    text_color: AMBER_FG
-                    disabled: root.game_state != "Playing"
-                    on_release: root.pause_game()
-
-                MDIconButton:
-                    icon: "play-circle-outline"
-                    theme_text_color: "Custom"
-                    text_color: GREEN_FG
-                    disabled: root.game_state != "Paused"
-                    on_release: root.resume_game()
-
-                MDIconButton:
-                    icon: "restart"
-                    theme_text_color: "Custom"
-                    text_color: 0, 0, 0, 1
-                    disabled: root.game_state == "Menu"
-                    on_release: root.restart_game()
-
-                MDIconButton:
-                    icon: "eye-refresh-outline"
-                    theme_text_color: "Custom"
-                    text_color: 0, 0, 0, 1
-                    on_release: root.recenter_view()
-
-                MDIconButton:
-                    icon: "backup-restore"
-                    theme_text_color: "Custom"
-                    text_color: 0, 0, 0, 1
-                    disabled: not root.vue_recentree
-                    on_release: root.restore_view()
+                    text_color: RED_FG
+                    on_release: root.confirm_quit_game()
 
                 MDIconButton:
                     icon: "arrow-left-circle-outline"
@@ -93,10 +58,45 @@
                     on_release: root.return_to_menu()
 
                 MDIconButton:
-                    icon: "exit-to-app"
+                    icon: "backup-restore"
                     theme_text_color: "Custom"
-                    text_color: RED_FG
-                    on_release: root.confirm_quit_game()
+                    text_color: 0, 0, 0, 1
+                    disabled: not root.vue_recentree
+                    on_release: root.restore_view()
+
+                MDIconButton:
+                    icon: "eye-refresh-outline"
+                    theme_text_color: "Custom"
+                    text_color: 0, 0, 0, 1
+                    on_release: root.recenter_view()
+
+                MDIconButton:
+                    icon: "restart"
+                    theme_text_color: "Custom"
+                    text_color: 0, 0, 0, 1
+                    disabled: root.game_state == "Menu"
+                    on_release: root.restart_game()
+
+                MDIconButton:
+                    icon: "play-circle-outline"
+                    theme_text_color: "Custom"
+                    text_color: GREEN_FG
+                    disabled: root.game_state != "Paused"
+                    on_release: root.resume_game()
+
+                MDIconButton:
+                    icon: "pause-circle-outline"
+                    theme_text_color: "Custom"
+                    text_color: AMBER_FG
+                    disabled: root.game_state != "Playing"
+                    on_release: root.pause_game()
+
+                MDIconButton:
+                    icon: "rocket-launch-outline"
+                    theme_text_color: "Custom"
+                    text_color: GREEN_FG
+                    disabled: root.game_state != "Menu"
+                    on_release: root.launch_game()
 
     # ---------- LANGUETTE (toujours visible, quel que soit l'écran) ----------
     # Centrée en bas, collée au-dessus de la barre de navigation (pas sur
