@@ -1,7 +1,7 @@
 #:kivy 2.0
 #:import dp kivy.metrics.dp
 #:import ClippedBox ui.widgets.quick_actions_bar.ClippedBox
-#:import HandleToggle ui.widgets.quick_actions_bar.HandleToggle
+#:import HandleBar ui.widgets.quick_actions_bar.HandleBar
 
 <QuickActionsBar>:
     size_hint: 1, 1
@@ -99,18 +99,17 @@
                     on_release: root.confirm_quit_game()
 
     # ---------- LANGUETTE (toujours visible, quel que soit l'écran) ----------
-    # AnchorLayout : centre son contenu quelle que soit sa taille réelle.
-    # HandleToggle (ButtonBehavior + MDIcon, voir quick_actions_bar.py)
-    # garde la taille donnée ci-dessous au lieu du diamètre ~dp(48) que
-    # MDIconButton s'impose toujours (cible tactile Material Design) —
-    # on veut une languette volontairement étroite.
-    AnchorLayout:
+    # HandleBar (ButtonBehavior + AnchorLayout, voir quick_actions_bar.py) :
+    # toute la languette est cliquable, pas seulement l'icône — et elle
+    # centre son contenu quelle que soit sa taille réelle.
+    HandleBar:
         id: handle
         anchor_x: "center"
         anchor_y: "center"
         size_hint: None, None
         size: dp(40), dp(110)
         pos_hint: {"right": 1, "center_y": 0.5}
+        on_release: root.toggle()
 
         canvas.before:
             Color:
@@ -120,11 +119,10 @@
                 size: self.size
                 radius: [dp(18), 0, 0, dp(18)]
 
-        HandleToggle:
+        MDIcon:
             size_hint: None, None
             size: dp(36), dp(36)
             icon: "chevron-left" if root.is_open else "chevron-right"
             theme_text_color: "Custom"
             text_color: 1, 1, 1, 1
             font_size: "28sp"
-            on_release: root.toggle()

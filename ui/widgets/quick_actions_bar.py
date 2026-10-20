@@ -1,10 +1,10 @@
 from kivy.app import App
 from kivy.properties import BooleanProperty, StringProperty
+from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.stencilview import StencilView
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.floatlayout import MDFloatLayout
-from kivymd.uix.label import MDIcon
 
 from app.controllers.game_actions import GameActionsController
 from utils.event_bus import event_bus
@@ -19,12 +19,9 @@ class ClippedBox(StencilView, MDBoxLayout):
     d'ouverture/fermeture (voir QuickActionsBar)."""
 
 
-class HandleToggle(ButtonBehavior, MDIcon):
-    """Icône cliquable pour la languette : contrairement à MDIconButton,
-    qui impose son propre diamètre ~dp(48) une frame après sa création
-    (cible tactile Material Design, voir MDIconButton.set_size), celle-ci
-    garde exactement la taille donnée dans le .kv — la languette doit
-    pouvoir être plus étroite que ça."""
+class HandleBar(ButtonBehavior, AnchorLayout):
+    """Languette cliquable sur toute sa surface (pas seulement son icône
+    chevron) — plus facile à toucher sur tablette/casque."""
 
 
 class QuickActionsBar(MDFloatLayout):
