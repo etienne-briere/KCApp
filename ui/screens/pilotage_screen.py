@@ -8,6 +8,7 @@ from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.menu import MDDropdownMenu
 
+from app.controllers.game_actions import GameActionsController
 from utils.event_bus import event_bus
 from utils.logger import get_logger
 
@@ -65,6 +66,14 @@ class PilotageScreen(MDScreen):
     player_name = StringProperty("") # nom du profil joueur actif
     environment = StringProperty("") # environnement du jeu (Cosmos/Forest/Sea/Mountain/Sky), vide si inconnu
     game_state = StringProperty("Menu") # état de partie reçu de Unity (Menu/Ready/Playing/Paused/Finished)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Pour redémarrer la partie après un changement de mode confirmé
+        # (voir _apply_model_change) — même mécanisme que QuickActionsBar
+        # (ui/widgets/quick_actions_bar.py), avec sa propre instance
+        # puisque PilotageScreen n'a plus de spinner/toast propre à piloter.
+        self._game_actions = GameActionsController()
 
     def on_enter(self):
         """Appelé à l'ouverture de l'écran"""
@@ -443,7 +452,7 @@ class PilotageScreen(MDScreen):
 
             # Redémarre le jeu seulement si une partie était effectivement en cours
             if restart:
-                self.restart_game()
+                self._game_actions.restart_game()
 
     # ========== DURÉE DE SESSION ==========
 
@@ -612,7 +621,7 @@ class PilotageScreen(MDScreen):
 
         def _on_confirm():
             _apply()
-            self.restart_game()
+            self._game_actions.restart_game()
 
         self._confirm_restart(
             "Ce réglage ne prend effet qu'au prochain lancement : redémarrer la partie maintenant ?",
@@ -662,7 +671,7 @@ class PilotageScreen(MDScreen):
 
         def _on_confirm():
             _apply()
-            self.restart_game()
+            self._game_actions.restart_game()
 
         def _on_cancel():
             self._warmup_duration_pending = None
@@ -730,7 +739,7 @@ class PilotageScreen(MDScreen):
 
         def _on_confirm():
             _apply()
-            self.restart_game()
+            self._game_actions.restart_game()
 
         self._confirm_restart(
             "Ce réglage ne prend effet qu'au prochain lancement : redémarrer la partie maintenant ?",
