@@ -1,4 +1,5 @@
 from kivy.app import App
+from kivy.clock import Clock
 from kivy.metrics import dp
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty
 from kivy.uix.anchorlayout import AnchorLayout
@@ -13,10 +14,15 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-# Distance de glissement (au-delà de laquelle un appui sur la languette est
-# traité comme un déplacement vertical plutôt qu'un simple tap qui
+# Distance de glissement (au-delà de laquelle un déplacement autorisé —
+# voir _DRAG_HOLD_DELAY — est traité comme tel plutôt qu'un simple tap qui
 # ouvre/ferme le panneau — voir HandleBar.on_touch_move).
 _DRAG_THRESHOLD = dp(8)
+# Durée d'appui maintenu avant que le glissement ne soit autorisé. Sans ce
+# délai, un simple mouvement du doigt juste après l'appui (ex. sur
+# Android) ne déclenchait jamais le glissement — l'appui maintenu lève
+# l'ambiguïté avec un tap avant même de regarder le déplacement.
+_DRAG_HOLD_DELAY = 1.0
 
 
 class ClippedBox(StencilView, MDBoxLayout):
@@ -29,11 +35,12 @@ class HandleBar(ButtonBehavior, AnchorLayout):
     """
     Languette cliquable sur toute sa surface (pas seulement son icône
     chevron) — plus facile à toucher sur tablette/casque. Également
-    déplaçable verticalement le long du bord droit de l'écran (glisser
-    au lieu de taper) : voir on_touch_move, qui bascule en mode
-    déplacement au-delà de _DRAG_THRESHOLD et ajuste alors
-    parent.handle_center_y (lié au pos_hint de cette languette dans le
-    .kv) plutôt que de laisser ButtonBehavior déclencher on_release.
+    déplaçable verticalement le long du bord droit de l'écran, mais
+    seulement après un appui maintenu _DRAG_HOLD_DELAY (voir
+    on_touch_down/_enable_drag) : le déplacement devient alors possible
+    au-delà de _DRAG_THRESHOLD, ajustant parent.handle_center_y (lié au
+    pos_hint de cette languette dans le .kv) plutôt que de laisser
+    ButtonBehavior déclencher on_release.
 
     Pas de mémorisation d'une session à l'autre pour l'instant — la
     position revient à sa valeur par défaut à chaque redémarrage de
@@ -45,6 +52,8 @@ class HandleBar(ButtonBehavior, AnchorLayout):
         self._drag_start_y = None
         self._drag_start_center_y = None
         self._dragging = False
+        self._drag_allowed = False
+        self._drag_allowed_event = None
 
     def on_touch_down(self, touch):
         handled = super().on_touch_down(touch)
@@ -52,12 +61,17 @@ class HandleBar(ButtonBehavior, AnchorLayout):
             self._drag_start_y = touch.y
             self._drag_start_center_y = self.parent.handle_center_y if self.parent else 0.5
             self._dragging = False
+            self._drag_allowed = False
+            self._drag_allowed_event = Clock.schedule_once(self._enable_drag, _DRAG_HOLD_DELAY)
         return handled
+
+    def _enable_drag(self, *_args):
+        self._drag_allowed = True
 
     def on_touch_move(self, touch):
         if touch.grab_current is self and self._drag_start_y is not None:
             dy = touch.y - self._drag_start_y
-            if not self._dragging and abs(dy) > _DRAG_THRESHOLD:
+            if self._drag_allowed and not self._dragging and abs(dy) > _DRAG_THRESHOLD:
                 self._dragging = True
             if self._dragging and self.parent and self.parent.height:
                 delta_fraction = dy / self.parent.height
@@ -71,9 +85,13 @@ class HandleBar(ButtonBehavior, AnchorLayout):
 
     def on_touch_up(self, touch):
         if touch.grab_current is self:
+            if self._drag_allowed_event is not None:
+                self._drag_allowed_event.cancel()
+                self._drag_allowed_event = None
             was_dragging = self._dragging
             self._drag_start_y = None
             self._dragging = False
+            self._drag_allowed = False
             if was_dragging:
                 # Déplacement : on relâche sans déclencher on_release,
                 # sinon le panneau s'ouvrirait/fermerait après un glisser.
