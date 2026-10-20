@@ -109,7 +109,7 @@
         anchor_x: "center"
         anchor_y: "center"
         size_hint: None, None
-        size: dp(26), dp(72)
+        size: dp(40), dp(110)
         pos_hint: {"right": 1, "center_y": 0.5}
 
         canvas.before:
@@ -118,13 +118,13 @@
             RoundedRectangle:
                 pos: self.pos
                 size: self.size
-                radius: [dp(12), 0, 0, dp(12)]
+                radius: [dp(18), 0, 0, dp(18)]
 
         HandleToggle:
             size_hint: None, None
-            size: dp(24), dp(24)
+            size: dp(36), dp(36)
             icon: "chevron-left" if root.is_open else "chevron-right"
             theme_text_color: "Custom"
             text_color: 1, 1, 1, 1
-            font_size: "20sp"
+            font_size: "28sp"
             on_release: root.toggle()
