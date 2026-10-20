@@ -449,18 +449,19 @@
                                             on_text_validate: root.on_warmup_duration_submit(self.text)
                                             on_focus: root.on_warmup_duration_submit(self.text) if not self.focus else None
 
-                                    # ---- PID d'échauffement (modes DRL, prochaine partie) : bouton dont le
-                                    # libellé et la couleur reflètent l'état (neutre : couleur primaire
-                                    # activé, gris désactivé — pas de rouge/vert, réservés aux alertes) ----
-                                    MDRectangleFlatIconButton:
+                                    # ---- PID d'échauffement (modes DRL, prochaine partie) : bouton-puce
+                                    # rempli (rond, pas rectangulaire à contour comme les sélecteurs
+                                    # Mode/Environnement), mêmes couleurs que les badges d'état de partie
+                                    # (GREEN_BG/FG = actif, GRAY_BG/FG = inactif, voir game_state_style.py)
+                                    MDFillRoundFlatIconButton:
                                         id: pid_warmup_toggle_button
                                         text: "PID warmup activé" if root.pid_warmup else "PID warmup désactivé"
                                         icon: "sine-wave"
+                                        md_bg_color: GREEN_BG if root.pid_warmup else GRAY_BG
                                         theme_text_color: "Custom"
-                                        text_color: app.theme_cls.primary_color if root.pid_warmup else GRAY_FG
+                                        text_color: GREEN_FG if root.pid_warmup else GRAY_FG
                                         theme_icon_color: "Custom"
-                                        icon_color: app.theme_cls.primary_color if root.pid_warmup else GRAY_FG
-                                        line_color: app.theme_cls.primary_color if root.pid_warmup else GRAY_FG
+                                        icon_color: GREEN_FG if root.pid_warmup else GRAY_FG
                                         size_hint_x: 0.5 if root.pending_model in root.DRL_MODES else 0
                                         size_hint_y: None
                                         height: dp(48)
