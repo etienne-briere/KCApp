@@ -101,8 +101,7 @@
     # ---------- LANGUETTE (toujours visible, quel que soit l'écran) ----------
     # Centrée en bas, collée au-dessus de la barre de navigation (pas sur
     # un bord d'écran) : sur Android, un bord vertical/horizontal est
-    # souvent réservé aux gestes système (retour, home), qui interceptent
-    # le glissement avant même qu'il n'arrive à l'app. HandleBar
+    # souvent réservé aux gestes système (retour, home). HandleBar
     # (ButtonBehavior + AnchorLayout, voir quick_actions_bar.py) rend
     # toute la languette cliquable, pas seulement l'icône, et centre son
     # contenu quelle que soit sa taille réelle.
@@ -112,7 +111,7 @@
         anchor_y: "center"
         size_hint: None, None
         size: dp(110), dp(40)
-        pos_hint: {"center_x": root.handle_center_x, "y": 0}
+        pos_hint: {"center_x": 0.5, "y": 0}
         on_release: root.toggle()
 
         canvas.before:

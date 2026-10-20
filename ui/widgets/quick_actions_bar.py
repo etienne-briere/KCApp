@@ -1,7 +1,5 @@
 from kivy.app import App
-from kivy.clock import Clock
-from kivy.metrics import dp
-from kivy.properties import BooleanProperty, NumericProperty, StringProperty
+from kivy.properties import BooleanProperty, StringProperty
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.stencilview import StencilView
@@ -14,16 +12,6 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-# Distance de glissement (au-delà de laquelle un déplacement autorisé —
-# voir _DRAG_HOLD_DELAY — est traité comme tel plutôt qu'un simple tap qui
-# ouvre/ferme le panneau — voir HandleBar.on_touch_move).
-_DRAG_THRESHOLD = dp(8)
-# Durée d'appui maintenu avant que le glissement ne soit autorisé. Sans ce
-# délai, un simple mouvement du doigt juste après l'appui (ex. sur
-# Android) ne déclenchait jamais le glissement — l'appui maintenu lève
-# l'ambiguïté avec un tap avant même de regarder le déplacement.
-_DRAG_HOLD_DELAY = 1.0
-
 
 class ClippedBox(StencilView, MDBoxLayout):
     """MDBoxLayout dont le contenu est découpé à sa taille, pour que le
@@ -32,78 +20,8 @@ class ClippedBox(StencilView, MDBoxLayout):
 
 
 class HandleBar(ButtonBehavior, AnchorLayout):
-    """
-    Languette cliquable sur toute sa surface (pas seulement son icône
-    chevron) — plus facile à toucher sur tablette/casque. Également
-    déplaçable horizontalement le long du bas de l'écran, mais seulement
-    après un appui maintenu _DRAG_HOLD_DELAY (voir on_touch_down/
-    _enable_drag) : le déplacement devient alors possible au-delà de
-    _DRAG_THRESHOLD, ajustant parent.handle_center_x (lié au pos_hint de
-    cette languette dans le .kv) plutôt que de laisser ButtonBehavior
-    déclencher on_release.
-
-    Centrée en bas plutôt que sur un bord vertical : sur Android, un
-    bord d'écran est souvent réservé aux gestes système (retour, home),
-    qui interceptent le glissement avant même qu'il n'arrive à l'app.
-
-    Pas de mémorisation d'une session à l'autre pour l'instant — la
-    position revient à sa valeur par défaut à chaque redémarrage de
-    l'app.
-    """
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._drag_start_x = None
-        self._drag_start_center_x = None
-        self._dragging = False
-        self._drag_allowed = False
-        self._drag_allowed_event = None
-
-    def on_touch_down(self, touch):
-        handled = super().on_touch_down(touch)
-        if handled and touch.grab_current is self:
-            self._drag_start_x = touch.x
-            self._drag_start_center_x = self.parent.handle_center_x if self.parent else 0.5
-            self._dragging = False
-            self._drag_allowed = False
-            self._drag_allowed_event = Clock.schedule_once(self._enable_drag, _DRAG_HOLD_DELAY)
-        return handled
-
-    def _enable_drag(self, *_args):
-        self._drag_allowed = True
-
-    def on_touch_move(self, touch):
-        if touch.grab_current is self and self._drag_start_x is not None:
-            dx = touch.x - self._drag_start_x
-            if self._drag_allowed and not self._dragging and abs(dx) > _DRAG_THRESHOLD:
-                self._dragging = True
-            if self._dragging and self.parent and self.parent.width:
-                delta_fraction = dx / self.parent.width
-                new_center_x = self._drag_start_center_x + delta_fraction
-                # Marge pour que la languette ne sorte jamais de l'écran.
-                margin = (self.width / 2 + dp(4)) / self.parent.width
-                new_center_x = max(margin, min(1 - margin, new_center_x))
-                self.parent.handle_center_x = new_center_x
-            return True
-        return super().on_touch_move(touch)
-
-    def on_touch_up(self, touch):
-        if touch.grab_current is self:
-            if self._drag_allowed_event is not None:
-                self._drag_allowed_event.cancel()
-                self._drag_allowed_event = None
-            was_dragging = self._dragging
-            self._drag_start_x = None
-            self._dragging = False
-            self._drag_allowed = False
-            if was_dragging:
-                # Déplacement : on relâche sans déclencher on_release,
-                # sinon le panneau s'ouvrirait/fermerait après un glisser.
-                touch.ungrab(self)
-                self.last_touch = touch
-                self._do_release()
-                return True
-        return super().on_touch_up(touch)
+    """Languette cliquable sur toute sa surface (pas seulement son icône
+    chevron) — plus facile à toucher sur tablette/casque."""
 
 
 class QuickActionsBar(MDFloatLayout):
@@ -122,11 +40,6 @@ class QuickActionsBar(MDFloatLayout):
     is_open = BooleanProperty(False)
     game_state = StringProperty("disconnected")
     unity_connected = BooleanProperty(False)
-    # Position horizontale de la languette (fraction 0-1 de la largeur
-    # de l'écran), ajustable en la faisant glisser — voir HandleBar. Pas
-    # de mémorisation entre sessions : revient à cette valeur par défaut
-    # à chaque redémarrage de l'app.
-    handle_center_x = NumericProperty(0.5)
     # "Restaurer la vue d'origine" n'a de sens qu'après un "Recentrer la
     # vue" — voir recenter_view()/restore_view(). Propre à cette UI,
     # comme dans PilotageScreen (ui/screens/pilotage_screen.py), qui a sa
