@@ -108,7 +108,7 @@
         anchor_y: "center"
         size_hint: None, None
         size: dp(40), dp(110)
-        pos_hint: {"right": 1, "center_y": 0.5}
+        pos_hint: {"right": 1, "center_y": root.handle_center_y}
         on_release: root.toggle()
 
         canvas.before:

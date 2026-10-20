@@ -1,5 +1,6 @@
 from kivy.app import App
-from kivy.properties import BooleanProperty, StringProperty
+from kivy.metrics import dp
+from kivy.properties import BooleanProperty, NumericProperty, StringProperty
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.stencilview import StencilView
@@ -12,6 +13,11 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+# Distance de glissement (au-delà de laquelle un appui sur la languette est
+# traité comme un déplacement vertical plutôt qu'un simple tap qui
+# ouvre/ferme le panneau — voir HandleBar.on_touch_move).
+_DRAG_THRESHOLD = dp(8)
+
 
 class ClippedBox(StencilView, MDBoxLayout):
     """MDBoxLayout dont le contenu est découpé à sa taille, pour que le
@@ -20,8 +26,62 @@ class ClippedBox(StencilView, MDBoxLayout):
 
 
 class HandleBar(ButtonBehavior, AnchorLayout):
-    """Languette cliquable sur toute sa surface (pas seulement son icône
-    chevron) — plus facile à toucher sur tablette/casque."""
+    """
+    Languette cliquable sur toute sa surface (pas seulement son icône
+    chevron) — plus facile à toucher sur tablette/casque. Également
+    déplaçable verticalement le long du bord droit de l'écran (glisser
+    au lieu de taper) : voir on_touch_move, qui bascule en mode
+    déplacement au-delà de _DRAG_THRESHOLD et ajuste alors
+    parent.handle_center_y (lié au pos_hint de cette languette dans le
+    .kv) plutôt que de laisser ButtonBehavior déclencher on_release.
+
+    Pas de mémorisation d'une session à l'autre pour l'instant — la
+    position revient à sa valeur par défaut à chaque redémarrage de
+    l'app.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._drag_start_y = None
+        self._drag_start_center_y = None
+        self._dragging = False
+
+    def on_touch_down(self, touch):
+        handled = super().on_touch_down(touch)
+        if handled and touch.grab_current is self:
+            self._drag_start_y = touch.y
+            self._drag_start_center_y = self.parent.handle_center_y if self.parent else 0.5
+            self._dragging = False
+        return handled
+
+    def on_touch_move(self, touch):
+        if touch.grab_current is self and self._drag_start_y is not None:
+            dy = touch.y - self._drag_start_y
+            if not self._dragging and abs(dy) > _DRAG_THRESHOLD:
+                self._dragging = True
+            if self._dragging and self.parent and self.parent.height:
+                delta_fraction = dy / self.parent.height
+                new_center_y = self._drag_start_center_y + delta_fraction
+                # Marge pour que la languette ne sorte jamais de l'écran.
+                margin = (self.height / 2 + dp(4)) / self.parent.height
+                new_center_y = max(margin, min(1 - margin, new_center_y))
+                self.parent.handle_center_y = new_center_y
+            return True
+        return super().on_touch_move(touch)
+
+    def on_touch_up(self, touch):
+        if touch.grab_current is self:
+            was_dragging = self._dragging
+            self._drag_start_y = None
+            self._dragging = False
+            if was_dragging:
+                # Déplacement : on relâche sans déclencher on_release,
+                # sinon le panneau s'ouvrirait/fermerait après un glisser.
+                touch.ungrab(self)
+                self.last_touch = touch
+                self._do_release()
+                return True
+        return super().on_touch_up(touch)
 
 
 class QuickActionsBar(MDFloatLayout):
@@ -39,6 +99,11 @@ class QuickActionsBar(MDFloatLayout):
     is_open = BooleanProperty(False)
     game_state = StringProperty("disconnected")
     unity_connected = BooleanProperty(False)
+    # Position verticale de la languette (fraction 0-1 de la hauteur de
+    # l'écran), ajustable en la faisant glisser — voir HandleBar. Pas de
+    # mémorisation entre sessions : revient à cette valeur par défaut à
+    # chaque redémarrage de l'app.
+    handle_center_y = NumericProperty(0.4)
     # "Restaurer la vue d'origine" n'a de sens qu'après un "Recentrer la
     # vue" — voir recenter_view()/restore_view(). Propre à cette UI,
     # comme dans PilotageScreen (ui/screens/pilotage_screen.py), qui a sa
