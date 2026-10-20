@@ -705,34 +705,29 @@
                             height: dp(48)
                             on_release: root.switch_controller("DRL_RUN3")
 
-                    MDBoxLayout:
-                        orientation: "horizontal"
-                        spacing: dp(10)
-                        size_hint_y: None
-                        height: self.minimum_height
-
-                        MDTextField:
-                            id: manual_cpm_field
-                            text: str(int(root.manual_cpm))
-                            hint_text: "Cadence manuelle (cubes/min)"
-                            icon_left: "hand-back-right-outline"
-                            mode: "rectangle"
-                            input_filter: "int"
-                            size_hint_x: 0.7
-                            text_color_focus: app.theme_cls.primary_color
-                            hint_text_color_focus: app.theme_cls.primary_color
-                            line_color_focus: app.theme_cls.primary_color
-                            icon_left_color_focus: app.theme_cls.primary_color
-                            on_text_validate: root.on_manual_cpm_submit(self.text)
-                            on_focus: root.on_manual_cpm_submit(self.text) if not self.focus else None
-
-                        MDRaisedButton:
+                        MDFillRoundFlatButton:
                             text: "Manuel"
-                            size_hint_x: 0.3
+                            md_bg_color: GREEN_BG if root.active_controller_button == "MANUAL" else GRAY_BG
+                            theme_text_color: "Custom"
+                            text_color: GREEN_FG if root.active_controller_button == "MANUAL" else GRAY_FG
+                            size_hint_x: 1
                             size_hint_y: None
                             height: dp(48)
-                            pos_hint: {"center_y": 0.5}
                             on_release: root.apply_manual_cpm()
+
+                    MDTextField:
+                        id: manual_cpm_field
+                        text: str(int(root.manual_cpm))
+                        hint_text: "Cadence manuelle (cubes/min)"
+                        icon_left: "hand-back-right-outline"
+                        mode: "rectangle"
+                        input_filter: "int"
+                        text_color_focus: app.theme_cls.primary_color
+                        hint_text_color_focus: app.theme_cls.primary_color
+                        line_color_focus: app.theme_cls.primary_color
+                        icon_left_color_focus: app.theme_cls.primary_color
+                        on_text_validate: root.on_manual_cpm_submit(self.text)
+                        on_focus: root.on_manual_cpm_submit(self.text) if not self.focus else None
 
                     MDLabel:
                         text: "Bascule appliquée à la seconde suivante (PID ou DRL : FC valide requise)"

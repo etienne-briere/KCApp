@@ -314,13 +314,13 @@ class TrackingScreen(MDScreen):
 
     def _controller_button_for_state(self, state, config):
         """
-        Bouton PID/DRL_DEPLOYED/DRL_RUN3 (carte "Contrôleur en cours de
-        partie") correspondant à l'état courant, pour le mettre en
-        évidence (puce verte) — "" si aucun ne correspond (ex: Manuel).
-        PID/PID_WARMUP/PID_BACKUP tournent sur le même algorithme PID (voir
-        discussion), donc tous les trois mettent en évidence le bouton PID.
+        Bouton PID/DRL_DEPLOYED/DRL_RUN3/MANUAL (carte "Contrôleur en cours
+        de partie") correspondant à l'état courant, pour le mettre en
+        évidence (puce verte) — "" si aucun ne correspond. PID/PID_WARMUP/
+        PID_BACKUP tournent sur le même algorithme PID (voir discussion),
+        donc tous les trois mettent en évidence le bouton PID.
         """
-        if state in ("PID", "PID_WARMUP", "PID_BACKUP"):
+        if state in ("PID", "PID_WARMUP", "PID_BACKUP", "LEGACY_PID"):
             return "PID"
         if state == "DRL":
             # Unity ne renvoie que l'état générique "DRL", pas le modèle en
@@ -330,6 +330,12 @@ class TrackingScreen(MDScreen):
             if variant is None:
                 variant = "run3" if config.is_drl_run3 else "deployed"
             return "DRL_RUN3" if variant == "run3" else "DRL_DEPLOYED"
+        if state == "LEGACY_DRL":
+            # Version Unity antérieure au contrôleur hybride : un seul DRL
+            # possible, Run 3 n'a pas de sens ici.
+            return "DRL_DEPLOYED"
+        if state == "MANUAL":
+            return "MANUAL"
         return ""
 
     def _sync_pid_backup(self, config):
@@ -464,24 +470,42 @@ class TrackingScreen(MDScreen):
         cfg.drl_model = drl_model
         cfg.pid_backup = is_active
 
-    def on_manual_cpm_submit(self, text):
-        """Champ cadence manuelle validé (n'envoie rien : le bouton Manuel applique)"""
+    def _parse_manual_cpm(self, text):
+        """Valide/clampe la cadence manuelle saisie et met à jour la propriété + le champ. None si invalide."""
         try:
             value = int(text)
         except ValueError:
             toast("Valeur invalide")
             self.ids.manual_cpm_field.text = str(int(self.manual_cpm))
-            return
+            return None
         value = max(30, min(200, value))
         self.manual_cpm = value
         self.ids.manual_cpm_field.text = str(value)
+        return value
+
+    def on_manual_cpm_submit(self, text):
+        """
+        Champ cadence manuelle validé : si le mode Manuel est déjà actif,
+        applique directement la nouvelle valeur (pas besoin de recliquer
+        sur le bouton) ; sinon se contente de mémoriser la valeur, en
+        attendant que le bouton Manuel passe réellement en mode manuel.
+        """
+        value = self._parse_manual_cpm(text)
+        if value is not None and self.active_controller_button == "MANUAL":
+            self._send_manual_cpm()
 
     def apply_manual_cpm(self):
         """Bouton Manuel : passe en cadence manuelle (ou change la cadence)"""
-        self.on_manual_cpm_submit(self.ids.manual_cpm_field.text)
+        if self._parse_manual_cpm(self.ids.manual_cpm_field.text) is None:
+            return
+        self._send_manual_cpm()
+
+    def _send_manual_cpm(self):
         if self.udp_controller and self.udp_controller.set_manual_cpm(self.manual_cpm):
             toast(f"Cadence manuelle : {int(self.manual_cpm)} cubes/min")
             logger.info(f"📤 Cadence manuelle : {self.manual_cpm}")
+            # Mise à jour optimiste, comme switch_controller — sans attendre l'écho d'Unity.
+            self.active_controller_button = "MANUAL"
         else:
             toast("❌ Échec de l'envoi")
 
