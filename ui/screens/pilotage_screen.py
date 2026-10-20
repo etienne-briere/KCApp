@@ -710,13 +710,15 @@ class PilotageScreen(MDScreen):
 
     def on_pid_warmup_toggle(self, is_active):
         """
-        Case PID d'échauffement (modes DRL) : ne prend effet qu'au prochain
-        lancement, donc redémarre la partie (avec confirmation) si elle est
-        Playing/Paused ; sinon applique directement.
+        Bouton PID d'échauffement (modes DRL) : ne prend effet qu'au
+        prochain lancement, donc redémarre la partie (avec confirmation) si
+        elle est Playing/Paused ; sinon applique directement. Rien à
+        annuler si le dialogue est rejeté — le bouton (contrairement à une
+        case à cocher) n'a pas d'état propre : son libellé/couleur suivent
+        pid_warmup directement, qui n'a pas encore changé.
         """
         if is_active == self.pid_warmup:
             return
-        previous = self.pid_warmup
 
         def _apply():
             self.pid_warmup = is_active
@@ -733,7 +735,6 @@ class PilotageScreen(MDScreen):
         self._confirm_restart(
             "Ce réglage ne prend effet qu'au prochain lancement : redémarrer la partie maintenant ?",
             on_confirm=_on_confirm,
-            on_cancel=lambda: setattr(self.ids.pid_warmup_checkbox, "active", previous),
         )
 
     def on_pid_backup_toggle(self, is_active):
