@@ -185,6 +185,10 @@ class TrackingScreen(MDScreen):
     controller_state_label = StringProperty("") # contrôleur actif en cours de partie (texte affiché)
     controller_reason_label = StringProperty("") # raison de la dernière bascule
     manual_cpm = NumericProperty(60) # cadence du mode manuel (cubes/min)
+    # Bouton PID/DRL_DEPLOYED/DRL_RUN3 à styliser comme actif (puce verte),
+    # "" si aucun ne correspond à l'état courant (ex: Manuel) — voir
+    # _controller_button_for_state.
+    active_controller_button = StringProperty("")
     # Toggle "PID de secours" sous le graphique (mode DRL) : bascule
     # automatique si le DRL entre en cycle limite, modifiable en cours de partie.
     pid_backup = BooleanProperty(False)
@@ -217,7 +221,18 @@ class TrackingScreen(MDScreen):
 
         # UDP Controller
         self.udp_controller = None
-    
+
+        # Dernier modèle DRL choisi manuellement via les boutons DRL/DRL Run 3
+        # ("deployed"/"run3", voir switch_controller) — Unity ne renvoie que
+        # l'état générique "DRL" (pas lequel des deux modèles), donc
+        # config.is_drl_run3 (le modèle CONFIGURÉ pour la partie, pas
+        # forcément celui en cours après une bascule manuelle) ne suffit
+        # pas à savoir lequel mettre en évidence. None tant qu'aucune
+        # bascule manuelle n'a eu lieu dans cette partie (on se fie alors à
+        # config.is_drl_run3) — remis à None en sortant de Playing (voir
+        # _sync_controller_state) pour repartir sur la config à la prochaine partie.
+        self._manual_drl_variant = None
+
     def on_kv_post(self, base_widget):
         """
         Appelé automatiquement quand le kv est chargé
@@ -290,9 +305,32 @@ class TrackingScreen(MDScreen):
             self.controller_state_label = self.CONTROLLER_STATE_LABELS.get(state, state)
             reason = config.controller_switch_reason or ""
             self.controller_reason_label = self.SWITCH_REASON_LABELS.get(reason, reason)
+            self.active_controller_button = self._controller_button_for_state(state, config)
         elif self.game_state != "Playing":
             self.controller_state_label = ""
             self.controller_reason_label = ""
+            self.active_controller_button = ""
+            self._manual_drl_variant = None
+
+    def _controller_button_for_state(self, state, config):
+        """
+        Bouton PID/DRL_DEPLOYED/DRL_RUN3 (carte "Contrôleur en cours de
+        partie") correspondant à l'état courant, pour le mettre en
+        évidence (puce verte) — "" si aucun ne correspond (ex: Manuel).
+        PID/PID_WARMUP/PID_BACKUP tournent sur le même algorithme PID (voir
+        discussion), donc tous les trois mettent en évidence le bouton PID.
+        """
+        if state in ("PID", "PID_WARMUP", "PID_BACKUP"):
+            return "PID"
+        if state == "DRL":
+            # Unity ne renvoie que l'état générique "DRL", pas le modèle en
+            # cours : on se fie à la dernière bascule manuelle de cette
+            # partie si elle existe, sinon au modèle configuré.
+            variant = self._manual_drl_variant
+            if variant is None:
+                variant = "run3" if config.is_drl_run3 else "deployed"
+            return "DRL_RUN3" if variant == "run3" else "DRL_DEPLOYED"
+        return ""
 
     def _sync_pid_backup(self, config):
         """Toggle PID de secours : reflète le réglage courant du contrôleur hybride"""
@@ -393,6 +431,12 @@ class TrackingScreen(MDScreen):
         if self.udp_controller.set_controller_state(state):
             toast(f"Bascule demandée : {label}")
             logger.info(f"📤 Bascule contrôleur demandée : {state}")
+            # Mise à jour optimiste du bouton en évidence — sans attendre
+            # l'écho d'Unity, qui ne distingue pas DRL/DRL Run 3 dans son
+            # état générique "DRL" (voir _controller_button_for_state).
+            self.active_controller_button = state
+            if state in ("DRL_DEPLOYED", "DRL_RUN3"):
+                self._manual_drl_variant = "run3" if state == "DRL_RUN3" else "deployed"
         else:
             toast("❌ Échec de l'envoi")
 

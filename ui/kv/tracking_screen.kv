@@ -672,22 +672,34 @@
                         size_hint_y: None
                         height: dp(48)
 
-                        MDRectangleFlatButton:
+                        # ---- PID / DRL / DRL Run 3 : puce remplie verte pour celui
+                        # réellement actif (root.active_controller_button), grise sinon —
+                        # même style que PID warmup dans Pilotage ----
+                        MDFillRoundFlatButton:
                             text: "PID"
+                            md_bg_color: GREEN_BG if root.active_controller_button == "PID" else GRAY_BG
+                            theme_text_color: "Custom"
+                            text_color: GREEN_FG if root.active_controller_button == "PID" else GRAY_FG
                             size_hint_x: 1
                             size_hint_y: None
                             height: dp(48)
                             on_release: root.switch_controller("PID")
 
-                        MDRectangleFlatButton:
+                        MDFillRoundFlatButton:
                             text: "DRL"
+                            md_bg_color: GREEN_BG if root.active_controller_button == "DRL_DEPLOYED" else GRAY_BG
+                            theme_text_color: "Custom"
+                            text_color: GREEN_FG if root.active_controller_button == "DRL_DEPLOYED" else GRAY_FG
                             size_hint_x: 1
                             size_hint_y: None
                             height: dp(48)
                             on_release: root.switch_controller("DRL_DEPLOYED")
 
-                        MDRectangleFlatButton:
+                        MDFillRoundFlatButton:
                             text: "DRL Run 3"
+                            md_bg_color: GREEN_BG if root.active_controller_button == "DRL_RUN3" else GRAY_BG
+                            theme_text_color: "Custom"
+                            text_color: GREEN_FG if root.active_controller_button == "DRL_RUN3" else GRAY_FG
                             size_hint_x: 1
                             size_hint_y: None
                             height: dp(48)
