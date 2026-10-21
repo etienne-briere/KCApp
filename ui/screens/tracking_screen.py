@@ -338,7 +338,12 @@ class TrackingScreen(MDScreen):
             colors = self._BADGE_COLORS[category]
             self.controller_badge_fg = colors["fg"]
             self.controller_badge_bg = colors["bg"]
-            self.controller_badge_text = self._BADGE_TEXT_OVERRIDE.get(category, self.controller_reason_label)
+            text = self._BADGE_TEXT_OVERRIDE.get(category, self.controller_reason_label)
+            # Majuscule initiale uniquement (pas .capitalize(), qui mettrait
+            # en minuscules le reste — ex. "PID saturé" ne doit pas devenir
+            # "Pid saturé") : les raisons de SWITCH_REASON_LABELS commencent
+            # toutes en minuscule.
+            self.controller_badge_text = text[:1].upper() + text[1:]
         elif self.game_state != "Playing":
             self.controller_state_label = ""
             self.controller_reason_label = ""
