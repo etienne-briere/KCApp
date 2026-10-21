@@ -541,47 +541,87 @@
                             valign: "center"
 
                     # ---- Aucun / PID / DRL : qui pilote pendant l'échauffement
-                    # (rampe de cible). DRL masqué en mode PID pur, où le choix
-                    # ne porte que sur warmup_enabled (voir on_warmup_mode_select) ----
+                    # (rampe de cible). Deux rangées distinctes (plutôt qu'un
+                    # 3e bouton réduit à largeur 0 en mode PID pur) : un enfant
+                    # masqué dans un MDBoxLayout laisse un espacement fantôme
+                    # et le bouton KivyMD a sa propre logique de largeur, donc
+                    # size_hint_x seul ne garantit pas un partage pile à 50/50.
+                    # Les deux rangées sont elles-mêmes regroupées dans CE
+                    # conteneur (spacing 0) pour que la Card (spacing dp(12))
+                    # ne voie qu'une seule "case" boutons : sinon la rangée
+                    # masquée garderait ses deux espacements de part et
+                    # d'autre, doublant le vide au-dessus/en-dessous.
                     MDBoxLayout:
-                        orientation: "horizontal"
-                        spacing: dp(10)
+                        orientation: "vertical"
                         size_hint_y: None
-                        height: dp(48)
+                        height: self.minimum_height
 
-                        MDFillRoundFlatButton:
-                            text: "Aucun"
-                            md_bg_color: RED_BG if not root.warmup_enabled else GRAY_BG
-                            theme_text_color: "Custom"
-                            text_color: RED_FG if not root.warmup_enabled else GRAY_FG
-                            size_hint_x: 1
+                        MDBoxLayout:
+                            orientation: "horizontal"
+                            spacing: dp(10)
                             size_hint_y: None
-                            height: dp(48)
-                            disabled: not root.unity_connected
-                            on_release: root.on_warmup_mode_select("none")
-
-                        MDFillRoundFlatButton:
-                            text: "PID"
-                            md_bg_color: GREEN_BG if root.warmup_enabled and (root.pid_warmup or root.pending_model not in root.DRL_MODES) else GRAY_BG
-                            theme_text_color: "Custom"
-                            text_color: GREEN_FG if root.warmup_enabled and (root.pid_warmup or root.pending_model not in root.DRL_MODES) else GRAY_FG
-                            size_hint_x: 1
-                            size_hint_y: None
-                            height: dp(48)
-                            disabled: not root.unity_connected
-                            on_release: root.on_warmup_mode_select("pid")
-
-                        MDFillRoundFlatButton:
-                            text: "DRL"
-                            md_bg_color: GREEN_BG if root.warmup_enabled and not root.pid_warmup else GRAY_BG
-                            theme_text_color: "Custom"
-                            text_color: GREEN_FG if root.warmup_enabled and not root.pid_warmup else GRAY_FG
-                            size_hint_x: 1 if root.pending_model in root.DRL_MODES else 0
-                            size_hint_y: None
-                            height: dp(48)
+                            height: dp(48) if root.pending_model in root.DRL_MODES else 0
                             opacity: 1 if root.pending_model in root.DRL_MODES else 0
                             disabled: not root.unity_connected or root.pending_model not in root.DRL_MODES
-                            on_release: root.on_warmup_mode_select("drl")
+
+                            MDFillRoundFlatButton:
+                                text: "Aucun"
+                                md_bg_color: RED_BG if not root.warmup_enabled else GRAY_BG
+                                theme_text_color: "Custom"
+                                text_color: RED_FG if not root.warmup_enabled else GRAY_FG
+                                size_hint_x: 1
+                                size_hint_y: None
+                                height: dp(48)
+                                on_release: root.on_warmup_mode_select("none")
+
+                            MDFillRoundFlatButton:
+                                text: "PID"
+                                md_bg_color: GREEN_BG if root.warmup_enabled and root.pid_warmup else GRAY_BG
+                                theme_text_color: "Custom"
+                                text_color: GREEN_FG if root.warmup_enabled and root.pid_warmup else GRAY_FG
+                                size_hint_x: 1
+                                size_hint_y: None
+                                height: dp(48)
+                                on_release: root.on_warmup_mode_select("pid")
+
+                            MDFillRoundFlatButton:
+                                text: "DRL"
+                                md_bg_color: GREEN_BG if root.warmup_enabled and not root.pid_warmup else GRAY_BG
+                                theme_text_color: "Custom"
+                                text_color: GREEN_FG if root.warmup_enabled and not root.pid_warmup else GRAY_FG
+                                size_hint_x: 1
+                                size_hint_y: None
+                                height: dp(48)
+                                on_release: root.on_warmup_mode_select("drl")
+
+                        # ---- Aucun / PID : mode PID pur, le DRL n'a pas de sens ----
+                        MDBoxLayout:
+                            orientation: "horizontal"
+                            spacing: dp(10)
+                            size_hint_y: None
+                            height: dp(48) if root.pending_model not in root.DRL_MODES else 0
+                            opacity: 1 if root.pending_model not in root.DRL_MODES else 0
+                            disabled: not root.unity_connected or root.pending_model in root.DRL_MODES
+
+                            MDFillRoundFlatButton:
+                                text: "Aucun"
+                                md_bg_color: RED_BG if not root.warmup_enabled else GRAY_BG
+                                theme_text_color: "Custom"
+                                text_color: RED_FG if not root.warmup_enabled else GRAY_FG
+                                size_hint_x: 1
+                                size_hint_y: None
+                                height: dp(48)
+                                on_release: root.on_warmup_mode_select("none")
+
+                            MDFillRoundFlatButton:
+                                text: "PID"
+                                md_bg_color: GREEN_BG if root.warmup_enabled else GRAY_BG
+                                theme_text_color: "Custom"
+                                text_color: GREEN_FG if root.warmup_enabled else GRAY_FG
+                                size_hint_x: 1
+                                size_hint_y: None
+                                height: dp(48)
+                                on_release: root.on_warmup_mode_select("pid")
 
                     # ---- Durée du warmup : toujours visible, désactivée si "Aucun" ----
                     MDTextField:
