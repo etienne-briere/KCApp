@@ -4,16 +4,108 @@
 <GameScreen>:
     MDBoxLayout:
         orientation: "vertical"
-        md_bg_color: "black"
+        md_bg_color: app.theme_cls.bg_normal
 
+        # ===== Réglages du flux : images/seconde et résolution (appliqués à chaud) =====
+        MDBoxLayout:
+            orientation: "horizontal"
+            spacing: dp(6)
+            padding: dp(6)
+            size_hint: 1, None
+            height: dp(48)
+
+            MDFillRoundFlatButton:
+                text: "2 img/s"
+                font_size: "13sp"
+                md_bg_color: GREEN_BG if root.fps_choice == 2 else GRAY_BG
+                theme_text_color: "Custom"
+                text_color: GREEN_FG if root.fps_choice == 2 else GRAY_FG
+                size_hint_x: 1
+                size_hint_y: None
+                height: dp(36)
+                on_release: root.set_stream_option(fps=2)
+
+            MDFillRoundFlatButton:
+                text: "4 img/s"
+                font_size: "13sp"
+                md_bg_color: GREEN_BG if root.fps_choice == 4 else GRAY_BG
+                theme_text_color: "Custom"
+                text_color: GREEN_FG if root.fps_choice == 4 else GRAY_FG
+                size_hint_x: 1
+                size_hint_y: None
+                height: dp(36)
+                on_release: root.set_stream_option(fps=4)
+
+            MDFillRoundFlatButton:
+                text: "8 img/s"
+                font_size: "13sp"
+                md_bg_color: GREEN_BG if root.fps_choice == 8 else GRAY_BG
+                theme_text_color: "Custom"
+                text_color: GREEN_FG if root.fps_choice == 8 else GRAY_FG
+                size_hint_x: 1
+                size_hint_y: None
+                height: dp(36)
+                on_release: root.set_stream_option(fps=8)
+
+            MDFillRoundFlatButton:
+                text: "12 img/s"
+                font_size: "13sp"
+                md_bg_color: GREEN_BG if root.fps_choice == 12 else GRAY_BG
+                theme_text_color: "Custom"
+                text_color: GREEN_FG if root.fps_choice == 12 else GRAY_FG
+                size_hint_x: 1
+                size_hint_y: None
+                height: dp(36)
+                on_release: root.set_stream_option(fps=12)
+
+            Widget:
+                size_hint_x: None
+                width: dp(12)
+
+            MDFillRoundFlatButton:
+                text: "320 px"
+                font_size: "13sp"
+                md_bg_color: GREEN_BG if root.width_choice == 320 else GRAY_BG
+                theme_text_color: "Custom"
+                text_color: GREEN_FG if root.width_choice == 320 else GRAY_FG
+                size_hint_x: 1
+                size_hint_y: None
+                height: dp(36)
+                on_release: root.set_stream_option(width=320)
+
+            MDFillRoundFlatButton:
+                text: "480 px"
+                font_size: "13sp"
+                md_bg_color: GREEN_BG if root.width_choice == 480 else GRAY_BG
+                theme_text_color: "Custom"
+                text_color: GREEN_FG if root.width_choice == 480 else GRAY_FG
+                size_hint_x: 1
+                size_hint_y: None
+                height: dp(36)
+                on_release: root.set_stream_option(width=480)
+
+            MDFillRoundFlatButton:
+                text: "640 px"
+                font_size: "13sp"
+                md_bg_color: GREEN_BG if root.width_choice == 640 else GRAY_BG
+                theme_text_color: "Custom"
+                text_color: GREEN_FG if root.width_choice == 640 else GRAY_FG
+                size_hint_x: 1
+                size_hint_y: None
+                height: dp(36)
+                on_release: root.set_stream_option(width=640)
+
+        # ===== Image : pleine largeur, à son format réel (pas de bandes noires) =====
         FloatLayout:
+            size_hint: 1, None
+            height: game_image.height
 
-            # ===== Image =====
             Image:
                 id: game_image
-                fit_mode: "contain"
-                size_hint: 1, 1
-                pos_hint: {"x": 0, "y": 0}
+                fit_mode: "fill"
+                size_hint: 1, None
+                height: self.width * self.texture_size[1] / self.texture_size[0] if self.texture and self.texture_size[0] else self.width * 9 / 16
+                pos_hint: {"x": 0, "top": 1}
 
             # ===== Message quand aucune image n'arrive =====
             MDLabel:
@@ -21,110 +113,17 @@
                 halign: "center"
                 valign: "center"
                 font_style: "H5"
-                theme_text_color: "Custom"
-                text_color: 1, 1, 1, 0.8
                 size_hint: 1, 1
                 pos_hint: {"x": 0, "y": 0}
                 opacity: 0 if root.has_signal else 1
 
-            # ===== Bandeau d'état (img/s, résolution, débit) =====
-            MDLabel:
-                text: root.status_text
-                halign: "center"
-                font_style: "Caption"
-                theme_text_color: "Custom"
-                text_color: 1, 1, 1, 0.7
-                size_hint: 1, None
-                height: dp(24)
-                pos_hint: {"x": 0, "y": 0}
+        # ===== Bandeau d'état (img/s, résolution, débit) =====
+        MDLabel:
+            text: root.status_text
+            halign: "center"
+            font_style: "Caption"
+            theme_text_color: "Secondary"
+            size_hint: 1, None
+            height: dp(28)
 
-            # ===== Réglages du flux : images/seconde et résolution (appliqués à chaud) =====
-            MDBoxLayout:
-                orientation: "horizontal"
-                spacing: dp(6)
-                padding: dp(6)
-                size_hint: 1, None
-                height: dp(48)
-                pos_hint: {"x": 0, "top": 1}
-                md_bg_color: 0, 0, 0, 0.45
-
-                MDFillRoundFlatButton:
-                    text: "2 img/s"
-                    font_size: "13sp"
-                    md_bg_color: GREEN_BG if root.fps_choice == 2 else GRAY_BG
-                    theme_text_color: "Custom"
-                    text_color: GREEN_FG if root.fps_choice == 2 else GRAY_FG
-                    size_hint_x: 1
-                    size_hint_y: None
-                    height: dp(36)
-                    on_release: root.set_stream_option(fps=2)
-
-                MDFillRoundFlatButton:
-                    text: "4 img/s"
-                    font_size: "13sp"
-                    md_bg_color: GREEN_BG if root.fps_choice == 4 else GRAY_BG
-                    theme_text_color: "Custom"
-                    text_color: GREEN_FG if root.fps_choice == 4 else GRAY_FG
-                    size_hint_x: 1
-                    size_hint_y: None
-                    height: dp(36)
-                    on_release: root.set_stream_option(fps=4)
-
-                MDFillRoundFlatButton:
-                    text: "8 img/s"
-                    font_size: "13sp"
-                    md_bg_color: GREEN_BG if root.fps_choice == 8 else GRAY_BG
-                    theme_text_color: "Custom"
-                    text_color: GREEN_FG if root.fps_choice == 8 else GRAY_FG
-                    size_hint_x: 1
-                    size_hint_y: None
-                    height: dp(36)
-                    on_release: root.set_stream_option(fps=8)
-
-                MDFillRoundFlatButton:
-                    text: "12 img/s"
-                    font_size: "13sp"
-                    md_bg_color: GREEN_BG if root.fps_choice == 12 else GRAY_BG
-                    theme_text_color: "Custom"
-                    text_color: GREEN_FG if root.fps_choice == 12 else GRAY_FG
-                    size_hint_x: 1
-                    size_hint_y: None
-                    height: dp(36)
-                    on_release: root.set_stream_option(fps=12)
-
-                Widget:
-                    size_hint_x: None
-                    width: dp(12)
-
-                MDFillRoundFlatButton:
-                    text: "320 px"
-                    font_size: "13sp"
-                    md_bg_color: GREEN_BG if root.width_choice == 320 else GRAY_BG
-                    theme_text_color: "Custom"
-                    text_color: GREEN_FG if root.width_choice == 320 else GRAY_FG
-                    size_hint_x: 1
-                    size_hint_y: None
-                    height: dp(36)
-                    on_release: root.set_stream_option(width=320)
-
-                MDFillRoundFlatButton:
-                    text: "480 px"
-                    font_size: "13sp"
-                    md_bg_color: GREEN_BG if root.width_choice == 480 else GRAY_BG
-                    theme_text_color: "Custom"
-                    text_color: GREEN_FG if root.width_choice == 480 else GRAY_FG
-                    size_hint_x: 1
-                    size_hint_y: None
-                    height: dp(36)
-                    on_release: root.set_stream_option(width=480)
-
-                MDFillRoundFlatButton:
-                    text: "640 px"
-                    font_size: "13sp"
-                    md_bg_color: GREEN_BG if root.width_choice == 640 else GRAY_BG
-                    theme_text_color: "Custom"
-                    text_color: GREEN_FG if root.width_choice == 640 else GRAY_FG
-                    size_hint_x: 1
-                    size_hint_y: None
-                    height: dp(36)
-                    on_release: root.set_stream_option(width=640)
+        Widget:
