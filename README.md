@@ -33,6 +33,8 @@ Nom de build Android : `APEX Control` (`org.m2s.apex.apex_control`, voir
    module [quest_control](quest_control/README.md), intégré à l'app via
    `app/network/quest_client.py` et aussi utilisable en standalone depuis un
    poste Windows.
+7. **Affiche la vue du joueur** (onglet « Vue joueur ») : images JPEG envoyées par Unity en UDP, images perdues
+   abandonnées plutôt qu'attendues — voir [STREAM_VUE_JOUEUR.md](STREAM_VUE_JOUEUR.md).
 
 ## Architecture du dépôt
 
