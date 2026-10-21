@@ -697,19 +697,22 @@ class PilotageScreen(MDScreen):
     def _send_controller_setup(self, model_name):
         """Envoie modèle DRL + PID d'échauffement + PID de secours (pris en compte au prochain lancement)"""
         drl_model = "run3" if model_name == "DRL_RUN3" else "deployed"
-        cfg = self.session.config
         if self.udp_controller and self.udp_controller.set_controller_setup(drl_model, self.pid_warmup, self.pid_backup):
             logger.info(f"📤 Contrôleur : {drl_model}, PID échauffement={self.pid_warmup}, PID secours={self.pid_backup}")
-        # Miroir local de la traduction faite par Unity (HybridControllerPrefs.ApplyMenuChoice)
-        if drl_model == "deployed" and not self.pid_warmup and not self.pid_backup:
+        self._mirror_controller_config(drl_model, self.pid_warmup, self.pid_backup)
+
+    def _mirror_controller_config(self, drl_model, pid_warmup, pid_backup):
+        """Miroir local de la traduction faite par Unity (HybridControllerPrefs.ApplyMenuChoice)"""
+        cfg = self.session.config
+        if drl_model == "deployed" and not pid_warmup and not pid_backup:
             cfg.controller_config = "off"
-        elif drl_model == "run3" and not self.pid_backup:
-            cfg.controller_config = "drl_run3" if self.pid_warmup else "drl_run3_no_warmup"
+        elif drl_model == "run3" and not pid_backup:
+            cfg.controller_config = "drl_run3" if pid_warmup else "drl_run3_no_warmup"
         else:
             cfg.controller_config = "custom"
         cfg.drl_model = drl_model
-        cfg.pid_warmup = self.pid_warmup
-        cfg.pid_backup = self.pid_backup
+        cfg.pid_warmup = pid_warmup
+        cfg.pid_backup = pid_backup
 
     def _on_controller_option_changed(self):
         # Envoi immédiat seulement si le mode DRL est déjà appliqué ; sinon il
@@ -747,11 +750,25 @@ class PilotageScreen(MDScreen):
         )
 
     def on_pid_backup_toggle(self, is_active):
-        """Case PID de secours (modes DRL) : applicable en cours de partie"""
+        """
+        Case PID de secours (modes DRL) : si une partie est déjà en cours
+        (Playing), envoie directement backupPid (appliqué en direct côté
+        Unity) plutôt que de repartir avec tout controllerSetup (qui ne
+        prendrait effet qu'au prochain lancement/redémarrage) ; sinon
+        repart avec le reste du contrôleur via controllerSetup comme
+        d'habitude.
+        """
         if is_active == self.pid_backup:
             return
         self.pid_backup = is_active
-        self._on_controller_option_changed()
+
+        if self.game_state == "Playing":
+            cfg = self.session.config
+            if self.udp_controller and self.udp_controller.set_pid_backup(is_active):
+                logger.info(f"📤 PID de secours (direct) : {'ON' if is_active else 'OFF'}")
+            self._mirror_controller_config(cfg.drl_model, self.pid_warmup, is_active)
+        else:
+            self._on_controller_option_changed()
 
     # ========== VITESSE DES BRIQUES ==========
 

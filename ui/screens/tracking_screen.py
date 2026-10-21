@@ -447,7 +447,12 @@ class TrackingScreen(MDScreen):
             toast("❌ Échec de l'envoi")
 
     def on_pid_backup_toggle(self, is_active):
-        """Toggle PID de secours sous le graphique (mode DRL) : envoyé à Unity, modifiable en cours de partie"""
+        """
+        Toggle PID de secours sous le graphique (mode DRL) : cette carte
+        n'est visible que pendant une partie en cours (game_state ==
+        "Playing"), donc toujours envoyé en direct via backupPid — jamais
+        besoin de controllerSetup (prochain lancement) ici.
+        """
         if is_active == self.pid_backup:
             return
         self.pid_backup = is_active
@@ -455,12 +460,12 @@ class TrackingScreen(MDScreen):
         cfg = self.session.config
         drl_model = "run3" if cfg.is_drl_run3 else "deployed"
         pid_warmup = bool(cfg.pid_warmup)
-        if self.udp_controller and self.udp_controller.set_controller_setup(drl_model, pid_warmup, is_active):
-            logger.info(f"📤 PID de secours : {'ON' if is_active else 'OFF'}")
+        if self.udp_controller and self.udp_controller.set_pid_backup(is_active):
+            logger.info(f"📤 PID de secours (direct) : {'ON' if is_active else 'OFF'}")
         else:
             toast("❌ Échec de l'envoi")
         # Miroir local de la traduction faite par Unity (HybridControllerPrefs.ApplyMenuChoice),
-        # comme _send_controller_setup dans pilotage_screen.py.
+        # comme _mirror_controller_config dans pilotage_screen.py.
         if drl_model == "deployed" and not pid_warmup and not is_active:
             cfg.controller_config = "off"
         elif drl_model == "run3" and not is_active:

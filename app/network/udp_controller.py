@@ -167,6 +167,14 @@ class UDPController:
         value = f"{drl_model},{1 if pid_warmup else 0},{1 if pid_backup else 0}"
         return self.send_command("controllerSetup", value)
 
+    def set_pid_backup(self, enabled: bool) -> bool:
+        """
+        Active/désactive le PID de secours en direct, pendant une partie
+        déjà en cours (contrairement à controllerSetup, qui ne prend effet
+        qu'au prochain lancement/redémarrage).
+        """
+        return self.send_command("backupPid", "1" if enabled else "0")
+
     def set_controller_state(self, state: str) -> bool:
         """
         Bascule de contrôleur EN COURS DE PARTIE (appliquée à la seconde suivante) :
