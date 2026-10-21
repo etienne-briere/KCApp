@@ -185,5 +185,36 @@ class RecepteurSocketTest(unittest.TestCase):
             s.close()
 
 
+
+
+class StreamSettingsTest(unittest.TestCase):
+    def test_defaults_save_and_reload(self):
+        import os
+        import tempfile
+        from app.data.stream_settings import StreamSettings
+        from config import STREAM_FPS, STREAM_WIDTH
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "s.json")
+            s = StreamSettings(path)
+            self.assertEqual((s.fps, s.width), (STREAM_FPS, STREAM_WIDTH))
+            s.fps, s.width = 4, 640
+            s.save()
+            s2 = StreamSettings(path)
+            self.assertEqual((s2.fps, s2.width), (4, 640))
+
+    def test_invalid_values_ignored(self):
+        import json
+        import os
+        import tempfile
+        from app.data.stream_settings import StreamSettings
+        from config import STREAM_FPS, STREAM_WIDTH
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "s.json")
+            with open(path, "w") as f:
+                json.dump({"fps": 99, "width": "x"}, f)
+            s = StreamSettings(path)
+            self.assertEqual((s.fps, s.width), (STREAM_FPS, STREAM_WIDTH))
+
+
 if __name__ == "__main__":
     unittest.main()

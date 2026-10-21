@@ -22,9 +22,10 @@ from kivy.core.image import Image as CoreImage
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty
 from kivymd.uix.screen import MDScreen
 
+from app.data.stream_settings import StreamSettings
 from app.network.game_stream_receiver import GameStreamReceiver
-from config import (STREAM_FLIP_VERTICAL, STREAM_FPS, STREAM_LEASE_RENEW_S, STREAM_NO_SIGNAL_S,
-                    STREAM_QUALITY, STREAM_WIDTH, UDP_PORT_STREAM)
+from config import (STREAM_FLIP_VERTICAL, STREAM_LEASE_RENEW_S, STREAM_NO_SIGNAL_S,
+                    STREAM_QUALITY, UDP_PORT_STREAM)
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -40,11 +41,16 @@ class GameScreen(MDScreen):
     stream_width = NumericProperty(0)
     stream_height = NumericProperty(0)
     status_text = StringProperty("")
+    fps_choice = NumericProperty(0)           # img/s demandées (bouton sélectionné)
+    width_choice = NumericProperty(0)         # largeur demandée en px (bouton sélectionné)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.udp_discovery = None
         self.udp_controller = None
+        self.settings = StreamSettings()
+        self.fps_choice = self.settings.fps
+        self.width_choice = self.settings.width
         self.receiver = None
         self._last_seq = 0
         self._last_frame_time = 0.0
@@ -104,8 +110,19 @@ class GameScreen(MDScreen):
             return
         if not self.is_streaming:
             # Premier START (ou reprise après une coupure) : on renvoie aussi les réglages.
-            self.udp_controller.set_stream_config(STREAM_FPS, STREAM_WIDTH, STREAM_QUALITY)
+            self.udp_controller.set_stream_config(self.fps_choice, self.width_choice, STREAM_QUALITY)
         self.is_streaming = bool(self.udp_controller.set_stream_game("START"))
+
+    def set_stream_option(self, fps=None, width=None):
+        """Choix de l'utilisateur : mémorisé, et appliqué tout de suite si le flux est en cours."""
+        if fps is not None:
+            self.fps_choice = self.settings.fps = int(fps)
+        if width is not None:
+            self.width_choice = self.settings.width = int(width)
+        self.settings.save()
+        if self.is_streaming and self.udp_controller:
+            # Unity applique stream_config à chaud (un changement de largeur recrée ses tampons).
+            self.udp_controller.set_stream_config(self.fps_choice, self.width_choice, STREAM_QUALITY)
 
     # ========== MISE À JOUR DES IMAGES ==========
 

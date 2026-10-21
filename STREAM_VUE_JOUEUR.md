@@ -30,8 +30,8 @@ Dans [config.py](config.py) (envoyés à Unity à chaque démarrage du flux) :
 
 | Réglage | Défaut | Rôle |
 |---|---|---|
-| `STREAM_FPS` | 8 | images/s (1 à 15). **Première chose à baisser si le jeu saccade.** |
-| `STREAM_WIDTH` | 480 | largeur en pixels (240 à 960), hauteur en 16:9 |
+| `STREAM_FPS` | 8 | valeur par défaut au premier lancement ; ensuite le choix fait à l'écran est mémorisé (`stream_settings.json`). images/s (1 à 15). **Première chose à baisser si le jeu saccade.** |
+| `STREAM_WIDTH` | 480 | valeur par défaut (idem, choix mémorisé). largeur en pixels (240 à 960), hauteur en 16:9 |
 | `STREAM_QUALITY` | 50 | qualité JPEG (20 à 90) |
 | `STREAM_FLIP_VERTICAL` | False | **mettre à True si l'image apparaît à l'envers** (voir ci-dessous) |
 | `UDP_PORT_STREAM` | 5007 | port de réception sur la tablette (identique côté Unity : `GameStreamer.DefaultPort`) |
@@ -62,3 +62,11 @@ passe par Kivy (SDL2), car Pillow n'est pas dans le build Android.
    dans le pare-feu pour le port UDP 5007.
 4. **Caméra** : Unity copie `Camera.main`. Si aucune caméra n'est taguée `MainCamera`, la première caméra active qui rend
    à l'écran est utilisée ; le message `[Stream] ...` du logcat indique ce qui se passe.
+
+## Choix de l'image/seconde et de la résolution
+
+En haut de l'écran « Vue joueur », deux groupes de boutons (comme dans APA Control) :
+**2 / 4 / 8 / 12 img/s** et **320 / 480 / 640 px**. Le choix est envoyé tout de suite à Unity
+(`stream_config`, appliqué à chaud sans relancer le flux), mémorisé dans `stream_settings.json`
+et réutilisé au prochain lancement. Les valeurs proposées se changent dans `config.py`
+(`STREAM_FPS_CHOICES`, `STREAM_WIDTH_CHOICES` ; mettre aussi les boutons du `.kv` en cohérence).
