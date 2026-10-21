@@ -598,22 +598,48 @@ class PilotageScreen(MDScreen):
                                 "adaptive_max_cpm", 0, None, "set_adaptive_max_cpm",
                                 "Cpm max adaptatif")
 
-    def on_warmup_toggle(self, is_active):
+    def _apply_warmup_enabled(self, is_active):
+        """Applique directement warmup_enabled (voir on_warmup_mode_select pour la confirmation de redémarrage)"""
+        self.warmup_enabled = is_active
+        self.session.config.warmup_enabled = is_active
+        logger.info(f"🔥 Warmup: {'ON' if is_active else 'OFF'}")
+        if self.udp_controller:
+            self.udp_controller.set_warmup_enabled(is_active)
+
+    def _apply_pid_warmup(self, is_active):
+        """Applique directement pid_warmup (voir on_warmup_mode_select pour la confirmation de redémarrage)"""
+        self.pid_warmup = is_active
+        self._on_controller_option_changed()
+
+    def on_warmup_mode_select(self, mode):
         """
-        Active/désactive le warmup (modes PID/DRL) : ne prend effet qu'au
-        prochain lancement, donc redémarre la partie (avec confirmation) si
-        elle est Playing/Paused ; sinon applique directement.
+        Sélecteur "Échauffement" ("none"/"pid"/"drl" : Card dédiée, Aucun/
+        PID/DRL en modes DRL, Aucun/PID seulement en mode PID pur) : regroupe
+        warmup_enabled et pid_warmup en un seul choix, pour éviter les
+        combinaisons invalides (ex. PID d'échauffement actif sans rampe).
+        pid_warmup n'a de sens qu'en mode DRL (voir effective_pid_warmup) :
+        en mode PID pur, le choix "PID" ne touche que warmup_enabled.
+
+        Ne prend effet qu'au prochain lancement : un seul dialogue de
+        confirmation et un seul redémarrage, même si les deux réglages
+        changent à la fois.
         """
-        if is_active == self.warmup_enabled:
+        target_enabled = mode != "none"
+        if self.pending_model in self.DRL_MODES:
+            target_pid = mode == "pid"
+        else:
+            target_pid = self.pid_warmup
+
+        enabled_changes = target_enabled != self.warmup_enabled
+        pid_changes = target_pid != self.pid_warmup
+        if not enabled_changes and not pid_changes:
             return
-        previous = self.warmup_enabled
 
         def _apply():
-            self.warmup_enabled = is_active
-            self.session.config.warmup_enabled = is_active
-            logger.info(f"🔥 Warmup: {'ON' if is_active else 'OFF'}")
-            if self.udp_controller:
-                self.udp_controller.set_warmup_enabled(is_active)
+            if enabled_changes:
+                self._apply_warmup_enabled(target_enabled)
+            if pid_changes:
+                self._apply_pid_warmup(target_pid)
 
         if self.game_state not in ("Playing", "Paused"):
             _apply()
@@ -626,7 +652,6 @@ class PilotageScreen(MDScreen):
         self._confirm_restart(
             "Ce réglage ne prend effet qu'au prochain lancement : redémarrer la partie maintenant ?",
             on_confirm=_on_confirm,
-            on_cancel=lambda: setattr(self.ids.warmup_checkbox, "active", previous),
         )
 
     def on_warmup_duration_submit(self, text):
@@ -719,35 +744,6 @@ class PilotageScreen(MDScreen):
         # part avec le prochain lancement (voir _apply_model_change).
         if self.selected_model in self.DRL_MODES and self.pending_model == self.selected_model:
             self._send_controller_setup(self.selected_model)
-
-    def on_pid_warmup_toggle(self, is_active):
-        """
-        Bouton PID d'échauffement (modes DRL) : ne prend effet qu'au
-        prochain lancement, donc redémarre la partie (avec confirmation) si
-        elle est Playing/Paused ; sinon applique directement. Rien à
-        annuler si le dialogue est rejeté — le bouton (contrairement à une
-        case à cocher) n'a pas d'état propre : son libellé/couleur suivent
-        pid_warmup directement, qui n'a pas encore changé.
-        """
-        if is_active == self.pid_warmup:
-            return
-
-        def _apply():
-            self.pid_warmup = is_active
-            self._on_controller_option_changed()
-
-        if self.game_state not in ("Playing", "Paused"):
-            _apply()
-            return
-
-        def _on_confirm():
-            _apply()
-            self._game_actions.restart_game()
-
-        self._confirm_restart(
-            "Ce réglage ne prend effet qu'au prochain lancement : redémarrer la partie maintenant ?",
-            on_confirm=_on_confirm,
-        )
 
     def on_pid_backup_toggle(self, is_active):
         """

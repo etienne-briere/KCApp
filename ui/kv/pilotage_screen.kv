@@ -382,94 +382,6 @@
                                     on_text_validate: root.on_adaptive_max_cpm_submit(self.text)
                                     on_focus: root.on_adaptive_max_cpm_submit(self.text) if not self.focus else None
     
-                            # ---- Warmup (rampe de la cible) ----
-                            MDBoxLayout:
-                                orientation: "horizontal"
-                                spacing: dp(15)
-                                size_hint_y: None
-                                height: dp(36)
-
-                                MDIcon:
-                                    icon: "timer-play-outline"
-                                    theme_text_color: "Custom"
-                                    text_color: app.theme_cls.primary_color
-                                    font_size: "26sp"
-                                    size_hint: None, None
-                                    size: dp(30), dp(30)
-                                    pos_hint: {"center_y": 0.5}
-
-                                MDLabel:
-                                    text: "Warmup (rampe de la cible)"
-                                    font_style: "Body1"
-                                    halign: "left"
-                                    valign: "center"
-
-                                MDCheckbox:
-                                    id: warmup_checkbox
-                                    active: root.warmup_enabled
-                                    pos_hint: {"center_y": 0.5}
-                                    size_hint: None, None
-                                    size: dp(36), dp(36)
-                                    on_active: root.on_warmup_toggle(self.active)
-                                    disabled: not root.unity_connected
-
-                            # ---- Durée du warmup + PID d'échauffement, même ligne (Warmup actif) ----
-                            ScrollView:
-                                do_scroll_x: False
-                                do_scroll_y: False
-                                size_hint_y: None
-                                height: warmup_duration_row.height if root.warmup_enabled else 0
-                                opacity: 1 if root.warmup_enabled else 0
-                                disabled: not root.unity_connected or not root.warmup_enabled
-
-                                MDBoxLayout:
-                                    id: warmup_duration_row
-                                    orientation: "horizontal"
-                                    spacing: dp(15)
-                                    size_hint_y: None
-                                    height: self.minimum_height
-
-                                    MDBoxLayout:
-                                        orientation: "vertical"
-                                        size_hint_x: 0.5 if root.pending_model in root.DRL_MODES else 1
-                                        size_hint_y: None
-                                        height: self.minimum_height
-
-                                        MDTextField:
-                                            id: warmup_duration_field
-                                            text: str(int(root.warmup_duration))
-                                            hint_text: "Durée du warmup (s)"
-                                            icon_left: "timer-sand"
-                                            mode: "rectangle"
-                                            input_filter: "int"
-                                            text_color_focus: app.theme_cls.primary_color
-                                            hint_text_color_focus: app.theme_cls.primary_color
-                                            line_color_focus: app.theme_cls.primary_color
-                                            icon_left_color_focus: app.theme_cls.primary_color
-                                            on_text_validate: root.on_warmup_duration_submit(self.text)
-                                            on_focus: root.on_warmup_duration_submit(self.text) if not self.focus else None
-
-                                    # ---- PID d'échauffement (modes DRL, prochaine partie) : bouton-puce
-                                    # rempli (rond, pas rectangulaire à contour comme les sélecteurs
-                                    # Mode/Environnement), mêmes couleurs que les badges d'état de partie
-                                    # (GREEN_BG/FG = actif, GRAY_BG/FG = inactif, voir game_state_style.py)
-                                    MDFillRoundFlatIconButton:
-                                        id: pid_warmup_toggle_button
-                                        text: "PID warmup activé" if root.pid_warmup else "PID warmup désactivé"
-                                        icon: "sine-wave"
-                                        md_bg_color: GREEN_BG if root.pid_warmup else GRAY_BG
-                                        theme_text_color: "Custom"
-                                        text_color: GREEN_FG if root.pid_warmup else GRAY_FG
-                                        theme_icon_color: "Custom"
-                                        icon_color: GREEN_FG if root.pid_warmup else GRAY_FG
-                                        size_hint_x: 0.5 if root.pending_model in root.DRL_MODES else 0
-                                        size_hint_y: None
-                                        height: dp(48)
-                                        pos_hint: {"center_y": 0.5}
-                                        opacity: 1 if root.pending_model in root.DRL_MODES else 0
-                                        disabled: not root.unity_connected or root.pending_model not in root.DRL_MODES
-                                        on_release: root.on_pid_warmup_toggle(not root.pid_warmup)
-
                             # ---- PID de secours (modes DRL, prochaine partie) ----
                             ScrollView:
                                 do_scroll_x: False
@@ -580,6 +492,112 @@
                             font_style: "Caption"
                             halign: "left"
                             valign: "center"
+
+            # ==== ÉCHAUFFEMENT (modes PID/DRL) ====
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(8)
+                size_hint_y: None
+                height: self.minimum_height if root.pending_model in ("PID", "DRL", "DRL_RUN3") else 0
+                opacity: 1 if root.pending_model in ("PID", "DRL", "DRL_RUN3") else 0
+                disabled: root.pending_model not in ("PID", "DRL", "DRL_RUN3")
+
+                MDLabel:
+                    text: "ÉCHAUFFEMENT"
+                    font_style: "Overline"
+                    theme_text_color: "Secondary"
+                    halign: "left"
+                    padding: dp(16), 0
+                    adaptive_size: True
+
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(12)
+                    size_hint_y: None
+                    height: self.minimum_height
+                    elevation: 0
+                    disabled: not root.unity_connected
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(15)
+                        size_hint_y: None
+                        height: dp(30)
+
+                        MDIcon:
+                            icon: "timer-play-outline"
+                            theme_text_color: "Custom"
+                            text_color: app.theme_cls.primary_color
+                            font_size: "30sp"
+                            size_hint_x: None
+                            width: dp(30)
+
+                        MDLabel:
+                            text: "Échauffement"
+                            font_style: "Body1"
+                            halign: "left"
+                            valign: "center"
+
+                    # ---- Aucun / PID / DRL : qui pilote pendant l'échauffement
+                    # (rampe de cible). DRL masqué en mode PID pur, où le choix
+                    # ne porte que sur warmup_enabled (voir on_warmup_mode_select) ----
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(10)
+                        size_hint_y: None
+                        height: dp(48)
+
+                        MDFillRoundFlatButton:
+                            text: "Aucun"
+                            md_bg_color: RED_BG if not root.warmup_enabled else GRAY_BG
+                            theme_text_color: "Custom"
+                            text_color: RED_FG if not root.warmup_enabled else GRAY_FG
+                            size_hint_x: 1
+                            size_hint_y: None
+                            height: dp(48)
+                            disabled: not root.unity_connected
+                            on_release: root.on_warmup_mode_select("none")
+
+                        MDFillRoundFlatButton:
+                            text: "PID"
+                            md_bg_color: GREEN_BG if root.warmup_enabled and (root.pid_warmup or root.pending_model not in root.DRL_MODES) else GRAY_BG
+                            theme_text_color: "Custom"
+                            text_color: GREEN_FG if root.warmup_enabled and (root.pid_warmup or root.pending_model not in root.DRL_MODES) else GRAY_FG
+                            size_hint_x: 1
+                            size_hint_y: None
+                            height: dp(48)
+                            disabled: not root.unity_connected
+                            on_release: root.on_warmup_mode_select("pid")
+
+                        MDFillRoundFlatButton:
+                            text: "DRL"
+                            md_bg_color: GREEN_BG if root.warmup_enabled and not root.pid_warmup else GRAY_BG
+                            theme_text_color: "Custom"
+                            text_color: GREEN_FG if root.warmup_enabled and not root.pid_warmup else GRAY_FG
+                            size_hint_x: 1 if root.pending_model in root.DRL_MODES else 0
+                            size_hint_y: None
+                            height: dp(48)
+                            opacity: 1 if root.pending_model in root.DRL_MODES else 0
+                            disabled: not root.unity_connected or root.pending_model not in root.DRL_MODES
+                            on_release: root.on_warmup_mode_select("drl")
+
+                    # ---- Durée du warmup : toujours visible, désactivée si "Aucun" ----
+                    MDTextField:
+                        id: warmup_duration_field
+                        text: str(int(root.warmup_duration))
+                        hint_text: "Durée du warmup (s)"
+                        icon_left: "timer-sand"
+                        mode: "rectangle"
+                        input_filter: "int"
+                        text_color_focus: app.theme_cls.primary_color
+                        hint_text_color_focus: app.theme_cls.primary_color
+                        line_color_focus: app.theme_cls.primary_color
+                        icon_left_color_focus: app.theme_cls.primary_color
+                        disabled: not root.unity_connected or not root.warmup_enabled
+                        on_text_validate: root.on_warmup_duration_submit(self.text)
+                        on_focus: root.on_warmup_duration_submit(self.text) if not self.focus else None
 
             # ==== OPTIONS GÉNÉRALES (indépendantes du mode de jeu) ====
             MDBoxLayout:
