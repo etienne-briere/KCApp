@@ -108,9 +108,10 @@ class GameScreen(MDScreen):
         if not self.udp_discovery or not self.udp_discovery.is_unity_connected():
             self.is_streaming = False
             return
-        if not self.is_streaming:
-            # Premier START (ou reprise après une coupure) : on renvoie aussi les réglages.
-            self.udp_controller.set_stream_config(self.fps_choice, self.width_choice, STREAM_QUALITY)
+        # Les réglages sont renvoyés à CHAQUE renouvellement : à un changement de scène du jeu
+        # (menu -> partie), Unity recrée son streamer avec les valeurs par défaut, et sans cela
+        # le choix fait à l'écran serait perdu. Côté Unity, renvoyer les mêmes valeurs ne coûte rien.
+        self.udp_controller.set_stream_config(self.fps_choice, self.width_choice, STREAM_QUALITY)
         self.is_streaming = bool(self.udp_controller.set_stream_game("START"))
 
     def set_stream_option(self, fps=None, width=None):
