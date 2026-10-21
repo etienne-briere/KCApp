@@ -15,27 +15,44 @@
             size_hint: 1, None
             height: dp(28)
 
-        # ===== Image : pleine largeur, à son format réel (pas de bandes noires) =====
-        FloatLayout:
+        # ===== Image dans une card (marges latérales = image plus petite), à son format réel =====
+        MDBoxLayout:
             size_hint: 1, None
-            height: game_image.height
+            height: game_card.height + dp(16)
+            padding: dp(36), dp(8)
 
-            Image:
-                id: game_image
-                fit_mode: "fill"
+            MDCard:
+                id: game_card
+                orientation: "vertical"
                 size_hint: 1, None
-                height: self.width * self.texture_size[1] / self.texture_size[0] if self.texture and self.texture_size[0] else self.width * 9 / 16
-                pos_hint: {"x": 0, "top": 1}
+                height: game_image.height + dp(8)
+                padding: dp(4)
+                radius: [dp(14)]
+                elevation: 2
+                md_bg_color: 0, 0, 0, 1
 
-            # ===== Message quand aucune image n'arrive =====
-            MDLabel:
-                text: "AUCUN SIGNAL"
-                halign: "center"
-                valign: "center"
-                font_style: "H5"
-                size_hint: 1, 1
-                pos_hint: {"x": 0, "y": 0}
-                opacity: 0 if root.has_signal else 1
+                FloatLayout:
+                    size_hint: 1, None
+                    height: game_image.height
+
+                    Image:
+                        id: game_image
+                        fit_mode: "fill"
+                        size_hint: 1, None
+                        height: self.width * self.texture_size[1] / self.texture_size[0] if self.texture and self.texture_size[0] else self.width * 9 / 16
+                        pos_hint: {"x": 0, "top": 1}
+
+                    # ===== Message quand aucune image n'arrive =====
+                    MDLabel:
+                        text: "AUCUN SIGNAL"
+                        halign: "center"
+                        valign: "center"
+                        font_style: "H5"
+                        theme_text_color: "Custom"
+                        text_color: 1, 1, 1, 0.8
+                        size_hint: 1, 1
+                        pos_hint: {"x": 0, "y": 0}
+                        opacity: 0 if root.has_signal else 1
 
         # ===== Réglages du flux (appliqués à chaud) : images/seconde puis résolution =====
 
