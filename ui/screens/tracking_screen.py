@@ -146,6 +146,22 @@ class TrackingScreen(MDScreen):
         "teacher_override": "commande tablette",
         "model_error": "erreur du modèle",
     }
+    # Raisons de bascule automatique vers le PID de secours (instabilité/cycle
+    # limite du DRL) — regroupées pour colorer le badge en alerte (AMBER).
+    _AUTO_SAFETY_REASONS = {
+        "early_overshoot", "third_dive", "floor_time", "pid_windup",
+        "persistent_overshoot", "model_error",
+    }
+    # Couleurs du badge "raison de la bascule" (même palette que les badges
+    # d'état de partie, voir ui/game_state_style.py et status_bar.kv) :
+    # BLUE = échauffement, GREEN = début réel de partie, AMBER = bascule
+    # automatique de sécurité, GRAY = commande manuelle via la tablette.
+    _BADGE_COLORS = {
+        "warmup": {"fg": (0.098, 0.463, 0.824, 1), "bg": (0.890, 0.949, 0.992, 1)},
+        "game_start": {"fg": (0.176, 0.490, 0.196, 1), "bg": (0.906, 0.961, 0.914, 1)},
+        "auto_safety": {"fg": (0.780, 0.518, 0.047, 1), "bg": (1, 0.976, 0.882, 1)},
+        "manual": {"fg": (0.459, 0.459, 0.459, 1), "bg": (0.925, 0.925, 0.925, 1)},
+    }
 
     # Properties pour l'UI
     heart_rate_label = StringProperty("--")
@@ -184,6 +200,10 @@ class TrackingScreen(MDScreen):
     game_state = StringProperty("Menu")
     controller_state_label = StringProperty("") # contrôleur actif en cours de partie (texte affiché)
     controller_reason_label = StringProperty("") # raison de la dernière bascule
+    # Badge "raison de la bascule" affiché à côté du titre de la Card (texte
+    # = controller_reason_label, coloré selon _BADGE_COLORS/_controller_badge_category)
+    controller_badge_fg = ListProperty(_BADGE_COLORS["manual"]["fg"])
+    controller_badge_bg = ListProperty(_BADGE_COLORS["manual"]["bg"])
     manual_cpm = NumericProperty(60) # cadence du mode manuel (cubes/min)
     # Bouton PID/DRL_DEPLOYED/DRL_RUN3 à styliser comme actif (puce verte),
     # "" si aucun ne correspond à l'état courant (ex: Manuel) — voir
@@ -306,11 +326,31 @@ class TrackingScreen(MDScreen):
             reason = config.controller_switch_reason or ""
             self.controller_reason_label = self.SWITCH_REASON_LABELS.get(reason, reason)
             self.active_controller_button = self._controller_button_for_state(state, config)
+            colors = self._BADGE_COLORS[self._controller_badge_category(state, reason)]
+            self.controller_badge_fg = colors["fg"]
+            self.controller_badge_bg = colors["bg"]
         elif self.game_state != "Playing":
             self.controller_state_label = ""
             self.controller_reason_label = ""
             self.active_controller_button = ""
             self._manual_drl_variant = None
+
+    def _controller_badge_category(self, state, reason):
+        """
+        Catégorie du badge "raison de la bascule" affiché à côté du titre de
+        la Card (voir _BADGE_COLORS) : l'échauffement se détecte par l'état
+        (son déclenchement initial a aussi la raison "start"), les autres
+        catégories par la raison de bascule renvoyée par Unity.
+        """
+        if state == "PID_WARMUP":
+            return "warmup"
+        if reason == "teacher_override":
+            return "manual"
+        if reason in ("start", "warmup_end"):
+            return "game_start"
+        if reason in self._AUTO_SAFETY_REASONS:
+            return "auto_safety"
+        return "manual"
 
     def _controller_button_for_state(self, state, config):
         """
