@@ -162,6 +162,11 @@ class TrackingScreen(MDScreen):
         "auto_safety": {"fg": (0.780, 0.518, 0.047, 1), "bg": (1, 0.976, 0.882, 1)},
         "manual": {"fg": (0.459, 0.459, 0.459, 1), "bg": (0.925, 0.925, 0.925, 1)},
     }
+    # Texte du badge pour la catégorie "warmup", à la place de la raison de
+    # bascule brute : à l'entrée en PID_WARMUP, Unity envoie la raison
+    # générique "start" ("début de partie"), qui ne dit rien de l'échauffement
+    # lui-même — le fait d'être dans l'état PID_WARMUP est plus parlant.
+    _BADGE_TEXT_OVERRIDE = {"warmup": "Échauffement"}
 
     # Properties pour l'UI
     heart_rate_label = StringProperty("--")
@@ -200,8 +205,10 @@ class TrackingScreen(MDScreen):
     game_state = StringProperty("Menu")
     controller_state_label = StringProperty("") # contrôleur actif en cours de partie (texte affiché)
     controller_reason_label = StringProperty("") # raison de la dernière bascule
-    # Badge "raison de la bascule" affiché à côté du titre de la Card (texte
-    # = controller_reason_label, coloré selon _BADGE_COLORS/_controller_badge_category)
+    # Badge "raison de la bascule" affiché à côté du titre de la Card —
+    # texte et couleur calculés par _sync_controller_state (voir
+    # _controller_badge_category/_BADGE_TEXT_OVERRIDE)
+    controller_badge_text = StringProperty("")
     controller_badge_fg = ListProperty(_BADGE_COLORS["manual"]["fg"])
     controller_badge_bg = ListProperty(_BADGE_COLORS["manual"]["bg"])
     manual_cpm = NumericProperty(60) # cadence du mode manuel (cubes/min)
@@ -279,7 +286,7 @@ class TrackingScreen(MDScreen):
         self._sync_cpm_fields(self.session.config)
         self.unity_connected = self.udp_discovery.is_unity_connected()
         self.game_state = self.session.game_state.capitalize()
-        self._sync_controller_state(self.session.config)
+        self._sync_controller_state(self.session)
         self._sync_pid_backup(self.session.config)
 
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC et de CPM
@@ -315,42 +322,67 @@ class TrackingScreen(MDScreen):
         self._sync_target_hr(session.config.target_hr_percent)
         self._sync_cpm_fields(session.config)
         self.game_state = session.game_state.capitalize()
-        self._sync_controller_state(session.config)
+        self._sync_controller_state(session)
         self._sync_pid_backup(session.config)
 
-    def _sync_controller_state(self, config):
+    def _sync_controller_state(self, session):
         """État du contrôleur en cours de partie — uniquement pendant une partie en cours"""
+        config = session.config
         if self.game_state == "Playing" and config.controller_state:
             state = config.controller_state
             self.controller_state_label = self.CONTROLLER_STATE_LABELS.get(state, state)
             reason = config.controller_switch_reason or ""
             self.controller_reason_label = self.SWITCH_REASON_LABELS.get(reason, reason)
             self.active_controller_button = self._controller_button_for_state(state, config)
-            colors = self._BADGE_COLORS[self._controller_badge_category(state, reason)]
+            category = self._controller_badge_category(state, reason, session)
+            colors = self._BADGE_COLORS[category]
             self.controller_badge_fg = colors["fg"]
             self.controller_badge_bg = colors["bg"]
+            self.controller_badge_text = self._BADGE_TEXT_OVERRIDE.get(category, self.controller_reason_label)
         elif self.game_state != "Playing":
             self.controller_state_label = ""
             self.controller_reason_label = ""
+            self.controller_badge_text = ""
             self.active_controller_button = ""
             self._manual_drl_variant = None
 
-    def _controller_badge_category(self, state, reason):
+    def _controller_badge_category(self, state, reason, session):
         """
         Catégorie du badge "raison de la bascule" affiché à côté du titre de
-        la Card (voir _BADGE_COLORS) : l'échauffement se détecte par l'état
-        (son déclenchement initial a aussi la raison "start"), les autres
-        catégories par la raison de bascule renvoyée par Unity.
+        la Card (voir _BADGE_COLORS). L'échauffement se détecte soit par
+        l'état (PID_WARMUP), soit — quand le PID d'échauffement est
+        désactivé et que le DRL pilote dès le début — par la rampe de cible
+        encore en cours (voir _in_warmup_ramp) : le participant reste en
+        phase d'échauffement même si ce n'est pas le PID qui la pilote. Les
+        bascules de sécurité et les commandes manuelles priment toujours sur
+        ce repli, pour rester visibles même pendant la rampe.
         """
         if state == "PID_WARMUP":
             return "warmup"
-        if reason == "teacher_override":
-            return "manual"
-        if reason in ("start", "warmup_end"):
-            return "game_start"
         if reason in self._AUTO_SAFETY_REASONS:
             return "auto_safety"
+        if reason == "teacher_override":
+            return "manual"
+        if self._in_warmup_ramp(session):
+            return "warmup"
+        if reason in ("start", "warmup_end"):
+            return "game_start"
         return "manual"
+
+    def _in_warmup_ramp(self, session):
+        """
+        True si la rampe de cible ("Warmup (rampe de la cible)", voir
+        CONTROLEUR_HYBRIDE_TABLETTE.md) est encore en cours — indépendant du
+        contrôleur réellement actif, contrairement à l'état PID_WARMUP qui ne
+        reflète que le "PID d'échauffement".
+        """
+        config = session.config
+        if not config.warmup_enabled or not config.warmup_duration:
+            return False
+        if session.playing_anchor is None:
+            return False
+        elapsed = time.time() - session.playing_anchor - session.paused_accum
+        return elapsed < config.warmup_duration
 
     def _controller_button_for_state(self, state, config):
         """
