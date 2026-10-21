@@ -729,14 +729,6 @@
                         on_text_validate: root.on_manual_cpm_submit(self.text)
                         on_focus: root.on_manual_cpm_submit(self.text) if not self.focus else None
 
-                    MDLabel:
-                        text: "Bascule appliquée à la seconde suivante (PID ou DRL : FC valide requise)"
-                        theme_text_color: "Secondary"
-                        font_style: "Caption"
-                        halign: "left"
-                        size_hint_y: None
-                        height: dp(20)
-
             # ==== Sessions passées en attente d'export ou de suppression ====
             MDBoxLayout:
                 orientation: "vertical"
