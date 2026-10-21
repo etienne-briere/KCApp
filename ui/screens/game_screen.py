@@ -3,11 +3,11 @@
 
 Principe (voir app/network/game_stream_protocol.py pour le détail du protocole) :
   - la tablette demande le flux à Unity par le canal UDP habituel
-    (stream_config:<fps>,<largeur>,<qualité> puis stream_game:START) ;
+    (stream_config:<fps>,<largeur>,<qualité> puis stream_game:1) ;
   - Unity renvoie des images JPEG fragmentées en UDP vers le port UDP_PORT_STREAM ;
   - GameStreamReceiver les assemble ; cet écran décode la plus récente et l'affiche.
 
-« Bail » : Unity arrête tout seul le flux s'il ne reçoit pas stream_game:START
+« Bail » : Unity arrête tout seul le flux s'il ne reçoit pas stream_game:1
 depuis 6 s ; la tablette le renvoie donc toutes les STREAM_LEASE_RENEW_S secondes.
 Si la tablette plante, si le Wi-Fi coupe ou si la scène du jeu change, le flux
 s'arrête puis reprend sans intervention.
@@ -89,7 +89,7 @@ class GameScreen(MDScreen):
         self._renew_event = self._update_event = None
 
         if self.udp_controller and self.udp_discovery and self.udp_discovery.is_unity_connected():
-            self.udp_controller.set_stream_game("STOP")
+            self.udp_controller.set_stream_game("0")
         if self.receiver is not None:
             self.receiver.stop()
             self.receiver = None
@@ -112,7 +112,7 @@ class GameScreen(MDScreen):
         # (menu -> partie), Unity recrée son streamer avec les valeurs par défaut, et sans cela
         # le choix fait à l'écran serait perdu. Côté Unity, renvoyer les mêmes valeurs ne coûte rien.
         self.udp_controller.set_stream_config(self.fps_choice, self.width_choice, STREAM_QUALITY)
-        self.is_streaming = bool(self.udp_controller.set_stream_game("START"))
+        self.is_streaming = bool(self.udp_controller.set_stream_game("1"))
 
     def set_stream_option(self, fps=None, width=None):
         """Choix de l'utilisateur : mémorisé, et appliqué tout de suite si le flux est en cours."""

@@ -8,16 +8,16 @@ Les images passent par UDP : une image perdue est simplement sautée, jamais att
 ```
 Tablette (KCApp)                                   Casque (APEXergame)
   GameScreen ── stream_config:8,480,50 ────────►  UDPListener (port 5003)
-             ── stream_game:START (toutes les 2 s) ►   └─ GameStreamer
+             ── stream_game:1 (toutes les 2 s) ►   └─ GameStreamer
                                                        caméra miroir → texture réduite
                                                        → lecture GPU asynchrone → JPEG
   GameStreamReceiver ◄── images JPEG fragmentées ──    → fragments de 1 200 octets
   (UDP, port 5007)         en UDP vers la tablette     (thread d'envoi dédié)
 ```
 
-- **Demande** : sur le canal UDP habituel (clé:valeur, port 5003). `stream_game:START` sert aussi de « bail » :
-  Unity coupe le flux de lui-même après 6 s sans START (tablette plantée, Wi-Fi coupé, scène rechargée), et la tablette
-  le relance automatiquement. Quitter l'onglet envoie `stream_game:STOP`.
+- **Demande** : sur le canal UDP habituel (clé:valeur, port 5003). `stream_game:1` (1 = démarrer, 0 = arrêter) sert aussi de « bail » :
+  Unity coupe le flux de lui-même après 6 s sans « 1 » (tablette plantée, Wi-Fi coupé, scène rechargée), et la tablette
+  le relance automatiquement. Quitter l'onglet envoie `stream_game:0`.
 - **Images** : un JPEG par image, découpé en fragments de 1 200 octets précédés d'un en-tête de 12 octets
   (`app/network/game_stream_protocol.py` ↔ `GameStreamer.cs`, à garder d'accord). Une image à laquelle il manque un
   fragment est abandonnée ; dès qu'une image plus récente arrive, les plus anciennes incomplètes le sont aussi.

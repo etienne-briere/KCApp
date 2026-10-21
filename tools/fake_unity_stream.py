@@ -4,9 +4,9 @@ Faux jeu Unity pour essayer l'écran « Vue du joueur » sans casque.
 Il imite ce que fait Unity côté réseau :
   - il écoute le port 5003 (UDPListener) et répond à la découverte (IP_Unity:...),
     puis envoie ping_Unity toutes les 2 s à l'app (port 5006) ;
-  - sur stream_config / stream_game:START, il envoie des images JPEG fragmentées
+  - sur stream_config / stream_game:1 (START), il envoie des images JPEG fragmentées
     en UDP vers <IP de l'app>:5007 (GameStreamer), avec le même bail de 6 s ;
-  - stream_game:STOP, ou 6 s sans START, arrête le flux.
+  - stream_game:0 (STOP), ou 6 s sans « 1 », arrête le flux.
 
 Usage (poste, dans le dossier du projet) :
     python tools/fake_unity_stream.py                 # flux normal
@@ -89,11 +89,11 @@ class FauxUnity:
                     print(f"[fake] stream_config illisible : {valeur!r}")
             elif cle == "stream_game":
                 self.dest_ip = ip
-                if valeur.upper() == "START":
+                if valeur in ("1",) or valeur.upper() == "START":
                     if time.time() > self.lease_until:
                         print(f"[fake] START -> flux vers {ip}:{PORT_STREAM}")
                     self.lease_until = time.time() + LEASE_S
-                elif valeur.upper() == "STOP":
+                elif valeur == "0" or valeur.upper() == "STOP":
                     self.lease_until = 0.0
                     print("[fake] STOP")
             else:
@@ -174,7 +174,7 @@ def auto_test(secondes: float) -> int:
     t0, derniere, vues = time.time(), 0, 0
     try:
         while time.time() - t0 < secondes:
-            tab.sendto(b"stream_game:START", ("127.0.0.1", PORT_UNITY))
+            tab.sendto(b"stream_game:1", ("127.0.0.1", PORT_UNITY))
             fin = time.time() + 1.0
             while time.time() < fin:
                 item = rec.get_latest(derniere)
@@ -183,7 +183,7 @@ def auto_test(secondes: float) -> int:
                 time.sleep(0.005)
             st = rec.stats()
             print(f"[auto-test] {st['fps']:.1f} img/s · {st['kbps']:.0f} ko/s · perdues {st['frames_dropped']}")
-        tab.sendto(b"stream_game:STOP", ("127.0.0.1", PORT_UNITY))
+        tab.sendto(b"stream_game:0", ("127.0.0.1", PORT_UNITY))
     finally:
         rec.stop()
     print(f"[auto-test] {vues} images vues en {secondes:.0f} s")

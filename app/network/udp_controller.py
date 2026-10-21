@@ -191,7 +191,7 @@ class UDPController:
         return self.send_command("requestConfig", "true")
 
     def set_stream_game(self, command: str)-> bool:
-        """Activation/Désactivation du stream de l'écran du jeux"""
+        """Stream de l'écran du jeu : "1" = démarrer / renouveler le bail, "0" = arrêter"""
         return self.send_command("stream_game", command)
 
     def set_stream_config(self, fps: int, width: int, quality: int) -> bool:
