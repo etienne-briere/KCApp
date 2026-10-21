@@ -65,8 +65,8 @@ passe par Kivy (SDL2), car Pillow n'est pas dans le build Android.
 
 ## Choix de l'image/seconde et de la résolution
 
-En haut de l'écran « Vue joueur », deux groupes de boutons (comme dans APA Control) :
-**2 / 4 / 8 / 12 img/s** et **320 / 480 / 640 px**. Le choix est envoyé tout de suite à Unity
+Sous l'image de l'écran « Vue joueur », deux rangées de boutons (comme dans APA Control) :
+**2 / 4 / 8 / 12 img/s** et **320 / 480 / 640 / 800 / 960 px**. Au-delà de 640 px, tester d'abord à 2-4 img/s : le second rendu du casque coûte plus cher. Le choix est envoyé tout de suite à Unity
 (`stream_config`, appliqué à chaud sans relancer le flux), mémorisé dans `stream_settings.json`
 et réutilisé au prochain lancement. Les valeurs proposées se changent dans `config.py`
 (`STREAM_FPS_CHOICES`, `STREAM_WIDTH_CHOICES` ; mettre aussi les boutons du `.kv` en cohérence).
