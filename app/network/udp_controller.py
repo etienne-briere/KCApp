@@ -191,5 +191,13 @@ class UDPController:
         return self.send_command("requestConfig", "true")
 
     def set_stream_game(self, command: str)-> bool:
-        """Activation/Désactivation du stream de l'écran du jeux"""
+        """Stream de l'écran du jeu : "1" = démarrer / renouveler le bail, "0" = arrêter"""
         return self.send_command("stream_game", command)
+
+    def set_stream_config(self, fps: int, width: int, quality: int) -> bool:
+        """
+        Réglage du flux vidéo de la vue du joueur : images/s, largeur en pixels,
+        qualité JPEG (stream_config:<fps>,<largeur>,<qualité>). Unity borne les valeurs.
+        Les images arrivent ensuite en UDP sur le port UDP_PORT_STREAM (voir config.py).
+        """
+        return self.send_command("stream_config", f"{int(fps)},{int(width)},{int(quality)}")

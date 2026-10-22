@@ -136,3 +136,5 @@ config.local.json
 bin/
 __pycache__/
 *:Zone.Identifier
+
+stream_settings.json

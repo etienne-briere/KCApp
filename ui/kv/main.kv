@@ -75,8 +75,8 @@ BoxLayout:
             PlayerProfileScreen:
                 name: "player_profile"
 
-            # GameScreen:
-            #     name: "game"
+            GameScreen:
+                name: "game"
 
         QuickActionsBar:
             id: quick_actions_bar
@@ -100,7 +100,7 @@ BoxLayout:
         MDBottomNavigationItem:
             name: "scan_tab"
             text: "Capteur"
-            icon: "bluetooth"
+            icon: "heart-pulse"
             on_tab_press:
                 app.change_screen("scan", "Connexion capteur")
 
@@ -118,11 +118,10 @@ BoxLayout:
             on_tab_press:
                 app.change_screen("control_menu", "Contrôle")
         
-        # MDBottomNavigationItem:
-        #     name: "game_tab"
-        #     text: "Game Screen"
-        #     icon: "fit-to-screen-outline"
-        #     on_tab_press:
-        #         screen_manager.current = "game"
-        #         top_bar.title = "Game Screen"
+        MDBottomNavigationItem:
+            name: "game_tab"
+            text: "Vue joueur"
+            icon: "video"
+            on_tab_press:
+                app.change_screen("game", "Vue du joueur")
 
