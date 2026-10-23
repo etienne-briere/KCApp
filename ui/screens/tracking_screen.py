@@ -193,7 +193,7 @@ class TrackingScreen(MDScreen):
     # Card "FC cible" (modifiable ici comme dans l'écran Contrôle)
     target_hr = NumericProperty(50)  # % FCmax
     # Cards "Cpm minimum / maximum" des modes adaptatifs (comme l'écran Contrôle)
-    adaptive_min_cpm = NumericProperty(30)
+    adaptive_min_cpm = NumericProperty(10)
     adaptive_max_cpm = NumericProperty(200)
     # Card "Cadence fixe" du mode Fixe (comme l'écran Contrôle)
     fixed_cpm = NumericProperty(60)
@@ -478,9 +478,9 @@ class TrackingScreen(MDScreen):
                                0, None, "set_adaptive_max_cpm", "Cpm max adaptatif")
 
     def on_fixed_cpm_submit(self, text):
-        """Cadence du mode Fixe : mêmes bornes (30-200) que l'écran Contrôle"""
+        """Cadence du mode Fixe : mêmes bornes (10-200) que l'écran Contrôle"""
         self._submit_cpm_field(text, "fixed_cpm_field", "fixed_cpm", "cube_per_min",
-                               30, 200, "set_cube_rate", "Cubes par minute")
+                               10, 200, "set_cube_rate", "Cubes par minute")
 
     def on_target_hr_submit(self, text):
         """Champ FC cible validé (Entrée ou perte de focus) — même logique que l'écran Contrôle"""

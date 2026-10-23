@@ -53,9 +53,9 @@ class PilotageScreen(MDScreen):
     cube_per_min = NumericProperty(60) # cubes/min
     target_hr = NumericProperty(50)  # % FCmax
     incremental_steps = NumericProperty(10) # mode incrémental : nombre de paliers
-    incremental_min_cpm = NumericProperty(30) # mode incrémental : cpm minimum
+    incremental_min_cpm = NumericProperty(10) # mode incrémental : cpm minimum
     incremental_max_cpm = NumericProperty(200) # mode incrémental : cpm maximum
-    adaptive_min_cpm = NumericProperty(30) # modes PID/DRL : cpm minimum
+    adaptive_min_cpm = NumericProperty(10) # modes PID/DRL : cpm minimum
     adaptive_max_cpm = NumericProperty(200) # modes PID/DRL : cpm maximum
     warmup_enabled = BooleanProperty(False) # modes PID/DRL : warmup
     warmup_duration = NumericProperty(90) # modes PID/DRL : durée du warmup (s)
@@ -535,7 +535,7 @@ class PilotageScreen(MDScreen):
     def on_cube_frequency_submit(self, text):
         """Champ cubes par minute validé"""
         self._submit_int_field(text, "cube_frequency_field", "cube_per_min",
-                                "cube_per_min", 30, 200, "set_cube_rate",
+                                "cube_per_min", 10, 200, "set_cube_rate",
                                 "Cubes par minute")
 
     # ========== MODE INCRÉMENTAL ==========
