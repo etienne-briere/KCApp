@@ -1,4 +1,5 @@
 #:import platform kivy.utils.platform
+#:import Window kivy.core.window.Window
 
 #:set GREEN_BG (0.906, 0.961, 0.914, 1)
 #:set GREEN_FG (0.176, 0.490, 0.196, 1)
@@ -15,8 +16,14 @@
 
 <StatusBar>:
     orientation: "horizontal"
+    # padding_bottom (dp(50)) ancre verticalement les icônes : avec
+    # padding_top + padding_bottom > height, Kivy ramène la hauteur de
+    # contenu à 0 et positionne chaque icône via padding_bottom seul (pas
+    # via height). Ne pas faire varier padding/height avec Window.width
+    # ici : ça déplacerait les icônes au lieu de les rétrécir. Seule la
+    # taille de police change sur smartphone.
     padding: [0, dp(50), dp(20), dp(50)]
-    spacing: dp(10)
+    spacing: dp(10) if Window.width >= dp(600) else dp(6)
     size_hint_y: None
     height: dp(30)
 
@@ -27,6 +34,7 @@
         icon: "bluetooth" if root.ble_connected else "bluetooth-off"
         theme_text_color: "Custom"
         text_color: GREEN_FG if root.ble_connected else (1, 0, 0, 1)
+        font_size: "24sp" if Window.width >= dp(600) else "18sp"
         opacity: 0 if platform == "win" else 1
         disabled: True if platform == "win" else False
 
@@ -35,15 +43,18 @@
         icon: "wifi" if root.wifi_connected else "wifi-off"
         theme_text_color: "Custom"
         text_color: GREEN_FG if root.wifi_connected else (1, 0, 0, 1)
+        font_size: "24sp" if Window.width >= dp(600) else "18sp"
 
     MDIcon:
         id: hr_icon
         icon: "heart" if root.hr_sensor_connected else "heart-off"
         theme_text_color: "Custom"
         text_color: root.hr_icon_color
-    
+        font_size: "24sp" if Window.width >= dp(600) else "18sp"
+
     MDIcon:
         id: unity_icon
         icon: "lan-connect" if root.unity_connected else "lan-disconnect"
         theme_text_color: "Custom"
         text_color: GREEN_FG if root.unity_connected else (1, 0, 0, 1)
+        font_size: "24sp" if Window.width >= dp(600) else "18sp"

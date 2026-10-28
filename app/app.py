@@ -206,6 +206,16 @@ class KCApp(MDApp):
         # children est en ordre inverse : index de left_actions = juste après elle
         row.add_widget(chip, index=row.children.index(left_actions))
 
+        # Titre plus compact sur smartphone (même seuil dp(600) que le
+        # reste de l'UI) : label_title appartient à la kv rule interne de
+        # MDTopAppBar, donc pas accessible depuis ui/kv/main.kv — on le
+        # pilote ici en Python plutôt que par binding kv.
+        def update_title_font_style(*_):
+            title.font_style = "H6" if Window.width >= dp(600) else "Subtitle1"
+
+        Window.bind(width=update_title_font_style)
+        update_title_font_style()
+
         # L'encadré décale le titre vers la droite : on compense avec un
         # padding asymétrique pour qu'il reste centré sur toute la largeur de
         # la barre (et non sur l'espace restant entre l'encadré et la droite).

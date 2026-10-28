@@ -1,17 +1,20 @@
 #:kivy 2.0
 #:import dp kivy.metrics.dp
+#:import Window kivy.core.window.Window
 
-# Encadré joueur de la top bar (voir ui/widgets/player_chip.py)
+# Encadré joueur de la top bar (voir ui/widgets/player_chip.py). Sur
+# smartphone (< dp(600)), icône/badge/texte sont resserrés pour laisser
+# plus de place au titre de la top bar.
 <PlayerChip>:
     orientation: "horizontal"
-    padding: dp(6), dp(4), dp(6), dp(4)
-    spacing: dp(8)
-    radius: [dp(18)]
+    padding: (dp(6), dp(4), dp(6), dp(4)) if Window.width >= dp(600) else (dp(4), dp(2), dp(4), dp(2))
+    spacing: dp(8) if Window.width >= dp(600) else dp(5)
+    radius: [dp(18)] if Window.width >= dp(600) else [dp(14)]
     md_bg_color: 1, 1, 1, 0.18
     elevation: 0
     ripple_behavior: True
     size_hint: None, None
-    size: self.minimum_width, dp(36)
+    size: self.minimum_width, dp(36) if Window.width >= dp(600) else dp(28)
     pos_hint: {"center_y": 0.5}
     on_release: app.open_player_profile()
 
@@ -19,19 +22,22 @@
         icon: "account-circle"
         theme_text_color: "Custom"
         text_color: 1, 1, 1, 1
-        font_size: "26sp"
+        font_size: "26sp" if Window.width >= dp(600) else "18sp"
         size_hint: None, None
-        size: dp(26), dp(26)
+        size: (dp(26), dp(26)) if Window.width >= dp(600) else (dp(18), dp(18))
         pos_hint: {"center_y": 0.5}
 
     # Nom + âge dans un même label (âge plus discret, absent sans profil
-    # actif) : pas d'espace vide laissé par un label d'âge masqué
+    # actif) : pas d'espace vide laissé par un label d'âge masqué. Sur
+    # smartphone, l'âge est retiré pour laisser plus de place au titre
+    # de la top bar (voir KCApp._add_player_chip_to_top_bar).
     MDLabel:
         text:
-            (root.player_name + "  [size=14sp][color=ffffffcc]" + root.player_age + "[/color][/size]") \
+            (root.player_name if Window.width < dp(600) else \
+            root.player_name + "  [size=14sp][color=ffffffcc]" + root.player_age + "[/color][/size]") \
             if root.player_name else "Aucun joueur"
         markup: True
-        font_style: "Subtitle1"
+        font_style: "Subtitle1" if Window.width >= dp(600) else "Body2"
         theme_text_color: "Custom"
         text_color: 1, 1, 1, 1 if root.player_name else 0.8
         adaptive_size: True
@@ -39,17 +45,17 @@
 
     # Badge d'état de partie (mêmes couleurs que la bannière Home)
     MDCard:
-        padding: dp(8), dp(2)
-        radius: [dp(10)]
+        padding: (dp(8), dp(2)) if Window.width >= dp(600) else (dp(5), dp(1))
+        radius: [dp(10)] if Window.width >= dp(600) else [dp(8)]
         md_bg_color: root.game_state_bg
         elevation: 0
         size_hint: None, None
-        size: self.minimum_width, dp(22)
+        size: self.minimum_width, dp(22) if Window.width >= dp(600) else dp(17)
         pos_hint: {"center_y": 0.5}
 
         MDLabel:
             text: root.game_state_label
-            font_style: "Caption"
+            font_style: "Caption" if Window.width >= dp(600) else "Overline"
             bold: True
             theme_text_color: "Custom"
             text_color: root.game_state_fg
