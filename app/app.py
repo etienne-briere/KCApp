@@ -206,15 +206,21 @@ class KCApp(MDApp):
         # children est en ordre inverse : index de left_actions = juste après elle
         row.add_widget(chip, index=row.children.index(left_actions))
 
-        # Titre plus compact sur smartphone (même seuil dp(600) que le
-        # reste de l'UI) : label_title appartient à la kv rule interne de
-        # MDTopAppBar, donc pas accessible depuis ui/kv/main.kv — on le
-        # pilote ici en Python plutôt que par binding kv.
-        def update_title_font_style(*_):
-            title.font_style = "H6" if Window.width >= dp(600) else "Subtitle1"
+        # Titre masqué sur smartphone (même seuil dp(600) que le reste de
+        # l'UI) : l'espace restant une fois le chip joueur placé le rend
+        # illisible même réduit. label_title appartient à la kv rule
+        # interne de MDTopAppBar, donc pas accessible depuis ui/kv/main.kv
+        # — on le pilote ici en Python plutôt que par binding kv. opacity
+        # (pas text) pour ne pas entrer en conflit avec le binding
+        # `text: root.title` de MDTopAppBar, qui écrase label_title.text
+        # à chaque app.change_screen().
+        def update_title_visibility(*_):
+            is_phone = Window.width < dp(600)
+            title.font_style = "Subtitle1" if is_phone else "H6"
+            title.opacity = 0 if is_phone else 1
 
-        Window.bind(width=update_title_font_style)
-        update_title_font_style()
+        Window.bind(width=update_title_visibility)
+        update_title_visibility()
 
         # L'encadré décale le titre vers la droite : on compense avec un
         # padding asymétrique pour qu'il reste centré sur toute la largeur de

@@ -28,13 +28,10 @@
         pos_hint: {"center_y": 0.5}
 
     # Nom + âge dans un même label (âge plus discret, absent sans profil
-    # actif) : pas d'espace vide laissé par un label d'âge masqué. Sur
-    # smartphone, l'âge est retiré pour laisser plus de place au titre
-    # de la top bar (voir KCApp._add_player_chip_to_top_bar).
+    # actif) : pas d'espace vide laissé par un label d'âge masqué
     MDLabel:
         text:
-            (root.player_name if Window.width < dp(600) else \
-            root.player_name + "  [size=14sp][color=ffffffcc]" + root.player_age + "[/color][/size]") \
+            (root.player_name + "  [size=" + ("14sp" if Window.width >= dp(600) else "10sp") + "][color=ffffffcc]" + root.player_age + "[/color][/size]") \
             if root.player_name else "Aucun joueur"
         markup: True
         font_style: "Subtitle1" if Window.width >= dp(600) else "Body2"
