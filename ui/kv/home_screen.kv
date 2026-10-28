@@ -279,15 +279,15 @@
                             spacing: dp(2)
                             elevation: 0
                             size_hint_y: None
-                            height: dp(100) + dp(24)
-    
+                            height: (dp(100) + dp(24)) if Window.width >= dp(600) else self.minimum_height
+
                             # ==== Raccourci vers l'écran Contrôle du jeu ====
                             AnchorLayout:
                                 anchor_x: "right"
                                 anchor_y: "top"
                                 size_hint_y: None
                                 height: dp(24)
-    
+
                                 MDIconButton:
                                     icon: "square-edit-outline"
                                     theme_text_color: "Custom"
@@ -296,46 +296,58 @@
                                     size: dp(24), dp(24)
                                     icon_size: "20sp"
                                     on_release: app.change_screen("pilotage", "Contrôle du jeu", True)
-    
+
+                            # Sur écran étroit : les 3 blocs (modèle / feedback / temps
+                            # restant) passent de côte-à-côte à empilés, séparés par un
+                            # filet horizontal plutôt que vertical.
                             MDBoxLayout:
-                                orientation: "horizontal"
-                                spacing: dp(10)
-    
+                                id: game_info_row
+                                orientation: "horizontal" if Window.width >= dp(600) else "vertical"
+                                spacing: dp(10) if Window.width >= dp(600) else dp(6)
+                                size_hint_y: None
+                                height: dp(78) if Window.width >= dp(600) else self.minimum_height
+
                                 # ===== Affichage du modèle sélectionné dans Unity ====
                                 AnchorLayout:
                                     anchor_x: "center"
                                     anchor_y: "center"
-    
+                                    size_hint_y: None
+                                    height: dp(78) if Window.width >= dp(600) else dp(28)
+
                                     # Label
                                     MDLabel:
                                         id: selected_model
                                         text: root.selected_model
                                         font_style: "Body1"
                                         halign: "center"
-    
+
                                 # ==== Séparateur ====
                                 Widget:
-                                    size_hint_x: None
+                                    size_hint_x: None if Window.width >= dp(600) else 1
+                                    size_hint_y: 1 if Window.width >= dp(600) else None
                                     width: dp(1)
+                                    height: dp(1)
                                     canvas:
                                         Color:
                                             rgba: app.theme_cls.divider_color
                                         Rectangle:
                                             pos: self.pos
                                             size: self.size
-    
+
                                 # ===== Feedback spécifique au mode de jeu =====
                                 AnchorLayout:
                                     anchor_x: "center"
                                     anchor_y: "center"
-    
+                                    size_hint_y: None
+                                    height: dp(78) if Window.width >= dp(600) else dp(44)
+
                                     MDBoxLayout:
                                         orientation: "horizontal"
                                         spacing: dp(5)
                                         size_hint: None, None
                                         size: self.minimum_size
                                         pos_hint: {"center_x": 0.5, "center_y": 0.5}
-    
+
                                         MDIcon:
                                             icon: root.mode_feedback_icon
                                             theme_text_color: "Custom"
@@ -344,46 +356,50 @@
                                             size_hint: None, None
                                             size: dp(30), dp(30)
                                             pos_hint: {'center_y': 0.5}
-    
+
                                         MDBoxLayout:
                                             orientation: "vertical"
                                             size_hint: None, None
                                             size: self.minimum_size
                                             pos_hint: {"center_y": 0.5}
-    
+
                                             MDLabel:
                                                 text: root.mode_feedback_text
                                                 font_style: "Body1"
                                                 halign: "center"
                                                 adaptive_size: True
-    
+
                                             MDLabel:
                                                 text: root.mode_feedback_subtext
                                                 font_style: "Caption"
                                                 theme_text_color: "Secondary"
                                                 halign: "center"
                                                 adaptive_size: True
-    
+
                                 # ==== Séparateur ====
                                 Widget:
-                                    size_hint_x: None
+                                    size_hint_x: None if Window.width >= dp(600) else 1
+                                    size_hint_y: 1 if Window.width >= dp(600) else None
                                     width: dp(1)
+                                    height: dp(1)
                                     canvas:
                                         Color:
                                             rgba: app.theme_cls.divider_color
                                         Rectangle:
                                             pos: self.pos
                                             size: self.size
-    
+
                                 # ===== Temps de session restant ====
                                 AnchorLayout:
                                     anchor_x: "center"
                                     anchor_y: "center"
-    
+                                    size_hint_y: None
+                                    height: dp(78) if Window.width >= dp(600) else dp(28)
+
                                     MDBoxLayout:
                                         orientation: "horizontal"
                                         spacing: dp(5)
-    
+
                                         Widget:
                                         MDIcon:
                                             icon: "timer-outline"
@@ -391,7 +407,7 @@
                                             text_color: app.theme_cls.primary_color
                                             font_size: "30sp"
                                             pos_hint: {'center_y': 0.5}
-    
+
                                         # Label
                                         MDLabel:
                                             text: root.session_remaining_text

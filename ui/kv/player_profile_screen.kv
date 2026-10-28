@@ -1,5 +1,6 @@
 #:kivy 2.0
 #:import dp kivy.metrics.dp
+#:import Window kivy.core.window.Window
 
 <PlayerProfileScreen>:
 
@@ -165,10 +166,10 @@
                     elevation: 0
 
                     MDBoxLayout:
-                        orientation: "horizontal"
+                        orientation: "horizontal" if Window.width >= dp(600) else "vertical"
                         spacing: dp(10)
                         size_hint_y: None
-                        height: dp(48)
+                        height: dp(48) if Window.width >= dp(600) else dp(106)
 
                         MDTextField:
                             id: new_name_field
@@ -176,7 +177,7 @@
                             hint_text: "Nom du joueur"
                             icon_left: "account-outline"
                             mode: "rectangle"
-                            size_hint_x: 0.65
+                            size_hint_x: 0.65 if Window.width >= dp(600) else 1
                             text_color_focus: app.theme_cls.primary_color
                             hint_text_color_focus: app.theme_cls.primary_color
                             line_color_focus: app.theme_cls.primary_color
@@ -189,17 +190,17 @@
                             icon_left: "cake-variant-outline"
                             mode: "rectangle"
                             input_filter: "int"
-                            size_hint_x: 0.35
+                            size_hint_x: 0.35 if Window.width >= dp(600) else 1
                             text_color_focus: app.theme_cls.primary_color
                             hint_text_color_focus: app.theme_cls.primary_color
                             line_color_focus: app.theme_cls.primary_color
                             icon_left_color_focus: app.theme_cls.primary_color
 
                     MDBoxLayout:
-                        orientation: "horizontal"
+                        orientation: "horizontal" if Window.width >= dp(600) else "vertical"
                         spacing: dp(10)
                         size_hint_y: None
-                        height: dp(48)
+                        height: dp(48) if Window.width >= dp(600) else dp(106)
 
                         MDTextField:
                             id: new_weight_field
@@ -208,7 +209,7 @@
                             icon_left: "scale-bathroom"
                             mode: "rectangle"
                             input_filter: "float"
-                            size_hint_x: 0.5
+                            size_hint_x: 0.5 if Window.width >= dp(600) else 1
                             text_color_focus: app.theme_cls.primary_color
                             hint_text_color_focus: app.theme_cls.primary_color
                             line_color_focus: app.theme_cls.primary_color
@@ -216,7 +217,7 @@
 
                         MDRectangleFlatButton:
                             text: root.sex_label(root.new_sex)
-                            size_hint_x: 0.5
+                            size_hint_x: 0.5 if Window.width >= dp(600) else 1
                             size_hint_y: None
                             height: dp(48)
                             on_release: root.open_sex_menu(self, "new")
@@ -263,10 +264,10 @@
                     elevation: 0
 
                     MDBoxLayout:
-                        orientation: "horizontal"
+                        orientation: "horizontal" if Window.width >= dp(600) else "vertical"
                         spacing: dp(10)
                         size_hint_y: None
-                        height: dp(48)
+                        height: dp(48) if Window.width >= dp(600) else dp(106)
 
                         MDTextField:
                             id: edit_name_field
@@ -274,7 +275,7 @@
                             hint_text: "Nom du joueur"
                             icon_left: "account-outline"
                             mode: "rectangle"
-                            size_hint_x: 0.65
+                            size_hint_x: 0.65 if Window.width >= dp(600) else 1
                             text_color_focus: app.theme_cls.primary_color
                             hint_text_color_focus: app.theme_cls.primary_color
                             line_color_focus: app.theme_cls.primary_color
@@ -287,17 +288,17 @@
                             icon_left: "cake-variant-outline"
                             mode: "rectangle"
                             input_filter: "int"
-                            size_hint_x: 0.35
+                            size_hint_x: 0.35 if Window.width >= dp(600) else 1
                             text_color_focus: app.theme_cls.primary_color
                             hint_text_color_focus: app.theme_cls.primary_color
                             line_color_focus: app.theme_cls.primary_color
                             icon_left_color_focus: app.theme_cls.primary_color
 
                     MDBoxLayout:
-                        orientation: "horizontal"
+                        orientation: "horizontal" if Window.width >= dp(600) else "vertical"
                         spacing: dp(10)
                         size_hint_y: None
-                        height: dp(48)
+                        height: dp(48) if Window.width >= dp(600) else dp(106)
 
                         MDTextField:
                             id: edit_weight_field
@@ -306,7 +307,7 @@
                             icon_left: "scale-bathroom"
                             mode: "rectangle"
                             input_filter: "float"
-                            size_hint_x: 0.5
+                            size_hint_x: 0.5 if Window.width >= dp(600) else 1
                             text_color_focus: app.theme_cls.primary_color
                             hint_text_color_focus: app.theme_cls.primary_color
                             line_color_focus: app.theme_cls.primary_color
@@ -314,7 +315,7 @@
 
                         MDRectangleFlatButton:
                             text: root.sex_label(root.edit_sex)
-                            size_hint_x: 0.5
+                            size_hint_x: 0.5 if Window.width >= dp(600) else 1
                             size_hint_y: None
                             height: dp(48)
                             on_release: root.open_sex_menu(self, "edit")

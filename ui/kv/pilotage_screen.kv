@@ -1,5 +1,6 @@
 #:kivy 2.0
 #:import dp kivy.metrics.dp
+#:import Window kivy.core.window.Window
 
 <PilotageScreen>:
 
@@ -269,7 +270,7 @@
 
                         MDBoxLayout:
                             id: incremental_options_content
-                            orientation: "horizontal"
+                            orientation: "horizontal" if Window.width >= dp(600) else "vertical"
                             padding: 0, dp(12), 0, 0
                             spacing: dp(10)
                             size_hint_y: None
@@ -335,7 +336,7 @@
                             height: self.minimum_height
 
                             MDBoxLayout:
-                                orientation: "horizontal"
+                                orientation: "horizontal" if Window.width >= dp(600) else "vertical"
                                 spacing: dp(10)
                                 size_hint_y: None
                                 height: self.minimum_height
