@@ -304,6 +304,14 @@
         # vue normale (ici la largeur ET la hauteur varient, l'écran
         # passant en paysage — voir GameScreen.toggle_fullscreen).
         FloatLayout:
+            # size_hint à (0, 0) quand masqué, pas seulement opacity/disabled :
+            # un widget disabled qui collide quand même avec le toucher
+            # l'absorbe silencieusement (voir Widget.on_touch_down dans
+            # Kivy — disabled + collide_point renvoie True sans dispatcher
+            # aux enfants/voisins). Avec une taille nulle, il ne peut plus
+            # intercepter le moindre toucher destiné à la vue normale
+            # en dessous.
+            size_hint: (1, 1) if root.is_fullscreen else (0, 0)
             opacity: 1 if root.is_fullscreen else 0
             disabled: not root.is_fullscreen
 
