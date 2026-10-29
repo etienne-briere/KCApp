@@ -71,7 +71,7 @@
                 MDBoxLayout:
                     orientation: "vertical"
                     spacing: dp(8)
-                    padding: dp(20), 0
+                    padding: (dp(20), 0) if Window.width >= dp(600) else (dp(8), 0)
                     size_hint_y: None
                     height: self.minimum_height
 
@@ -85,7 +85,7 @@
 
                     MDCard:
                         orientation: "vertical"
-                        padding: dp(16)
+                        padding: dp(16) if Window.width >= dp(600) else dp(10)
                         radius: [12]
                         spacing: dp(8)
                         size_hint_y: None
@@ -114,13 +114,14 @@
 
                         MDBoxLayout:
                             orientation: "horizontal"
-                            spacing: dp(8)
+                            spacing: dp(8) if Window.width >= dp(600) else dp(4)
                             size_hint_y: None
                             height: dp(40)
 
                             MDFillRoundFlatButton:
-                                text: "2 img/s"
-                                font_size: "13sp"
+                                text: "2 img/s" if Window.width >= dp(600) else "2"
+                                font_size: "13sp" if Window.width >= dp(600) else "11sp"
+                                padding: (dp(16), dp(8)) if Window.width >= dp(600) else (dp(6), dp(4))
                                 md_bg_color: GREEN_BG if root.fps_choice == 2 else GRAY_BG
                                 theme_text_color: "Custom"
                                 text_color: GREEN_FG if root.fps_choice == 2 else GRAY_FG
@@ -130,8 +131,9 @@
                                 on_release: root.set_stream_option(fps=2)
 
                             MDFillRoundFlatButton:
-                                text: "4 img/s"
-                                font_size: "13sp"
+                                text: "4 img/s" if Window.width >= dp(600) else "4"
+                                font_size: "13sp" if Window.width >= dp(600) else "11sp"
+                                padding: (dp(16), dp(8)) if Window.width >= dp(600) else (dp(6), dp(4))
                                 md_bg_color: GREEN_BG if root.fps_choice == 4 else GRAY_BG
                                 theme_text_color: "Custom"
                                 text_color: GREEN_FG if root.fps_choice == 4 else GRAY_FG
@@ -141,8 +143,9 @@
                                 on_release: root.set_stream_option(fps=4)
 
                             MDFillRoundFlatButton:
-                                text: "8 img/s"
-                                font_size: "13sp"
+                                text: "8 img/s" if Window.width >= dp(600) else "8"
+                                font_size: "13sp" if Window.width >= dp(600) else "11sp"
+                                padding: (dp(16), dp(8)) if Window.width >= dp(600) else (dp(6), dp(4))
                                 md_bg_color: GREEN_BG if root.fps_choice == 8 else GRAY_BG
                                 theme_text_color: "Custom"
                                 text_color: GREEN_FG if root.fps_choice == 8 else GRAY_FG
@@ -152,8 +155,9 @@
                                 on_release: root.set_stream_option(fps=8)
 
                             MDFillRoundFlatButton:
-                                text: "12 img/s"
-                                font_size: "13sp"
+                                text: "12 img/s" if Window.width >= dp(600) else "12"
+                                font_size: "13sp" if Window.width >= dp(600) else "11sp"
+                                padding: (dp(16), dp(8)) if Window.width >= dp(600) else (dp(6), dp(4))
                                 md_bg_color: GREEN_BG if root.fps_choice == 12 else GRAY_BG
                                 theme_text_color: "Custom"
                                 text_color: GREEN_FG if root.fps_choice == 12 else GRAY_FG
@@ -165,7 +169,7 @@
                 MDBoxLayout:
                     orientation: "vertical"
                     spacing: dp(8)
-                    padding: dp(20), 0
+                    padding: (dp(20), 0) if Window.width >= dp(600) else (dp(8), 0)
                     size_hint_y: None
                     height: self.minimum_height
 
@@ -179,7 +183,7 @@
 
                     MDCard:
                         orientation: "vertical"
-                        padding: dp(16)
+                        padding: dp(16) if Window.width >= dp(600) else dp(10)
                         radius: [12]
                         spacing: dp(8)
                         size_hint_y: None
@@ -208,13 +212,14 @@
 
                         MDBoxLayout:
                             orientation: "horizontal"
-                            spacing: dp(8)
+                            spacing: dp(8) if Window.width >= dp(600) else dp(4)
                             size_hint_y: None
                             height: dp(40)
 
                             MDFillRoundFlatButton:
-                                text: "320 px"
-                                font_size: "13sp"
+                                text: "320 px" if Window.width >= dp(600) else "320"
+                                font_size: "13sp" if Window.width >= dp(600) else "11sp"
+                                padding: (dp(16), dp(8)) if Window.width >= dp(600) else (dp(6), dp(4))
                                 md_bg_color: GREEN_BG if root.width_choice == 320 else GRAY_BG
                                 theme_text_color: "Custom"
                                 text_color: GREEN_FG if root.width_choice == 320 else GRAY_FG
@@ -224,8 +229,9 @@
                                 on_release: root.set_stream_option(width=320)
 
                             MDFillRoundFlatButton:
-                                text: "480 px"
-                                font_size: "13sp"
+                                text: "480 px" if Window.width >= dp(600) else "480"
+                                font_size: "13sp" if Window.width >= dp(600) else "11sp"
+                                padding: (dp(16), dp(8)) if Window.width >= dp(600) else (dp(6), dp(4))
                                 md_bg_color: GREEN_BG if root.width_choice == 480 else GRAY_BG
                                 theme_text_color: "Custom"
                                 text_color: GREEN_FG if root.width_choice == 480 else GRAY_FG
@@ -235,8 +241,9 @@
                                 on_release: root.set_stream_option(width=480)
 
                             MDFillRoundFlatButton:
-                                text: "640 px"
-                                font_size: "13sp"
+                                text: "640 px" if Window.width >= dp(600) else "640"
+                                font_size: "13sp" if Window.width >= dp(600) else "11sp"
+                                padding: (dp(16), dp(8)) if Window.width >= dp(600) else (dp(6), dp(4))
                                 md_bg_color: GREEN_BG if root.width_choice == 640 else GRAY_BG
                                 theme_text_color: "Custom"
                                 text_color: GREEN_FG if root.width_choice == 640 else GRAY_FG
@@ -246,8 +253,9 @@
                                 on_release: root.set_stream_option(width=640)
 
                             MDFillRoundFlatButton:
-                                text: "800 px"
-                                font_size: "13sp"
+                                text: "800 px" if Window.width >= dp(600) else "800"
+                                font_size: "13sp" if Window.width >= dp(600) else "11sp"
+                                padding: (dp(16), dp(8)) if Window.width >= dp(600) else (dp(6), dp(4))
                                 md_bg_color: GREEN_BG if root.width_choice == 800 else GRAY_BG
                                 theme_text_color: "Custom"
                                 text_color: GREEN_FG if root.width_choice == 800 else GRAY_FG
@@ -257,8 +265,9 @@
                                 on_release: root.set_stream_option(width=800)
 
                             MDFillRoundFlatButton:
-                                text: "960 px"
-                                font_size: "13sp"
+                                text: "960 px" if Window.width >= dp(600) else "960"
+                                font_size: "13sp" if Window.width >= dp(600) else "11sp"
+                                padding: (dp(16), dp(8)) if Window.width >= dp(600) else (dp(6), dp(4))
                                 md_bg_color: GREEN_BG if root.width_choice == 960 else GRAY_BG
                                 theme_text_color: "Custom"
                                 text_color: GREEN_FG if root.width_choice == 960 else GRAY_FG
