@@ -40,12 +40,6 @@ class QuickActionsBar(MDFloatLayout):
     is_open = BooleanProperty(False)
     game_state = StringProperty("disconnected")
     unity_connected = BooleanProperty(False)
-    # "Restaurer la vue d'origine" n'a de sens qu'après un "Recentrer la
-    # vue" — voir recenter_view()/restore_view(). Propre à cette UI,
-    # comme dans PilotageScreen (ui/screens/pilotage_screen.py), qui a sa
-    # propre instance de GameActionsController et ne partage donc pas cet
-    # état avec elle.
-    vue_recentree = BooleanProperty(False)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -109,14 +103,6 @@ class QuickActionsBar(MDFloatLayout):
 
     def return_to_menu(self):
         self._game_actions.return_to_menu()
-
-    def recenter_view(self):
-        if self._game_actions.recenter_view():
-            self.vue_recentree = True
-
-    def restore_view(self):
-        if self._game_actions.restore_view():
-            self.vue_recentree = False
 
     def confirm_quit_game(self):
         self._game_actions.confirm_quit_game()

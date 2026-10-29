@@ -7,14 +7,14 @@
     size_hint: 1, 1
 
     # ---------- PANNEAU (icônes d'actions, en rangée horizontale) ----------
-    # Largeur voulue (dp(444), pour 8 icônes à ~dp(48) de diamètre naturel
+    # Largeur voulue (dp(336), pour 6 icônes à ~dp(48) de diamètre naturel
     # + espacement + padding) plafonnée à la largeur dispo de l'écran —
     # sinon le panneau déborde sur un écran étroit. Le ScrollView interne
     # rend le reste atteignable si ça ne tient pas.
     ClippedBox:
         id: panel
         size_hint: None, None
-        width: min(dp(444), root.width - dp(16))
+        width: min(dp(336), root.width - dp(16))
         height: dp(64) if root.is_open else 0
         x: max(0, min(root.width - self.width, handle.center_x - self.width / 2))
         y: handle.top
@@ -56,19 +56,6 @@
                     text_color: 0, 0, 0, 1
                     disabled: root.game_state == "Menu"
                     on_release: root.return_to_menu()
-
-                MDIconButton:
-                    icon: "backup-restore"
-                    theme_text_color: "Custom"
-                    text_color: 0, 0, 0, 1
-                    disabled: not root.vue_recentree
-                    on_release: root.restore_view()
-
-                MDIconButton:
-                    icon: "eye-refresh-outline"
-                    theme_text_color: "Custom"
-                    text_color: 0, 0, 0, 1
-                    on_release: root.recenter_view()
 
                 MDIconButton:
                     icon: "restart"
