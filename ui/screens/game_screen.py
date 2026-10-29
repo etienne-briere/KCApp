@@ -139,16 +139,27 @@ class GameScreen(MDScreen):
     def toggle_fullscreen(self):
         """Plein écran de la vidéo : masque top bar / barre de statut /
         navigation du bas / réglages FLUIDITÉ-QUALITÉ D'IMAGE (voir
-        app.chrome_visible, lu par ui/kv/main.kv) et bascule en paysage sur
-        Android pour une image plus grande. Seule sortie : retaper l'icône
-        (la nav étant masquée, il n'y a pas d'autre chemin de retour)."""
+        app.chrome_visible, lu par ui/kv/main.kv). S'affiche d'abord dans
+        l'orientation courante (portrait en pratique, puisqu'on ne force
+        rien) ; si l'utilisateur pivote physiquement le téléphone, l'écran
+        suit (voir _set_android_orientation : SENSOR, pas de bascule
+        programmatique). Seule sortie : retaper l'icône (la nav étant
+        masquée, il n'y a pas d'autre chemin de retour)."""
         self.is_fullscreen = not self.is_fullscreen
         App.get_running_app().chrome_visible = not self.is_fullscreen
-        self._set_android_orientation("landscape" if self.is_fullscreen else "portrait")
+        self._set_android_orientation("free" if self.is_fullscreen else "portrait")
 
-    def _set_android_orientation(self, orientation):
-        """Verrouille l'orientation sur Android ; sans effet ailleurs (pas
-        de rotation d'écran sur desktop)."""
+    def _set_android_orientation(self, mode):
+        """Pilote l'orientation sur Android ; sans effet ailleurs (pas de
+        rotation d'écran sur desktop).
+
+        'free' : suit le capteur (portrait et paysage), sans forcer de
+        bascule immédiate — l'écran reste dans son orientation actuelle
+        tant que l'utilisateur ne tourne pas physiquement le téléphone.
+        'portrait' : verrouillé, pour que le reste de l'app (pas conçu
+        pour le paysage) retrouve un état stable à la sortie du plein
+        écran, quelle que soit la façon dont le téléphone est tenu.
+        """
         if platform != "android":
             return
 
@@ -157,8 +168,8 @@ class GameScreen(MDScreen):
         activity = autoclass("org.kivy.android.PythonActivity").mActivity
         ActivityInfo = autoclass("android.content.pm.ActivityInfo")
         value = (
-            ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-            if orientation == "landscape"
+            ActivityInfo.SCREEN_ORIENTATION_SENSOR
+            if mode == "free"
             else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         )
         activity.setRequestedOrientation(value)
