@@ -1,5 +1,6 @@
 #:kivy 2.0
 #:import dp kivy.metrics.dp
+#:import Window kivy.core.window.Window
 
 <ControlMenuScreen>:
 
@@ -34,13 +35,13 @@
 
                 MDLabel:
                     text: "Casque VR"
-                    font_style: "H6"
+                    font_style: "H6" if Window.width >= dp(600) else "Subtitle1"
                     halign: "left"
                     valign: "bottom"
 
                 MDLabel:
                     text: "Détection, connexion et préparation du casque avant la séance"
-                    font_style: "Caption"
+                    font_style: "Caption" if Window.width >= dp(600) else "Overline"
                     theme_text_color: "Secondary"
                     halign: "left"
                     valign: "top"
@@ -80,13 +81,13 @@
 
                 MDLabel:
                     text: "Contrôle du jeu"
-                    font_style: "H6"
+                    font_style: "H6" if Window.width >= dp(600) else "Subtitle1"
                     halign: "left"
                     valign: "bottom"
 
                 MDLabel:
                     text: "Obstacles, FC cible et actions en direct pendant la séance"
-                    font_style: "Caption"
+                    font_style: "Caption" if Window.width >= dp(600) else "Overline"
                     theme_text_color: "Secondary"
                     halign: "left"
                     valign: "top"
@@ -126,13 +127,13 @@
 
                 MDLabel:
                     text: "Profil du joueur"
-                    font_style: "H6"
+                    font_style: "H6" if Window.width >= dp(600) else "Subtitle1"
                     halign: "left"
                     valign: "bottom"
 
                 MDLabel:
                     text: "Nom et âge du joueur, choix parmi les profils enregistrés"
-                    font_style: "Caption"
+                    font_style: "Caption" if Window.width >= dp(600) else "Overline"
                     theme_text_color: "Secondary"
                     halign: "left"
                     valign: "top"

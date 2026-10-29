@@ -144,14 +144,14 @@
 
                             MDLabel:
                                 text: "Fréquence cardiaque"
-                                font_style: "Body1"
+                                font_style: "Body1" if Window.width >= dp(600) else "Body2"
                                 halign: "left"
                                 valign: "bottom"
 
                             # Signal perdu : le capteur s'est déconnecté tout seul
                             MDLabel:
                                 text: "Signal perdu — reconnectez le capteur" if root.hr_signal_lost else f"{root.hrmax_percent_label} % FCmax · {root.patient_age} ans"
-                                font_style: "Caption"
+                                font_style: "Caption" if Window.width >= dp(600) else "Overline"
                                 theme_text_color: "Custom" if root.hr_signal_lost else "Secondary"
                                 text_color: 0.776, 0.157, 0.157, 1
                                 halign: "left"
@@ -167,14 +167,14 @@
                             MDLabel:
                                 id: heart_rate_label
                                 text: root.heart_rate_label
-                                font_style: "H5"
+                                font_style: "H5" if Window.width >= dp(600) else "H6"
                                 theme_text_color: "Secondary" if root.hr_signal_lost else "Primary"
                                 adaptive_size: True
                                 pos_hint: {"center_y": 0.5}
 
                             MDLabel:
                                 text: "bpm"
-                                font_style: "Caption"
+                                font_style: "Caption" if Window.width >= dp(600) else "Overline"
                                 theme_text_color: "Secondary"
                                 adaptive_size: True
                                 pos_hint: {"center_y": 0.4}
@@ -197,7 +197,7 @@
 
                         MDLabel:
                             text: "Cubes par minute"
-                            font_style: "Body1"
+                            font_style: "Body1" if Window.width >= dp(600) else "Body2"
                             halign: "left"
                             valign: "middle"
 
@@ -211,14 +211,14 @@
                             MDLabel:
                                 id: cpm_label
                                 text: root.cpm_label
-                                font_style: "H5"
+                                font_style: "H5" if Window.width >= dp(600) else "H6"
                                 theme_text_color: "Primary"
                                 adaptive_size: True
                                 pos_hint: {"center_y": 0.5}
 
                             MDLabel:
                                 text: "cpm"
-                                font_style: "Caption"
+                                font_style: "Caption" if Window.width >= dp(600) else "Overline"
                                 theme_text_color: "Secondary"
                                 adaptive_size: True
                                 pos_hint: {"center_y": 0.4}
@@ -266,13 +266,13 @@
 
                             MDLabel:
                                 text: "FC cible"
-                                font_style: "Body1"
+                                font_style: "Body1" if Window.width >= dp(600) else "Body2"
                                 halign: "left"
                                 adaptive_height: True
 
                             MDLabel:
                                 text: "Valeur envoyée au jeu, Entrée pour valider" if root.unity_connected else "Jeu non connecté"
-                                font_style: "Caption"
+                                font_style: "Caption" if Window.width >= dp(600) else "Overline"
                                 theme_text_color: "Secondary"
                                 halign: "left"
                                 adaptive_height: True
@@ -325,13 +325,13 @@
 
                                 MDLabel:
                                     text: "Cpm minimum"
-                                    font_style: "Body1"
+                                    font_style: "Body1" if Window.width >= dp(600) else "Body2"
                                     halign: "left"
                                     adaptive_height: True
 
                                 MDLabel:
                                     text: "Cubes par minute"
-                                    font_style: "Caption"
+                                    font_style: "Caption" if Window.width >= dp(600) else "Overline"
                                     theme_text_color: "Secondary"
                                     halign: "left"
                                     adaptive_height: True
@@ -377,13 +377,13 @@
 
                                 MDLabel:
                                     text: "Cpm maximum"
-                                    font_style: "Body1"
+                                    font_style: "Body1" if Window.width >= dp(600) else "Body2"
                                     halign: "left"
                                     adaptive_height: True
 
                                 MDLabel:
                                     text: "Cubes par minute"
-                                    font_style: "Caption"
+                                    font_style: "Caption" if Window.width >= dp(600) else "Overline"
                                     theme_text_color: "Secondary"
                                     halign: "left"
                                     adaptive_height: True
@@ -441,13 +441,13 @@
 
                             MDLabel:
                                 text: "Cadence fixe"
-                                font_style: "Body1"
+                                font_style: "Body1" if Window.width >= dp(600) else "Body2"
                                 halign: "left"
                                 adaptive_height: True
 
                             MDLabel:
                                 text: "Cubes par minute (30 à 200), Entrée pour valider" if root.unity_connected else "Jeu non connecté"
-                                font_style: "Caption"
+                                font_style: "Caption" if Window.width >= dp(600) else "Overline"
                                 theme_text_color: "Secondary"
                                 halign: "left"
                                 adaptive_height: True
@@ -582,7 +582,7 @@
 
                                 MDLabel:
                                     text: "État du jeu"
-                                    font_style: "Caption"
+                                    font_style: "Caption" if Window.width >= dp(600) else "Overline"
                                     adaptive_size: True
                                     pos_hint: {"center_y": 0.5}
 
@@ -615,7 +615,7 @@
 
                                 MDLabel:
                                     text: "PID de secours"
-                                    font_style: "Caption"
+                                    font_style: "Caption" if Window.width >= dp(600) else "Overline"
                                     adaptive_size: True
                                     pos_hint: {"center_y": 0.5}
 
@@ -662,7 +662,7 @@
 
                         MDLabel:
                             text: "Contrôleur" if root.controller_state_label else "Aucune partie en cours"
-                            font_style: "Body1"
+                            font_style: "Body1" if Window.width >= dp(600) else "Body2"
                             halign: "left"
                             valign: "center"
                             adaptive_size: True
@@ -701,7 +701,7 @@
 
                             MDLabel:
                                 text: root.controller_badge_text
-                                font_style: "Caption"
+                                font_style: "Caption" if Window.width >= dp(600) else "Overline"
                                 bold: True
                                 theme_text_color: "Custom"
                                 text_color: root.controller_badge_fg

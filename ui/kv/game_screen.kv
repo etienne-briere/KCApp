@@ -1,5 +1,6 @@
 #:kivy 2.0
 #:import dp kivy.metrics.dp
+#:import Window kivy.core.window.Window
 
 <GameScreen>:
     MDBoxLayout:
@@ -10,7 +11,7 @@
         MDLabel:
             text: root.status_text
             halign: "center"
-            font_style: "Caption"
+            font_style: "Caption" if Window.width >= dp(600) else "Overline"
             theme_text_color: "Secondary"
             size_hint: 1, None
             height: dp(28)
@@ -57,7 +58,7 @@
                                 text: "AUCUN SIGNAL"
                                 halign: "center"
                                 valign: "center"
-                                font_style: "H5"
+                                font_style: "H5" if Window.width >= dp(600) else "H6"
                                 theme_text_color: "Custom"
                                 text_color: 1, 1, 1, 0.8
                                 size_hint: 1, 1
@@ -107,7 +108,7 @@
 
                             MDLabel:
                                 text: "Images par seconde"
-                                font_style: "Body1"
+                                font_style: "Body1" if Window.width >= dp(600) else "Body2"
                                 halign: "left"
                                 valign: "center"
 
@@ -201,7 +202,7 @@
 
                             MDLabel:
                                 text: "Résolution"
-                                font_style: "Body1"
+                                font_style: "Body1" if Window.width >= dp(600) else "Body2"
                                 halign: "left"
                                 valign: "center"
 

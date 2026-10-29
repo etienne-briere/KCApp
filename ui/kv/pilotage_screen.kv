@@ -55,7 +55,7 @@
 
                         MDLabel:
                             text: "Joueur"
-                            font_style: "Body1"
+                            font_style: "Body1" if Window.width >= dp(600) else "Body2"
                             halign: "left"
                             valign: "center"
 
@@ -90,7 +90,7 @@
                         text: "Changement de joueur disponible uniquement dans le menu du jeu"
                         theme_text_color: "Custom"
                         text_color: AMBER_FG
-                        font_style: "Caption"
+                        font_style: "Caption" if Window.width >= dp(600) else "Overline"
                         halign: "left"
                         valign: "center"
 
@@ -135,7 +135,7 @@
 
                         MDLabel:
                             text: "Environnement"
-                            font_style: "Body1"
+                            font_style: "Body1" if Window.width >= dp(600) else "Body2"
                             halign: "left"
                             valign: "center"
 
@@ -170,7 +170,7 @@
                         text: "Changement d'environnement disponible uniquement dans le menu du jeu"
                         theme_text_color: "Custom"
                         text_color: AMBER_FG
-                        font_style: "Caption"
+                        font_style: "Caption" if Window.width >= dp(600) else "Overline"
                         halign: "left"
                         valign: "center"
 
@@ -215,7 +215,7 @@
 
                         MDLabel:
                             text: "Mode de jeu"
-                            font_style: "Body1"
+                            font_style: "Body1" if Window.width >= dp(600) else "Body2"
                             halign: "left"
                             valign: "center"
 
@@ -409,7 +409,7 @@
 
                                     MDLabel:
                                         text: "PID de secours (si cycle limite)"
-                                        font_style: "Body1"
+                                        font_style: "Body1" if Window.width >= dp(600) else "Body2"
                                         halign: "left"
                                         valign: "center"
 
@@ -448,7 +448,7 @@
 
                             MDLabel:
                                 text: "Signal FC requis"
-                                font_style: "Body1"
+                                font_style: "Body1" if Window.width >= dp(600) else "Body2"
                                 halign: "left"
                                 valign: "center"
 
@@ -490,7 +490,7 @@
                             text: "Ce mode nécessite un signal FC valide pour fonctionner"
                             theme_text_color: "Custom"
                             text_color: AMBER_FG
-                            font_style: "Caption"
+                            font_style: "Caption" if Window.width >= dp(600) else "Overline"
                             halign: "left"
                             valign: "center"
 
@@ -537,7 +537,7 @@
 
                         MDLabel:
                             text: "Échauffement"
-                            font_style: "Body1"
+                            font_style: "Body1" if Window.width >= dp(600) else "Body2"
                             halign: "left"
                             valign: "center"
 
@@ -745,7 +745,7 @@
 
                         MDLabel:
                             text: "Obstacles"
-                            font_style: "Body1"
+                            font_style: "Body1" if Window.width >= dp(600) else "Body2"
                             halign: "left"
                             valign: "center"
 
@@ -775,7 +775,7 @@
 
                         MDLabel:
                             text: "Main gauche"
-                            font_style: "Body1"
+                            font_style: "Body1" if Window.width >= dp(600) else "Body2"
                             halign: "left"
                             valign: "center"
 
@@ -804,7 +804,7 @@
 
                         MDLabel:
                             text: "Main droite"
-                            font_style: "Body1"
+                            font_style: "Body1" if Window.width >= dp(600) else "Body2"
                             halign: "left"
                             valign: "center"
 

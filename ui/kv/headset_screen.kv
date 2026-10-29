@@ -1,5 +1,6 @@
 #:kivy 2.0
 #:import dp kivy.metrics.dp
+#:import Window kivy.core.window.Window
 
 <HeadsetScreen>:
 
@@ -44,13 +45,13 @@
 
                     MDLabel:
                         text: root.casque_statut
-                        font_style: "H6"
+                        font_style: "H6" if Window.width >= dp(600) else "Subtitle1"
                         halign: "left"
                         valign: "bottom"
 
                     MDLabel:
                         text: "Casque prêt pour la séance" if root.casque_connecte else "Détectez ou renseignez l'adresse IP du casque"
-                        font_style: "Caption"
+                        font_style: "Caption" if Window.width >= dp(600) else "Overline"
                         theme_text_color: "Secondary"
                         halign: "left"
                         valign: "top"
@@ -91,7 +92,7 @@
 
                     MDLabel:
                         text: "Détection du casque"
-                        font_style: "Body1"
+                        font_style: "Body1" if Window.width >= dp(600) else "Body2"
                         halign: "left"
                         valign: "center"
 
@@ -140,7 +141,7 @@
 
                     MDLabel:
                         text: "Alerte de zone activée (recommandé)" if root.casque_limite_active else "Alerte de zone désactivée — dérogation"
-                        font_style: "Caption"
+                        font_style: "Caption" if Window.width >= dp(600) else "Overline"
                         halign: "left"
                         valign: "center"
 

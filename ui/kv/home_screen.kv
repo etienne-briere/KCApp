@@ -47,13 +47,13 @@
                             ("Wi-Fi connecté : " + root.wifi_ssid) \
                             if root.wifi_connected and root.wifi_ssid else \
                             ("Wi-Fi connecté" if root.wifi_connected else "Wi-Fi désactivé")
-                        font_style: "H6"
+                        font_style: "H6" if Window.width >= dp(600) else "Subtitle1"
                         halign: "left"
                         valign: "bottom"
 
                     MDLabel:
                         text: "Connectez-vous sur le même réseau que votre casque VR"
-                        font_style: "Caption"
+                        font_style: "Caption" if Window.width >= dp(600) else "Overline"
                         theme_text_color: "Secondary"
                         halign: "left"
                         valign: "top"
@@ -88,7 +88,7 @@
 
                     MDLabel:
                         text: "Capteur FC connecté" if root.hr_sensor_connected else "Capteur FC déconnecté"
-                        font_style: "H6"
+                        font_style: "H6" if Window.width >= dp(600) else "Subtitle1"
                         halign: "left"
                         valign: "bottom"
 
@@ -97,7 +97,7 @@
                             ("Connecté à " + (root.hr_sensor_name or "votre capteur") + " — envoi en cours…") \
                             if root.hr_data_sent else \
                             ("En attente de connexion du jeu…" if root.hr_sensor_connected else "Connectez votre capteur FC")
-                        font_style: "Caption"
+                        font_style: "Caption" if Window.width >= dp(600) else "Overline"
                         theme_text_color: "Secondary"
                         halign: "left"
                         valign: "top"
@@ -128,14 +128,14 @@
 
                         MDLabel:
                             text: root.heart_rate_text
-                            font_style: "H5"
+                            font_style: "H5" if Window.width >= dp(600) else "H6"
                             theme_text_color: "Primary"
                             adaptive_size: True
                             pos_hint: {"center_y": 0.5}
 
                         MDLabel:
                             text: "bpm"
-                            font_style: "Caption"
+                            font_style: "Caption" if Window.width >= dp(600) else "Overline"
                             theme_text_color: "Secondary"
                             adaptive_size: True
                             pos_hint: {"center_y": 0.4}
@@ -170,7 +170,7 @@
 
                     MDLabel:
                         text: "Jeu connecté" if root.unity_connected else "Jeu déconnecté"
-                        font_style: "H6"
+                        font_style: "H6" if Window.width >= dp(600) else "Subtitle1"
                         halign: "left"
                         valign: "bottom"
 
@@ -178,7 +178,7 @@
                         text:
                             ("Connecté à " + root.unity_ip) if root.unity_connected else \
                             "Appuyez sur le bouton pour relancer la recherche du jeu"
-                        font_style: "Caption"
+                        font_style: "Caption" if Window.width >= dp(600) else "Overline"
                         theme_text_color: "Secondary"
                         halign: "left"
                         valign: "top"
@@ -318,7 +318,7 @@
                                     MDLabel:
                                         id: selected_model
                                         text: root.selected_model
-                                        font_style: "Body1"
+                                        font_style: "Body1" if Window.width >= dp(600) else "Body2"
                                         halign: "center"
 
                                 # ==== Séparateur ====
@@ -365,13 +365,13 @@
 
                                             MDLabel:
                                                 text: root.mode_feedback_text
-                                                font_style: "Body1"
+                                                font_style: "Body1" if Window.width >= dp(600) else "Body2"
                                                 halign: "center"
                                                 adaptive_size: True
 
                                             MDLabel:
                                                 text: root.mode_feedback_subtext
-                                                font_style: "Caption"
+                                                font_style: "Caption" if Window.width >= dp(600) else "Overline"
                                                 theme_text_color: "Secondary"
                                                 halign: "center"
                                                 adaptive_size: True
@@ -411,6 +411,6 @@
                                         # Label
                                         MDLabel:
                                             text: root.session_remaining_text
-                                            font_style: "Body1"
+                                            font_style: "Body1" if Window.width >= dp(600) else "Body2"
                                             halign: "center"
                                         Widget:

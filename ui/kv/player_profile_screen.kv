@@ -55,7 +55,7 @@
 
                         MDLabel:
                             text: "Profil du joueur"
-                            font_style: "Body1"
+                            font_style: "Body1" if Window.width >= dp(600) else "Body2"
                             halign: "left"
                             valign: "center"
 
@@ -106,7 +106,7 @@
 
                     MDLabel:
                         text: root.player_details if root.player_name else ""
-                        font_style: "Caption"
+                        font_style: "Caption" if Window.width >= dp(600) else "Overline"
                         theme_text_color: "Secondary"
                         halign: "left"
                         padding: dp(4), 0
@@ -135,7 +135,7 @@
                         text: "Changement de joueur disponible uniquement dans le menu du jeu"
                         theme_text_color: "Custom"
                         text_color: AMBER_FG
-                        font_style: "Caption"
+                        font_style: "Caption" if Window.width >= dp(600) else "Overline"
                         halign: "left"
                         valign: "center"
 
@@ -224,7 +224,7 @@
 
                     MDLabel:
                         text: "Poids et sexe : facultatifs, servent à estimer les kcal affichées en fin de partie"
-                        font_style: "Caption"
+                        font_style: "Caption" if Window.width >= dp(600) else "Overline"
                         theme_text_color: "Secondary"
                         halign: "left"
                         size_hint_y: None
@@ -322,7 +322,7 @@
 
                     MDLabel:
                         text: "Poids et sexe : facultatifs, servent à estimer les kcal affichées en fin de partie"
-                        font_style: "Caption"
+                        font_style: "Caption" if Window.width >= dp(600) else "Overline"
                         theme_text_color: "Secondary"
                         halign: "left"
                         size_hint_y: None
