@@ -25,6 +25,9 @@ BoxLayout:
             size: self.size
 
     # ---------- TOP BAR ----------
+    # height explicite : masquée (0) quand app.chrome_visible est False
+    # (plein écran vidéo — voir GameScreen.toggle_fullscreen), sinon la
+    # hauteur que KivyMD aurait calculée elle-même selon l'appareil.
     MDTopAppBar:
         id: top_bar
         title: "Accueil"
@@ -33,10 +36,12 @@ BoxLayout:
         # (ui/widgets/player_chip.py) sert de bouton profil
         left_action_items: []
         right_action_items: [["", lambda x: print(x)]]
-    
+        height: self.theme_cls.standard_increment if app.chrome_visible else 0
+
     # -------- SUIVI BLE / Wi-Fi / FC ------
     StatusBar:
         id: status_bar
+        height: dp(30) if app.chrome_visible else 0
 
     # ---------- SCREEN MANAGER + ACTIONS RAPIDES ----------
     # FloatLayout : la barre d'actions rapides flotte par-dessus l'écran
@@ -81,12 +86,16 @@ BoxLayout:
         QuickActionsBar:
             id: quick_actions_bar
             pos: screen_area.pos
+            opacity: 1 if app.chrome_visible else 0
+            disabled: not app.chrome_visible
 
     # ---------- BOTTOM NAVIGATION (FIXE) ----------
+    # height explicite : masquée (0) en plein écran vidéo, comme la top bar
+    # et la status bar ci-dessus (voir GameScreen.toggle_fullscreen).
     MDBottomNavigation:
         id: bottom_nav
         size_hint_y: None
-        height: dp(81)
+        height: dp(81) if app.chrome_visible else 0
         use_text: Window.width >= dp(600)
         transition: NoTransition
 		

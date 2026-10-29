@@ -9,6 +9,7 @@ from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.clock import Clock
 from kivy.metrics import dp
+from kivy.properties import BooleanProperty
 from kivy.utils import platform
 
 # Custom modules
@@ -34,6 +35,11 @@ class KCApp(MDApp):
     """
     Application principale KCApp
     """
+
+    # Top bar / barre de statut / navigation du bas visibles ou non — lu
+    # par ui/kv/main.kv. Passé à False par GameScreen.toggle_fullscreen()
+    # pour le plein écran de la vidéo (voir ui/screens/game_screen.py).
+    chrome_visible = BooleanProperty(True)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
