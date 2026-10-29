@@ -7,7 +7,8 @@ from kivymd.toast import toast
 from kivy.properties import StringProperty, NumericProperty, BooleanProperty, ListProperty, ObjectProperty
 from kivy.app import App
 from kivy.clock import Clock
-from kivy.metrics import Metrics
+from kivy.core.window import Window
+from kivy.metrics import Metrics, dp
 from kivy.uix.scrollview import ScrollView
 from kivy.utils import platform
 
@@ -238,7 +239,6 @@ class TrackingScreen(MDScreen):
         # Configuration Matplotlib
         self.fig = None
         self.line_hr = None
-        self.placeholder_text = None
         self.target_zone = None
         self.target_received = False
 
@@ -672,21 +672,8 @@ class TrackingScreen(MDScreen):
         self.ax1.margins(x=0, y=0) # Pas de marges autour des données
         self.ax1.grid(True, alpha=0.2) # Grille légère
 
-        # Texte indicatif quand pas de données
-        self.placeholder_text = self.ax1.text(
-            0.5,
-            0.5,
-            "Connectez votre capteur pour démarrer le suivi",
-            ha="center",
-            va="center",
-            transform=self.ax1.transAxes,
-            color="#9e9e9e",
-            fontsize=14,
-        )
-
         # Labels des axes (gris foncé, cohérent avec le thème clair de l'app)
         self.ax1.set_xlabel("Temps (s)", color="#616161")
-        self.ax1.set_ylabel("FCmax (%)", color="#616161")
         self.ax2.set_ylabel("Cubes / min", color="#616161")
 
         # Couleurs des axes
@@ -719,6 +706,7 @@ class TrackingScreen(MDScreen):
         self.ax2.set_ylim(20, 210) # CPM
 
         self.update_legend()
+        self._apply_graph_responsive_sizing()
 
         # Ajuster le layout maintenant que les labels/légende existent — le
         # faire plus tôt (avant qu'ils ne soient posés) ne réservait pas de
@@ -732,7 +720,35 @@ class TrackingScreen(MDScreen):
         # sur la taille par défaut de matplotlib, pas celle de la Card).
         self.ids.hr_graph_widget.bind(size=self._on_graph_widget_resize)
 
+    def _apply_graph_responsive_sizing(self):
+        """Police des graduations/labels et visibilité de l'axe Cubes/min
+        (à droite) selon la largeur d'écran — même seuil dp(600) que le
+        reste de l'UI. Sur smartphone, avoir deux axes verticaux complets
+        (FCmax à gauche, Cubes/min à droite) laissait trop peu de place à
+        la courbe elle-même ; l'axe Cubes/min est donc masqué (sa courbe
+        reste tracée, la valeur cpm en direct reste affichée au-dessus du
+        graphique — voir tracking_screen.kv).
+
+        Appelée à l'init, à chaque update_graph() (les set_ylabel de
+        update_graph y remettent une fontsize fixe) et sur resize (pour
+        rester réactif en test desktop --size=...).
+        """
+        is_phone = Window.width < dp(600)
+        label_size = 10 if is_phone else 12
+        tick_size = 8 if is_phone else 10
+
+        self.ax1.xaxis.label.set_fontsize(label_size)
+        self.ax2.yaxis.label.set_fontsize(label_size)
+        self.ax1.tick_params(axis='x', labelsize=tick_size)
+        self.ax1.tick_params(axis='y', labelsize=tick_size)
+        self.ax2.tick_params(axis='y', labelsize=tick_size)
+
+        show_cpm_axis = self.line_cpm.get_visible() and not is_phone
+        self.ax2.get_yaxis().set_visible(show_cpm_axis)
+        self.ax2.spines['right'].set_visible(show_cpm_axis)
+
     def _on_graph_widget_resize(self, *args):
+        self._apply_graph_responsive_sizing()
         self.fig.tight_layout()
         self.fig.canvas.draw_idle()
     
@@ -837,12 +853,7 @@ class TrackingScreen(MDScreen):
             )
 
         # UI
-        self.ax1.set_ylabel("FCmax (%)", color="#C62828", fontsize=12)
         self.ax2.set_ylabel("Cubes / min", color="#009688", fontsize=12)
-
-        # Supprimer le placeholder
-        if self.placeholder_text:
-            self.placeholder_text.set_visible(False)
 
         # target = self.session.config.target_hr_percent
 
@@ -883,10 +894,9 @@ class TrackingScreen(MDScreen):
         has_cpm = bool(cpm_values)
         self.line_cpm.set_data(cpm_times, cpm_values)
         self.line_cpm.set_visible(has_cpm)
-        self.ax2.get_yaxis().set_visible(has_cpm)
-        self.ax2.spines['right'].set_visible(has_cpm)
 
         self.update_legend()
+        self._apply_graph_responsive_sizing()
 
         # Ajuster les limites de l'axe HR en fonction des données
         self.ax1.relim()
