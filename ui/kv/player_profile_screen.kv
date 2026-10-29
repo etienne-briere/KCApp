@@ -59,35 +59,50 @@
                             halign: "left"
                             valign: "center"
 
-                        MDIconButton:
-                            icon: "account-plus"
-                            theme_text_color: "Custom"
-                            text_color: app.theme_cls.primary_color
-                            size_hint: None, None
-                            size: dp(30), dp(30)
-                            icon_size: "22sp"
-                            pos_hint: {"center_y": 0.5}
-                            on_release: root.open_new_form()
+                        # Ajouter/modifier/supprimer à côté du titre sur tablette
+                        # seulement : sur smartphone elles passent sous le
+                        # sélecteur (voir plus bas). Regroupées dans CE conteneur
+                        # (spacing propre) plutôt que mises à 0 individuellement :
+                        # sinon chacune laisse quand même l'espacement du parent
+                        # (dp(15) x 3 = dp(45) de vide à droite du titre, même
+                        # largeur 0) — un seul enfant ne laisse qu'un espacement.
+                        MDBoxLayout:
+                            orientation: "horizontal"
+                            spacing: dp(6)
+                            size_hint_x: None
+                            width: self.minimum_width if Window.width >= dp(600) else 0
+                            opacity: 1 if Window.width >= dp(600) else 0
+                            disabled: Window.width < dp(600)
 
-                        MDIconButton:
-                            icon: "account-edit"
-                            theme_text_color: "Custom"
-                            text_color: app.theme_cls.primary_color
-                            size_hint: None, None
-                            size: dp(30), dp(30)
-                            icon_size: "22sp"
-                            pos_hint: {"center_y": 0.5}
-                            on_release: root.open_edit_form()
+                            MDIconButton:
+                                icon: "account-plus"
+                                theme_text_color: "Custom"
+                                text_color: app.theme_cls.primary_color
+                                size_hint: None, None
+                                size: dp(30), dp(30)
+                                icon_size: "22sp"
+                                pos_hint: {"center_y": 0.5}
+                                on_release: root.open_new_form()
 
-                        MDIconButton:
-                            icon: "account-remove"
-                            theme_text_color: "Custom"
-                            text_color: RED_FG
-                            size_hint: None, None
-                            size: dp(30), dp(30)
-                            icon_size: "22sp"
-                            pos_hint: {"center_y": 0.5}
-                            on_release: root.confirm_delete_player()
+                            MDIconButton:
+                                icon: "account-edit"
+                                theme_text_color: "Custom"
+                                text_color: app.theme_cls.primary_color
+                                size_hint: None, None
+                                size: dp(30), dp(30)
+                                icon_size: "22sp"
+                                pos_hint: {"center_y": 0.5}
+                                on_release: root.open_edit_form()
+
+                            MDIconButton:
+                                icon: "account-remove"
+                                theme_text_color: "Custom"
+                                text_color: RED_FG
+                                size_hint: None, None
+                                size: dp(30), dp(30)
+                                icon_size: "22sp"
+                                pos_hint: {"center_y": 0.5}
+                                on_release: root.confirm_delete_player()
 
                     MDBoxLayout:
                         orientation: "horizontal"
@@ -103,6 +118,49 @@
                             size_hint_y: None
                             height: dp(48)
                             on_release: root.open_player_menu(self)
+
+                    # Ajouter/modifier/supprimer sous le sélecteur, sur
+                    # smartphone seulement (symétrique du bloc ci-dessus).
+                    AnchorLayout:
+                        anchor_x: "center"
+                        anchor_y: "center"
+                        size_hint_y: None
+                        height: dp(40) if Window.width < dp(600) else 0
+                        opacity: 1 if Window.width < dp(600) else 0
+                        disabled: Window.width >= dp(600)
+
+                        MDBoxLayout:
+                            orientation: "horizontal"
+                            spacing: dp(24)
+                            size_hint: None, None
+                            size: self.minimum_size
+
+                            MDIconButton:
+                                icon: "account-plus"
+                                theme_text_color: "Custom"
+                                text_color: app.theme_cls.primary_color
+                                size_hint: None, None
+                                size: dp(30), dp(30)
+                                icon_size: "22sp"
+                                on_release: root.open_new_form()
+
+                            MDIconButton:
+                                icon: "account-edit"
+                                theme_text_color: "Custom"
+                                text_color: app.theme_cls.primary_color
+                                size_hint: None, None
+                                size: dp(30), dp(30)
+                                icon_size: "22sp"
+                                on_release: root.open_edit_form()
+
+                            MDIconButton:
+                                icon: "account-remove"
+                                theme_text_color: "Custom"
+                                text_color: RED_FG
+                                size_hint: None, None
+                                size: dp(30), dp(30)
+                                icon_size: "22sp"
+                                on_release: root.confirm_delete_player()
 
                     MDLabel:
                         text: root.player_details if root.player_name else ""
