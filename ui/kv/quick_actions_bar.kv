@@ -7,14 +7,14 @@
     size_hint: 1, 1
 
     # ---------- PANNEAU (icônes d'actions, en rangée horizontale) ----------
-    # Largeur voulue (dp(336), pour 6 icônes à ~dp(48) de diamètre naturel
-    # + espacement + padding) plafonnée à la largeur dispo de l'écran —
-    # sinon le panneau déborde sur un écran étroit. Le ScrollView interne
-    # rend le reste atteignable si ça ne tient pas.
+    # Largeur voulue (dp(304), pour 7 icônes à dp(36) + espacement +
+    # padding) plafonnée à la largeur dispo de l'écran — sinon le panneau
+    # déborde sur un écran étroit. Le ScrollView interne rend le reste
+    # atteignable si ça ne tient toujours pas.
     ClippedBox:
         id: panel
         size_hint: None, None
-        width: min(dp(336), root.width - dp(16))
+        width: min(dp(304), root.width - dp(16))
         height: dp(64) if root.is_open else 0
         x: max(0, min(root.width - self.width, handle.center_x - self.width / 2))
         y: handle.top
@@ -47,12 +47,18 @@
                 MDIconButton:
                     icon: "exit-to-app"
                     theme_text_color: "Custom"
+                    icon_size: "20sp"
+                    size_hint: None, None
+                    size: dp(36), dp(36)
                     text_color: RED_FG
                     on_release: root.confirm_quit_game()
 
                 MDIconButton:
                     icon: "arrow-left-circle-outline"
                     theme_text_color: "Custom"
+                    icon_size: "20sp"
+                    size_hint: None, None
+                    size: dp(36), dp(36)
                     text_color: 0, 0, 0, 1
                     disabled: root.game_state == "Menu"
                     on_release: root.return_to_menu()
@@ -60,6 +66,9 @@
                 MDIconButton:
                     icon: "restart"
                     theme_text_color: "Custom"
+                    icon_size: "20sp"
+                    size_hint: None, None
+                    size: dp(36), dp(36)
                     text_color: 0, 0, 0, 1
                     disabled: root.game_state == "Menu"
                     on_release: root.restart_game()
@@ -67,6 +76,9 @@
                 MDIconButton:
                     icon: "play-circle-outline"
                     theme_text_color: "Custom"
+                    icon_size: "20sp"
+                    size_hint: None, None
+                    size: dp(36), dp(36)
                     text_color: GREEN_FG
                     disabled: root.game_state != "Paused"
                     on_release: root.resume_game()
@@ -74,6 +86,9 @@
                 MDIconButton:
                     icon: "pause-circle-outline"
                     theme_text_color: "Custom"
+                    icon_size: "20sp"
+                    size_hint: None, None
+                    size: dp(36), dp(36)
                     text_color: AMBER_FG
                     disabled: root.game_state != "Playing"
                     on_release: root.pause_game()
@@ -81,9 +96,25 @@
                 MDIconButton:
                     icon: "rocket-launch-outline"
                     theme_text_color: "Custom"
+                    icon_size: "20sp"
+                    size_hint: None, None
+                    size: dp(36), dp(36)
                     text_color: GREEN_FG
                     disabled: root.game_state != "Menu"
                     on_release: root.launch_game()
+
+                # Pas de disabled propre : actif dès que le jeu est
+                # connecté (déjà garanti par le disabled du panel ClippedBox
+                # ci-dessus), contrairement aux actions au-dessus qui
+                # dépendent en plus de l'état de la partie.
+                MDIconButton:
+                    icon: "cog-refresh-outline"
+                    theme_text_color: "Custom"
+                    icon_size: "20sp"
+                    size_hint: None, None
+                    size: dp(36), dp(36)
+                    text_color: 0, 0, 0, 1
+                    on_release: root.refresh_config()
 
     # ---------- LANGUETTE (toujours visible, quel que soit l'écran) ----------
     # Centrée en bas, collée au-dessus de la barre de navigation (pas sur

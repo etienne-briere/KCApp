@@ -194,6 +194,17 @@ class GameActionsController:
         self.run(lambda: self.udp_controller.return_to_menu(),
                   "↩️ Retour au menu", "❌ Échec du retour au menu")
 
+    def refresh_config(self):
+        """Redemande à Unity de renvoyer l'ensemble de ses réglages actuels.
+        Pas de toast de succès/spinner (pas de confirmation session_updated
+        dédiée pour cette action) — même comportement que
+        HomeScreen.refresh_config(), dupliqué ici plutôt que partagé pour
+        ne pas faire dépendre HomeScreen de ce contrôleur."""
+        if self.udp_controller:
+            success = self.udp_controller.request_config_refresh()
+            if not success:
+                toast(_strip_emoji_prefix("❌ Échec de la demande de synchronisation"))
+
     def recenter_view(self):
         """Recentre l'orientation du joueur dans le jeu. Renvoie True en
         cas de succès, pour que l'UI hôte sache activer "restaurer la vue

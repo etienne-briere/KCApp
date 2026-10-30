@@ -104,5 +104,8 @@ class QuickActionsBar(MDFloatLayout):
     def return_to_menu(self):
         self._game_actions.return_to_menu()
 
+    def refresh_config(self):
+        self._game_actions.refresh_config()
+
     def confirm_quit_game(self):
         self._game_actions.confirm_quit_game()
