@@ -2,6 +2,27 @@
 #:import dp kivy.metrics.dp
 #:import Window kivy.core.window.Window
 
+# Contenu du popup d'info ADB (voir HeadsetScreen.afficher_info_casque) :
+# hauteur plafonnée (place pour le titre/boutons du dialogue) avec un
+# ScrollView interne pour le texte, trop long pour tenir sur un écran de
+# téléphone sans défiler.
+<InfoCasqueContent>:
+    orientation: "vertical"
+    size_hint_y: None
+    height: min(dp(400), Window.height * 0.6)
+
+    ScrollView:
+        do_scroll_x: False
+
+        MDLabel:
+            id: label
+            markup: True
+            halign: "left"
+            valign: "top"
+            size_hint_y: None
+            height: self.texture_size[1]
+            text_size: self.width, None
+
 <HeadsetScreen>:
 
     ScrollView:

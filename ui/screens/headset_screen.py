@@ -3,13 +3,25 @@ import asyncio
 from kivymd.uix.screen import MDScreen
 from kivy.properties import StringProperty, BooleanProperty
 from kivy.app import App
+from kivy.core.window import Window
+from kivy.metrics import dp
 from utils.logger import get_logger
 from utils.event_bus import event_bus
 from kivymd.toast import toast
+from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDFlatButton
 
 logger = get_logger(__name__)
+
+
+class InfoCasqueContent(MDBoxLayout):
+    """Contenu du popup d'info ADB (voir HeadsetScreen.afficher_info_casque) :
+    le texte est long (plusieurs paragraphes de prérequis/dépannage), une
+    MDDialog "alert"/"simple" classique ne le fait pas défiler et déborderait
+    de l'écran sur un téléphone. kv (headset_screen.kv) met un ScrollView
+    autour du label, avec une hauteur plafonnée pour laisser de la place au
+    titre et aux boutons du dialogue."""
 
 
 class HeadsetScreen(MDScreen):
@@ -86,9 +98,12 @@ class HeadsetScreen(MDScreen):
         )
 
         if not hasattr(self, "_dialog_info_casque") or self._dialog_info_casque is None:
+            content = InfoCasqueContent()
+            content.ids.label.text = texte
             self._dialog_info_casque = MDDialog(
                 title="Paramétrer le casque pour l'ADB",
-                text=texte,
+                type="custom",
+                content_cls=content,
                 size_hint=(0.85, None),
                 buttons=[
                     MDFlatButton(
