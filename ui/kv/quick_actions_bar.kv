@@ -7,15 +7,17 @@
     size_hint: 1, 1
 
     # ---------- PANNEAU (icônes d'actions, en rangée horizontale) ----------
-    # Largeur voulue (dp(360), pour 7 icônes à ~dp(48) de diamètre naturel
-    # + espacement resserré + padding) plafonnée à la largeur dispo de
-    # l'écran — sinon le panneau déborde sur un écran étroit. Le
-    # ScrollView interne (do_scroll_x, activé par défaut) rend le reste
-    # atteignable par un balayage horizontal si ça ne tient toujours pas.
+    # Largeur = celle du contenu (icons_row.minimum_width), plafonnée à
+    # la largeur dispo de l'écran. Pas de ScrollView : le balayage ne
+    # fonctionnait pas de façon fiable en pratique, et l'espacement
+    # resserré (voir icons_row) suffit à faire tenir les 7 icônes sur la
+    # quasi-totalité des écrans visés. Sur un écran plus étroit que ça,
+    # le ClippedBox (StencilView) rogne simplement les icônes en trop —
+    # pas de scroll de secours.
     ClippedBox:
         id: panel
         size_hint: None, None
-        width: min(dp(360), root.width - dp(16))
+        width: min(icons_row.width, root.width - dp(16))
         height: dp(64) if root.is_open else 0
         x: max(0, min(root.width - self.width, handle.center_x - self.width / 2))
         y: handle.top
@@ -30,72 +32,68 @@
                 pos: self.x, self.y
                 size: self.width, dp(1)
 
-        ScrollView:
-            do_scroll_x: True
-            do_scroll_y: False
-            bar_width: dp(2)
+        MDBoxLayout:
+            id: icons_row
+            orientation: "horizontal"
+            size_hint_x: None
+            width: self.minimum_width
+            padding: dp(0), dp(4)
+            spacing: dp(2)
 
-            MDBoxLayout:
-                orientation: "horizontal"
-                size_hint_x: None
-                width: self.minimum_width
-                padding: dp(4), dp(4)
-                spacing: dp(2)
+            # Code couleur sémantique réservé aux actions où la
+            # distinction compte en urgence (vert = ça avance, jaune
+            # = attention, rouge = ça s'arrête) ; les autres restent
+            # en noir pour ne pas diluer le repère visuel.
+            MDIconButton:
+                icon: "exit-to-app"
+                theme_text_color: "Custom"
+                text_color: RED_FG
+                on_release: root.confirm_quit_game()
 
-                # Code couleur sémantique réservé aux actions où la
-                # distinction compte en urgence (vert = ça avance, jaune
-                # = attention, rouge = ça s'arrête) ; les autres restent
-                # en noir pour ne pas diluer le repère visuel.
-                MDIconButton:
-                    icon: "exit-to-app"
-                    theme_text_color: "Custom"
-                    text_color: RED_FG
-                    on_release: root.confirm_quit_game()
+            MDIconButton:
+                icon: "arrow-left-circle-outline"
+                theme_text_color: "Custom"
+                text_color: 0, 0, 0, 1
+                disabled: root.game_state == "Menu"
+                on_release: root.return_to_menu()
 
-                MDIconButton:
-                    icon: "arrow-left-circle-outline"
-                    theme_text_color: "Custom"
-                    text_color: 0, 0, 0, 1
-                    disabled: root.game_state == "Menu"
-                    on_release: root.return_to_menu()
+            MDIconButton:
+                icon: "restart"
+                theme_text_color: "Custom"
+                text_color: 0, 0, 0, 1
+                disabled: root.game_state == "Menu"
+                on_release: root.restart_game()
 
-                MDIconButton:
-                    icon: "restart"
-                    theme_text_color: "Custom"
-                    text_color: 0, 0, 0, 1
-                    disabled: root.game_state == "Menu"
-                    on_release: root.restart_game()
+            MDIconButton:
+                icon: "play-circle-outline"
+                theme_text_color: "Custom"
+                text_color: GREEN_FG
+                disabled: root.game_state != "Paused"
+                on_release: root.resume_game()
 
-                MDIconButton:
-                    icon: "play-circle-outline"
-                    theme_text_color: "Custom"
-                    text_color: GREEN_FG
-                    disabled: root.game_state != "Paused"
-                    on_release: root.resume_game()
+            MDIconButton:
+                icon: "pause-circle-outline"
+                theme_text_color: "Custom"
+                text_color: AMBER_FG
+                disabled: root.game_state != "Playing"
+                on_release: root.pause_game()
 
-                MDIconButton:
-                    icon: "pause-circle-outline"
-                    theme_text_color: "Custom"
-                    text_color: AMBER_FG
-                    disabled: root.game_state != "Playing"
-                    on_release: root.pause_game()
+            MDIconButton:
+                icon: "rocket-launch-outline"
+                theme_text_color: "Custom"
+                text_color: GREEN_FG
+                disabled: root.game_state != "Menu"
+                on_release: root.launch_game()
 
-                MDIconButton:
-                    icon: "rocket-launch-outline"
-                    theme_text_color: "Custom"
-                    text_color: GREEN_FG
-                    disabled: root.game_state != "Menu"
-                    on_release: root.launch_game()
-
-                # Pas de disabled propre : actif dès que le jeu est
-                # connecté (déjà garanti par le disabled du panel ClippedBox
-                # ci-dessus), contrairement aux actions au-dessus qui
-                # dépendent en plus de l'état de la partie.
-                MDIconButton:
-                    icon: "cog-refresh-outline"
-                    theme_text_color: "Custom"
-                    text_color: 0, 0, 0, 1
-                    on_release: root.refresh_config()
+            # Pas de disabled propre : actif dès que le jeu est
+            # connecté (déjà garanti par le disabled du panel ClippedBox
+            # ci-dessus), contrairement aux actions au-dessus qui
+            # dépendent en plus de l'état de la partie.
+            MDIconButton:
+                icon: "cog-refresh-outline"
+                theme_text_color: "Custom"
+                text_color: 0, 0, 0, 1
+                on_release: root.refresh_config()
 
     # ---------- LANGUETTE (toujours visible, quel que soit l'écran) ----------
     # Centrée en bas, collée au-dessus de la barre de navigation (pas sur
