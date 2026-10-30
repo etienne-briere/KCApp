@@ -15,13 +15,19 @@
             height: self.minimum_height
 
             # ==== STATUT DU CASQUE ====
+            # Hauteur adaptative (plus de dp(70) fixe) : casque_statut peut
+            # recevoir un message d'erreur dynamique et non borné (chemin de
+            # fichier Android, texte d'exception brut — voir
+            # HeadsetScreen.handle_casque_erreur), qui peut dépasser la
+            # largeur de la card. Le label est autorisé à passer sur
+            # plusieurs lignes plutôt que d'être coupé ou de déborder.
             MDCard:
                 orientation: "horizontal"
                 padding: dp(16)
                 radius: [12]
                 spacing: dp(10)
                 size_hint_y: None
-                height: dp(70)
+                height: self.minimum_height
                 elevation: 0
                 canvas.after:
                     Color:
@@ -38,16 +44,22 @@
                     font_size: "40sp"
                     size_hint_x: None
                     width: dp(50)
+                    pos_hint: {"center_y": 0.5}
 
                 MDBoxLayout:
                     orientation: "vertical"
                     spacing: dp(2)
+                    size_hint_y: None
+                    height: self.minimum_height
+                    pos_hint: {"center_y": 0.5}
 
                     MDLabel:
                         text: root.casque_statut
                         font_style: "H6" if Window.width >= dp(600) else "Subtitle1"
                         halign: "left"
                         valign: "bottom"
+                        size_hint_y: None
+                        height: self.texture_size[1]
 
                     MDLabel:
                         text: "Casque prêt pour la séance" if root.casque_connecte else "Détectez ou renseignez l'adresse IP du casque"
@@ -55,6 +67,8 @@
                         theme_text_color: "Secondary"
                         halign: "left"
                         valign: "top"
+                        size_hint_y: None
+                        height: self.texture_size[1]
 
                 MDIconButton:
                     icon: "information-outline"
