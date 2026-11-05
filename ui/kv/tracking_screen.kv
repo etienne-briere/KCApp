@@ -271,7 +271,7 @@
                                 adaptive_height: True
 
                             MDLabel:
-                                text: "Valeur envoyée au jeu, Entrée pour valider" if root.unity_connected else "Jeu non connecté"
+                                text: "Valeur en % FCmax, Entrée pour valider" if root.unity_connected else "Jeu non connecté"
                                 font_style: "Caption" if Window.width >= dp(600) else "Overline"
                                 theme_text_color: "Secondary"
                                 halign: "left"
@@ -280,8 +280,7 @@
                         MDTextField:
                             id: target_hr_field
                             text: str(int(root.target_hr))
-                            hint_text: "% FCmax"
-                            mode: "rectangle"
+                            mode: "line"
                             input_filter: "int"
                             size_hint_x: None
                             width: dp(110)
@@ -297,13 +296,15 @@
                         orientation: "horizontal" if Window.width >= dp(600) else "vertical"
                         spacing: dp(15)
                         size_hint_y: None
-                        height: dp(84) if Window.width >= dp(600) else dp(183)
+                        height: self.minimum_height
 
                         MDCard:
                             orientation: "horizontal"
                             padding: dp(16), dp(12)
                             radius: [12]
                             spacing: dp(15)
+                            size_hint_y: None
+                            height: dp(84)
                             elevation: 0
                             disabled: not root.unity_connected
 
@@ -324,13 +325,13 @@
                                 pos_hint: {"center_y": 0.5}
 
                                 MDLabel:
-                                    text: "Cpm minimum"
+                                    text: "Cadence minimale"
                                     font_style: "Body1" if Window.width >= dp(600) else "Body2"
                                     halign: "left"
                                     adaptive_height: True
 
                                 MDLabel:
-                                    text: "Borne basse"
+                                    text: "ENTREZ UNE VALEUR EN CUBES/MIN"
                                     font_style: "Caption" if Window.width >= dp(600) else "Overline"
                                     theme_text_color: "Secondary"
                                     halign: "left"
@@ -339,8 +340,7 @@
                             MDTextField:
                                 id: adaptive_min_cpm_field
                                 text: str(int(root.adaptive_min_cpm))
-                                hint_text: "cpm"
-                                mode: "rectangle"
+                                mode: "fill"
                                 input_filter: "int"
                                 size_hint_x: None
                                 width: dp(90)
@@ -356,6 +356,8 @@
                             padding: dp(16), dp(12)
                             radius: [12]
                             spacing: dp(15)
+                            size_hint_y: None
+                            height: dp(84)
                             elevation: 0
                             disabled: not root.unity_connected
 
@@ -376,13 +378,13 @@
                                 pos_hint: {"center_y": 0.5}
 
                                 MDLabel:
-                                    text: "Cpm maximum"
+                                    text: "Cadence maximale"
                                     font_style: "Body1" if Window.width >= dp(600) else "Body2"
                                     halign: "left"
                                     adaptive_height: True
 
                                 MDLabel:
-                                    text: "Borne haute"
+                                    text: "ENTREZ UNE VALEUR EN CUBES/MIN"
                                     font_style: "Caption" if Window.width >= dp(600) else "Overline"
                                     theme_text_color: "Secondary"
                                     halign: "left"
@@ -391,7 +393,6 @@
                             MDTextField:
                                 id: adaptive_max_cpm_field
                                 text: str(int(root.adaptive_max_cpm))
-                                hint_text: "cpm"
                                 mode: "rectangle"
                                 input_filter: "int"
                                 size_hint_x: None
