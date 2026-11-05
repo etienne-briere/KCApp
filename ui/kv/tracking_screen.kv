@@ -638,7 +638,7 @@
 
                 MDCard:
                     orientation: "vertical"
-                    padding: dp(16)
+                    padding: dp(10), dp(16)
                     radius: [12]
                     spacing: dp(10)
                     size_hint_y: None
@@ -710,7 +710,7 @@
 
                     MDBoxLayout:
                         orientation: "horizontal"
-                        spacing: dp(10)
+                        spacing: dp(6)
                         size_hint_y: None
                         height: dp(48)
 
@@ -738,7 +738,7 @@
                             on_release: root.switch_controller("DRL_DEPLOYED")
 
                         MDFillRoundFlatButton:
-                            text: "DRL Run 3"
+                            text: "DRL 3"
                             md_bg_color: GREEN_BG if root.active_controller_button == "DRL_RUN3" else GRAY_BG
                             theme_text_color: "Custom"
                             text_color: GREEN_FG if root.active_controller_button == "DRL_RUN3" else GRAY_FG
