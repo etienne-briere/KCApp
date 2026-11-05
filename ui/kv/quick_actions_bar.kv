@@ -23,7 +23,13 @@
         y: handle.top
         opacity: 1 if root.is_open else 0
         md_bg_color: app.theme_cls.bg_normal
-        disabled: not root.unity_connected
+        # not root.is_open est indispensable ici, pas juste une sécurité
+        # en trop : height passe bien à 0 à la fermeture, mais MDIconButton
+        # calcule sa propre taille en interne (set_size(), voir KivyMD) et
+        # ignore la taille imposée par le parent qui s'effondre — les
+        # boutons restaient donc cliquables, invisibles, même fermés.
+        # disabled, lui, se propage correctement à tous les enfants.
+        disabled: not root.unity_connected or not root.is_open
 
         canvas.after:
             Color:
