@@ -23,6 +23,7 @@ class PlayerProfileScreen(MDScreen):
     player_name = StringProperty("") # nom du profil actif (affiché sur le sélecteur)
     player_age = StringProperty("") # âge du profil actif (affiché sous le sélecteur)
     player_details = StringProperty("") # « 30 ans · 72 kg · Homme » (affiché sous le sélecteur)
+    player_language = StringProperty("fr") # langue des labels du jeu ("fr"/"en"), persistée dans le profil actif
 
     # Card "Nouveau joueur"
     show_new_form = BooleanProperty(False)
@@ -108,6 +109,9 @@ class PlayerProfileScreen(MDScreen):
         else:
             self._active_profile_name = None
 
+        profile = self.player_store.get(user_profile.name) if user_profile.name else None
+        self.player_language = self.player_store.language_of(profile) if profile else "fr"
+
     # ========== SÉLECTION ==========
 
     def open_player_menu(self, caller):
@@ -152,7 +156,8 @@ class PlayerProfileScreen(MDScreen):
         self.show_new_form = False
         self.show_edit_form = False
         self._apply_active_profile(profile["name"], profile["age"],
-                                   self.player_store.weight_of(profile), self.player_store.sex_of(profile))
+                                   self.player_store.weight_of(profile), self.player_store.sex_of(profile),
+                                   self.player_store.language_of(profile))
 
     # ========== NOUVEAU JOUEUR ==========
 
@@ -191,7 +196,7 @@ class PlayerProfileScreen(MDScreen):
 
         self._active_profile_name = name
         self.show_new_form = False
-        self._apply_active_profile(name, age, weight, sex)
+        self._apply_active_profile(name, age, weight, sex, "fr")
         toast(f"Profil « {name} » créé")
 
     # ========== MODIFICATION DU JOUEUR ==========
@@ -235,13 +240,16 @@ class PlayerProfileScreen(MDScreen):
         sex = self.edit_sex
 
         old_name = self._active_profile_name
+        # Langue conservée telle quelle : ce formulaire ne la modifie pas
+        # (voir on_language_select), seul le renommage éventuel la déplace.
+        language = self.player_store.language_of(self.player_store.get(old_name) or {}) if old_name else "fr"
         if old_name and old_name != name:
             self.player_store.rename(old_name, name)
         self.player_store.add(name, age, weight, sex)
 
         self._active_profile_name = name
         self.show_edit_form = False
-        self._apply_active_profile(name, age, weight, sex)
+        self._apply_active_profile(name, age, weight, sex, language)
         toast(f"Profil « {name} » mis à jour")
 
     # ========== SUPPRESSION ==========
@@ -358,7 +366,7 @@ class PlayerProfileScreen(MDScreen):
             self._sex_menu = None
             Clock.schedule_once(lambda dt: Window.remove_widget(menu), 0)
 
-    def _apply_active_profile(self, name, age, weight=0.0, sex=""):
+    def _apply_active_profile(self, name, age, weight=0.0, sex="", language=None):
         """Fait de ce profil le profil actif de la session, et le pousse à Unity"""
         self.session.user_profile.set_name_locally(name)
         self.session.user_profile.set_age_locally(age)
@@ -367,6 +375,7 @@ class PlayerProfileScreen(MDScreen):
         self.player_name = name
         self.player_age = str(age)
         self.player_details = self._details_text(age, weight, sex)
+        self.player_language = language if language in ("fr", "en") else "fr"
         logger.info(f"👤 Profil joueur actif : {name}, {self.player_details}")
 
         if self.udp_controller:
@@ -374,6 +383,7 @@ class PlayerProfileScreen(MDScreen):
             self.udp_controller.set_age_player(age)
             self.udp_controller.set_weight_player(weight)
             self.udp_controller.set_sex_player(sex)
+            self.udp_controller.set_language(self.player_language)
             logger.info(f"📤 Profil joueur envoyé : {name}, {self.player_details}")
 
         # user_profile n'est pas une Kivy Property : sans cet évènement,
@@ -381,3 +391,19 @@ class PlayerProfileScreen(MDScreen):
         # leur âge affiché qu'au prochain message UDP reçu de Unity, pas
         # immédiatement — et pas du tout si Unity est déconnecté.
         event_bus.emit("session_updated", self.session)
+
+    def on_language_select(self, language):
+        """Sélecteur FR/EN de la langue des labels : persisté dans le profil joueur actif"""
+        if language == self.player_language:
+            return
+        self.player_language = language
+        logger.info(f"🌐 Langue des labels : {language}")
+
+        profile = self.player_store.get(self._active_profile_name) if self._active_profile_name else None
+        if profile:
+            self.player_store.add(profile["name"], profile["age"], language=language)
+
+        if self.udp_controller:
+            success = self.udp_controller.set_language(language)
+            if success:
+                logger.info(f"📤 Langue envoyée : {language}")

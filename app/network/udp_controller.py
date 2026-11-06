@@ -156,6 +156,10 @@ class UDPController:
         """Change l'environnement du jeu (Cosmos, Forest, Sea, Mountain, Sky) — uniquement dans le menu"""
         return self.send_command("environment", environment)
 
+    def set_language(self, language: str) -> bool:
+        """Change la langue des labels du jeu ("fr" ou "en")"""
+        return self.send_command("language", language if language in ("fr", "en") else "fr")
+
     # ========== CONTRÔLEUR HYBRIDE (Unity, branche feature/controleur-hybride-1hz) ==========
 
     def set_controller_setup(self, drl_model: str, pid_warmup: bool, pid_backup: bool) -> bool:

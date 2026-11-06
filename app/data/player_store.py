@@ -52,11 +52,11 @@ class PlayerStore:
                 return p
         return None
 
-    def add(self, name, age, weight=_KEEP, sex=_KEEP):
+    def add(self, name, age, weight=_KEEP, sex=_KEEP, language=_KEEP):
         """
         Ajoute un nouveau profil, ou met à jour l'âge si le nom existe déjà.
-        weight (kg, 0 = non renseigné) et sex ("M", "F" ou "") ne sont
-        modifiés que s'ils sont passés explicitement.
+        weight (kg, 0 = non renseigné), sex ("M", "F" ou "") et language
+        ("fr" ou "en") ne sont modifiés que s'ils sont passés explicitement.
         """
         existing = self.get(name)
         if not existing:
@@ -67,6 +67,8 @@ class PlayerStore:
             existing["weight"] = float(weight or 0)
         if sex is not _KEEP:
             existing["sex"] = sex or ""
+        if language is not _KEEP:
+            existing["language"] = language if language in ("fr", "en") else "fr"
         self._save()
 
     @staticmethod
@@ -81,6 +83,12 @@ class PlayerStore:
     def sex_of(profile):
         """Sexe du profil ("M", "F" ou "" si non renseigné)."""
         return profile.get("sex") or ""
+
+    @staticmethod
+    def language_of(profile):
+        """Langue des labels du jeu pour ce profil ("fr" ou "en", "fr" par défaut)."""
+        language = profile.get("language")
+        return language if language in ("fr", "en") else "fr"
 
     def ensure(self, name, default_age=DEFAULT_AGE):
         """

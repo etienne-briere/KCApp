@@ -64,6 +64,7 @@ class PilotageScreen(MDScreen):
     pid_warmup = BooleanProperty(False) # mode DRL : PID pendant l'échauffement (prochaine partie)
     pid_backup = BooleanProperty(False) # mode DRL : PID de secours si cycle limite (prochaine partie)
     player_name = StringProperty("") # nom du profil joueur actif
+    player_language = StringProperty("fr") # langue des labels du jeu ("fr"/"en"), persistée dans le profil joueur actif
     environment = StringProperty("") # environnement du jeu (Cosmos/Forest/Sea/Mountain/Sky), vide si inconnu
     game_state = StringProperty("Menu") # état de partie reçu de Unity (Menu/Ready/Playing/Paused/Finished)
 
@@ -87,6 +88,7 @@ class PilotageScreen(MDScreen):
         self.player_store = app.player_store
 
         self.player_name = self.session.user_profile.name
+        self.player_language = self._language_of_player(self.player_name)
         self.game_state = self.session.game_state.capitalize()
         self.environment = self.session.config.environment or ""
 
@@ -166,6 +168,8 @@ class PilotageScreen(MDScreen):
 
     def on_session_updated(self, session):
          # Mise à jour UI
+        if session.user_profile.name != self.player_name:
+            self.player_language = self._language_of_player(session.user_profile.name)
         self.player_name = session.user_profile.name
         self.game_state = session.game_state.capitalize()
         if session.config.environment is not None:
@@ -278,9 +282,11 @@ class PilotageScreen(MDScreen):
         self.session.user_profile.set_age_locally(profile["age"])
         weight = self.player_store.weight_of(profile)
         sex = self.player_store.sex_of(profile)
+        language = self.player_store.language_of(profile)
         self.session.user_profile.set_weight_locally(weight)
         self.session.user_profile.set_sex_locally(sex)
         self.player_name = profile["name"]
+        self.player_language = language
         logger.info(f"👤 Profil joueur actif : {profile['name']}, {profile['age']} ans")
 
         if self.udp_controller:
@@ -288,6 +294,7 @@ class PilotageScreen(MDScreen):
             self.udp_controller.set_age_player(profile["age"])
             self.udp_controller.set_weight_player(weight)
             self.udp_controller.set_sex_player(sex)
+            self.udp_controller.set_language(language)
             logger.info(f"📤 Profil joueur envoyé : {profile['name']}, {profile['age']} ans")
 
         # user_profile n'est pas une Kivy Property : sans cet évènement,
@@ -295,6 +302,17 @@ class PilotageScreen(MDScreen):
         # affiché qu'au prochain message UDP reçu de Unity, pas
         # immédiatement — et pas du tout si Unity est déconnecté.
         event_bus.emit("session_updated", self.session)
+
+    def _language_of_player(self, name):
+        """
+        Langue des labels persistée pour ce profil ("fr" par défaut, y
+        compris sans profil actif) — le réglage se fait depuis l'écran
+        "Profil du joueur" (voir player_profile_screen.py), mais est
+        repoussé à Unity dès qu'un profil devient actif, y compris via le
+        sélecteur de cet écran.
+        """
+        profile = self.player_store.get(name) if name else None
+        return self.player_store.language_of(profile) if profile else "fr"
 
     # ========== ENVIRONNEMENT ==========
 
