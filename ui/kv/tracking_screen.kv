@@ -2,6 +2,7 @@
 #:import Window kivy.core.window.Window
 #:import MatplotFigure kivy_matplotlib_widget.uix.graph_widget
 #:import GraphAwareScrollView ui.screens.tracking_screen.GraphAwareScrollView
+#:set LIGHT_GREEN_FG (0.298, 0.686, 0.314, 1)
 
 <SessionRow>:
     orientation: "horizontal"
@@ -223,248 +224,180 @@
                                 adaptive_size: True
                                 pos_hint: {"center_y": 0.4}
 
-                # ---- FC cible + cpm min/max : uniquement en mode adaptatif (PID/DRL) ----
+                # ---- Options du mode adaptatif (FC cible + cadence min/max) ----
+                # Une seule card groupée (au lieu de 3) : ces 3 valeurs forment
+                # ensemble la bande de cadence cible du contrôleur, pas 3
+                # réglages indépendants. rectangle + hint_text fonctionnent ici
+                # sans le défaut d'alignement rencontré précédemment : chaque
+                # champ porte sa propre icône via icon_left plutôt qu'un
+                # MDIcon frère dans la même rangée — c'était cette dernière
+                # combinaison qui cassait le centrage du hint, pas
+                # rectangle+hint_text en tant que tel (voir icon_left_color_*
+                # ci-dessous pour la couleur permanente, pas juste au focus).
+                #
                 # Enveloppe à hauteur 0 quand masquée : l'espacement est porté
                 # par son padding (et non par le spacing du parent), pour ne
                 # pas laisser de trou dans les autres modes.
                 MDBoxLayout:
                     orientation: "vertical"
                     padding: 0, dp(20), 0, 0
-                    spacing: dp(15)
+                    spacing: dp(8)
                     size_hint_y: None
                     height: self.minimum_height if root.target_available else 0
                     opacity: 1 if root.target_available else 0
                     disabled: not root.target_available
 
+                    MDLabel:
+                        text: "OPTIONS DU MODE"
+                        font_style: "Overline"
+                        theme_text_color: "Secondary"
+                        halign: "left"
+                        padding: dp(16), 0
+                        adaptive_size: True
+
                     MDCard:
-                        orientation: "horizontal"
-                        padding: dp(16), dp(12)
+                        orientation: "vertical"
+                        padding: dp(16)
                         radius: [12]
                         spacing: dp(15)
-                        size_hint_y: None
-                        # Assez haute pour le champ "rectangle" (contour + libellé flottant)
-                        height: dp(84)
                         elevation: 0
-                        disabled: not root.unity_connected
-
-                        MDIcon:
-                            icon: "target"
-                            theme_text_color: "Custom"
-                            text_color: GREEN_FG
-                            font_size: "30sp"
-                            size_hint_x: None
-                            width: dp(30)
-                            pos_hint: {"center_y": 0.5}
-
-                        # Titre + sous-titre groupés et centrés verticalement
-                        MDBoxLayout:
-                            orientation: "vertical"
-                            spacing: dp(2)
-                            size_hint_y: None
-                            height: self.minimum_height
-                            pos_hint: {"center_y": 0.5}
-
-                            MDLabel:
-                                text: "FC cible"
-                                font_style: "Body1" if Window.width >= dp(600) else "Body2"
-                                halign: "left"
-                                adaptive_height: True
-
-                            MDLabel:
-                                text: "Valeur en % FCmax, Entrée pour valider" if root.unity_connected else "Jeu non connecté"
-                                font_style: "Caption" if Window.width >= dp(600) else "Overline"
-                                theme_text_color: "Secondary"
-                                halign: "left"
-                                adaptive_height: True
-
-                        MDTextField:
-                            id: target_hr_field
-                            text: str(int(root.target_hr))
-                            mode: "line"
-                            input_filter: "int"
-                            size_hint_x: None
-                            width: dp(110)
-                            pos_hint: {"center_y": 0.5}
-                            text_color_focus: app.theme_cls.primary_color
-                            hint_text_color_focus: app.theme_cls.primary_color
-                            line_color_focus: app.theme_cls.primary_color
-                            on_text_validate: root.on_target_hr_submit(self.text)
-                            on_focus: root.on_target_hr_submit(self.text) if not self.focus else None
-
-                    # Cpm minimum / maximum côte à côte (l'un sous l'autre sur écran étroit)
-                    MDBoxLayout:
-                        orientation: "horizontal" if Window.width >= dp(600) else "vertical"
-                        spacing: dp(15)
                         size_hint_y: None
                         height: self.minimum_height
+                        disabled: not root.unity_connected
 
-                        MDCard:
+                        MDBoxLayout:
                             orientation: "horizontal"
-                            padding: dp(16), dp(12)
-                            radius: [12]
                             spacing: dp(15)
                             size_hint_y: None
-                            height: dp(84)
-                            elevation: 0
-                            disabled: not root.unity_connected
+                            height: dp(30)
 
                             MDIcon:
-                                icon: "arrow-collapse-down"
+                                icon: "tune-vertical"
                                 theme_text_color: "Custom"
-                                text_color: BLUE_FG
+                                text_color: app.theme_cls.primary_color
                                 font_size: "30sp"
                                 size_hint_x: None
                                 width: dp(30)
-                                pos_hint: {"center_y": 0.5}
 
-                            MDBoxLayout:
-                                orientation: "vertical"
-                                spacing: dp(2)
-                                size_hint_y: None
-                                height: self.minimum_height
-                                pos_hint: {"center_y": 0.5}
+                            MDLabel:
+                                text: "Mode adaptatif"
+                                font_style: "Body1" if Window.width >= dp(600) else "Body2"
+                                halign: "left"
+                                valign: "center"
 
-                                MDLabel:
-                                    text: "Cadence minimale"
-                                    font_style: "Body1" if Window.width >= dp(600) else "Body2"
-                                    halign: "left"
-                                    adaptive_height: True
+                        MDBoxLayout:
+                            orientation: "horizontal" if Window.width >= dp(600) else "vertical"
+                            spacing: dp(15)
+                            size_hint_y: None
+                            height: self.minimum_height
 
-                                MDLabel:
-                                    text: "ENTREZ UNE VALEUR EN CUBES/MIN"
-                                    font_style: "Caption" if Window.width >= dp(600) else "Overline"
-                                    theme_text_color: "Secondary"
-                                    halign: "left"
-                                    adaptive_height: True
+                            MDTextField:
+                                id: target_hr_field
+                                text: str(int(root.target_hr))
+                                hint_text: "%FCmax cible"
+                                icon_left: "target"
+                                mode: "rectangle"
+                                input_filter: "int"
+                                text_color_focus: LIGHT_GREEN_FG
+                                hint_text_color_focus: LIGHT_GREEN_FG
+                                line_color_focus: LIGHT_GREEN_FG
+                                icon_left_color_normal: LIGHT_GREEN_FG
+                                icon_left_color_focus: LIGHT_GREEN_FG
+                                on_text_validate: root.on_target_hr_submit(self.text)
+                                on_focus: root.on_target_hr_submit(self.text) if not self.focus else None
 
                             MDTextField:
                                 id: adaptive_min_cpm_field
                                 text: str(int(root.adaptive_min_cpm))
-                                mode: "fill"
+                                hint_text: "Cadence minimale (cpm)"
+                                icon_left: "arrow-collapse-down"
+                                mode: "rectangle"
                                 input_filter: "int"
-                                size_hint_x: None
-                                width: dp(90)
-                                pos_hint: {"center_y": 0.5}
-                                text_color_focus: app.theme_cls.primary_color
-                                hint_text_color_focus: app.theme_cls.primary_color
-                                line_color_focus: app.theme_cls.primary_color
+                                text_color_focus: BLUE_FG
+                                hint_text_color_focus: BLUE_FG
+                                line_color_focus: BLUE_FG
+                                icon_left_color_normal: BLUE_FG
+                                icon_left_color_focus: BLUE_FG
                                 on_text_validate: root.on_adaptive_min_cpm_submit(self.text)
                                 on_focus: root.on_adaptive_min_cpm_submit(self.text) if not self.focus else None
-
-                        MDCard:
-                            orientation: "horizontal"
-                            padding: dp(16), dp(12)
-                            radius: [12]
-                            spacing: dp(15)
-                            size_hint_y: None
-                            height: dp(84)
-                            elevation: 0
-                            disabled: not root.unity_connected
-
-                            MDIcon:
-                                icon: "arrow-collapse-up"
-                                theme_text_color: "Custom"
-                                text_color: BLUE_FG
-                                font_size: "30sp"
-                                size_hint_x: None
-                                width: dp(30)
-                                pos_hint: {"center_y": 0.5}
-
-                            MDBoxLayout:
-                                orientation: "vertical"
-                                spacing: dp(2)
-                                size_hint_y: None
-                                height: self.minimum_height
-                                pos_hint: {"center_y": 0.5}
-
-                                MDLabel:
-                                    text: "Cadence maximale"
-                                    font_style: "Body1" if Window.width >= dp(600) else "Body2"
-                                    halign: "left"
-                                    adaptive_height: True
-
-                                MDLabel:
-                                    text: "ENTREZ UNE VALEUR EN CUBES/MIN"
-                                    font_style: "Caption" if Window.width >= dp(600) else "Overline"
-                                    theme_text_color: "Secondary"
-                                    halign: "left"
-                                    adaptive_height: True
 
                             MDTextField:
                                 id: adaptive_max_cpm_field
                                 text: str(int(root.adaptive_max_cpm))
+                                hint_text: "Cadence maximale (cpm)"
+                                icon_left: "arrow-collapse-up"
                                 mode: "rectangle"
                                 input_filter: "int"
-                                size_hint_x: None
-                                width: dp(90)
-                                pos_hint: {"center_y": 0.5}
-                                text_color_focus: app.theme_cls.primary_color
-                                hint_text_color_focus: app.theme_cls.primary_color
-                                line_color_focus: app.theme_cls.primary_color
+                                text_color_focus: BLUE_FG
+                                hint_text_color_focus: BLUE_FG
+                                line_color_focus: BLUE_FG
+                                icon_left_color_normal: BLUE_FG
+                                icon_left_color_focus: BLUE_FG
                                 on_text_validate: root.on_adaptive_max_cpm_submit(self.text)
                                 on_focus: root.on_adaptive_max_cpm_submit(self.text) if not self.focus else None
 
-                # ---- Cadence fixe : uniquement en mode Fixe ----
-                # Même principe d'enveloppe à hauteur 0 que le bloc adaptatif.
+                # ---- Options du mode fixe (cadence unique) ----
+                # Même principe d'enveloppe à hauteur 0 et de card groupée
+                # que le bloc adaptatif juste au-dessus.
                 MDBoxLayout:
                     orientation: "vertical"
                     padding: 0, dp(20), 0, 0
+                    spacing: dp(8)
                     size_hint_y: None
                     height: self.minimum_height if root.current_model == "FIXE" else 0
                     opacity: 1 if root.current_model == "FIXE" else 0
                     disabled: root.current_model != "FIXE"
 
+                    MDLabel:
+                        text: "OPTIONS DU MODE"
+                        font_style: "Overline"
+                        theme_text_color: "Secondary"
+                        halign: "left"
+                        padding: dp(16), 0
+                        adaptive_size: True
+
                     MDCard:
-                        orientation: "horizontal"
-                        padding: dp(16), dp(12)
+                        orientation: "vertical"
+                        padding: dp(16)
                         radius: [12]
                         spacing: dp(15)
-                        size_hint_y: None
-                        height: dp(84)
                         elevation: 0
+                        size_hint_y: None
+                        height: self.minimum_height
                         disabled: not root.unity_connected
 
-                        MDIcon:
-                            icon: "speedometer"
-                            theme_text_color: "Custom"
-                            text_color: BLUE_FG
-                            font_size: "30sp"
-                            size_hint_x: None
-                            width: dp(30)
-                            pos_hint: {"center_y": 0.5}
-
                         MDBoxLayout:
-                            orientation: "vertical"
-                            spacing: dp(2)
+                            orientation: "horizontal"
+                            spacing: dp(15)
                             size_hint_y: None
-                            height: self.minimum_height
-                            pos_hint: {"center_y": 0.5}
+                            height: dp(30)
+
+                            MDIcon:
+                                icon: "tune-vertical"
+                                theme_text_color: "Custom"
+                                text_color: app.theme_cls.primary_color
+                                font_size: "30sp"
+                                size_hint_x: None
+                                width: dp(30)
 
                             MDLabel:
-                                text: "Cadence fixe"
+                                text: "Mode fixe"
                                 font_style: "Body1" if Window.width >= dp(600) else "Body2"
                                 halign: "left"
-                                adaptive_height: True
-
-                            MDLabel:
-                                text: "Cubes par minute (30 à 200), Entrée pour valider" if root.unity_connected else "Jeu non connecté"
-                                font_style: "Caption" if Window.width >= dp(600) else "Overline"
-                                theme_text_color: "Secondary"
-                                halign: "left"
-                                adaptive_height: True
+                                valign: "center"
 
                         MDTextField:
                             id: fixed_cpm_field
                             text: str(int(root.fixed_cpm))
-                            hint_text: "cpm"
+                            hint_text: "Cadence fixe (cpm)"
+                            icon_left: "speedometer"
                             mode: "rectangle"
                             input_filter: "int"
-                            size_hint_x: None
-                            width: dp(110)
-                            pos_hint: {"center_y": 0.5}
-                            text_color_focus: app.theme_cls.primary_color
-                            hint_text_color_focus: app.theme_cls.primary_color
-                            line_color_focus: app.theme_cls.primary_color
+                            text_color_focus: BLUE_FG
+                            hint_text_color_focus: BLUE_FG
+                            line_color_focus: BLUE_FG
+                            icon_left_color_normal: BLUE_FG
+                            icon_left_color_focus: BLUE_FG
                             on_text_validate: root.on_fixed_cpm_submit(self.text)
                             on_focus: root.on_fixed_cpm_submit(self.text) if not self.focus else None
 
