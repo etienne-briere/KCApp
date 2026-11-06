@@ -469,6 +469,16 @@ class TrackingScreen(MDScreen):
         if self.udp_controller and getattr(self.udp_controller, send_method_name)(value):
             logger.info(f"📤 {label} envoyé: {value}")
 
+    def step_field(self, field_id, submit_method_name, delta):
+        """Boutons +/- (smartphone) : ajuste le champ puis revalide via le même handler que la saisie clavier"""
+        field = self.ids[field_id]
+        try:
+            value = int(field.text)
+        except (TypeError, ValueError):
+            value = 0
+        field.text = str(value + delta)
+        getattr(self, submit_method_name)(field.text)
+
     def on_adaptive_min_cpm_submit(self, text):
         self._submit_cpm_field(text, "adaptive_min_cpm_field", "adaptive_min_cpm", "adaptive_min_cpm",
                                0, None, "set_adaptive_min_cpm", "Cpm min adaptatif")

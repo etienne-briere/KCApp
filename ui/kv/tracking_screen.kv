@@ -291,50 +291,129 @@
                             size_hint_y: None
                             height: self.minimum_height
 
-                            MDTextField:
-                                id: target_hr_field
-                                text: str(int(root.target_hr))
-                                hint_text: "%FCmax cible"
-                                icon_left: "target"
-                                mode: "rectangle"
-                                input_filter: "int"
-                                text_color_focus: LIGHT_GREEN_FG
-                                hint_text_color_focus: LIGHT_GREEN_FG
-                                line_color_focus: LIGHT_GREEN_FG
-                                icon_left_color_normal: LIGHT_GREEN_FG
-                                icon_left_color_focus: LIGHT_GREEN_FG
-                                on_text_validate: root.on_target_hr_submit(self.text)
-                                on_focus: root.on_target_hr_submit(self.text) if not self.focus else None
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: dp(4)
+                                size_hint_y: None
+                                height: target_hr_field.height
 
-                            MDTextField:
-                                id: adaptive_min_cpm_field
-                                text: str(int(root.adaptive_min_cpm))
-                                hint_text: "Cadence minimale (cpm)"
-                                icon_left: "arrow-collapse-down"
-                                mode: "rectangle"
-                                input_filter: "int"
-                                text_color_focus: BLUE_FG
-                                hint_text_color_focus: BLUE_FG
-                                line_color_focus: BLUE_FG
-                                icon_left_color_normal: BLUE_FG
-                                icon_left_color_focus: BLUE_FG
-                                on_text_validate: root.on_adaptive_min_cpm_submit(self.text)
-                                on_focus: root.on_adaptive_min_cpm_submit(self.text) if not self.focus else None
+                                MDTextField:
+                                    id: target_hr_field
+                                    text: str(int(root.target_hr))
+                                    hint_text: "%FCmax cible"
+                                    icon_left: "target"
+                                    mode: "rectangle"
+                                    input_filter: "int"
+                                    text_color_focus: LIGHT_GREEN_FG
+                                    hint_text_color_focus: LIGHT_GREEN_FG
+                                    line_color_focus: LIGHT_GREEN_FG
+                                    icon_left_color_normal: LIGHT_GREEN_FG
+                                    icon_left_color_focus: LIGHT_GREEN_FG
+                                    on_text_validate: root.on_target_hr_submit(self.text)
+                                    on_focus: root.on_target_hr_submit(self.text) if not self.focus else None
 
-                            MDTextField:
-                                id: adaptive_max_cpm_field
-                                text: str(int(root.adaptive_max_cpm))
-                                hint_text: "Cadence maximale (cpm)"
-                                icon_left: "arrow-collapse-up"
-                                mode: "rectangle"
-                                input_filter: "int"
-                                text_color_focus: BLUE_FG
-                                hint_text_color_focus: BLUE_FG
-                                line_color_focus: BLUE_FG
-                                icon_left_color_normal: BLUE_FG
-                                icon_left_color_focus: BLUE_FG
-                                on_text_validate: root.on_adaptive_max_cpm_submit(self.text)
-                                on_focus: root.on_adaptive_max_cpm_submit(self.text) if not self.focus else None
+                                # Boutons +/- : uniquement sur smartphone (disabled bloque
+                                # le clic quel que soit le rendu ; set_size() de
+                                # MDIconButton ignore de toute façon la largeur imposée,
+                                # mais opacity: 0 suffit à les rendre invisibles).
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    size_hint_x: None
+                                    width: dp(96) if Window.width < dp(600) else 0
+                                    opacity: 1 if Window.width < dp(600) else 0
+                                    disabled: Window.width >= dp(600)
+
+                                    MDIconButton:
+                                        icon: "minus"
+                                        theme_text_color: "Custom"
+                                        text_color: LIGHT_GREEN_FG
+                                        on_release: root.step_field("target_hr_field", "on_target_hr_submit", -1)
+
+                                    MDIconButton:
+                                        icon: "plus"
+                                        theme_text_color: "Custom"
+                                        text_color: LIGHT_GREEN_FG
+                                        on_release: root.step_field("target_hr_field", "on_target_hr_submit", 1)
+
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: dp(4)
+                                size_hint_y: None
+                                height: adaptive_min_cpm_field.height
+
+                                MDTextField:
+                                    id: adaptive_min_cpm_field
+                                    text: str(int(root.adaptive_min_cpm))
+                                    hint_text: "Cadence minimale (cpm)"
+                                    icon_left: "arrow-collapse-down"
+                                    mode: "rectangle"
+                                    input_filter: "int"
+                                    text_color_focus: BLUE_FG
+                                    hint_text_color_focus: BLUE_FG
+                                    line_color_focus: BLUE_FG
+                                    icon_left_color_normal: BLUE_FG
+                                    icon_left_color_focus: BLUE_FG
+                                    on_text_validate: root.on_adaptive_min_cpm_submit(self.text)
+                                    on_focus: root.on_adaptive_min_cpm_submit(self.text) if not self.focus else None
+
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    size_hint_x: None
+                                    width: dp(96) if Window.width < dp(600) else 0
+                                    opacity: 1 if Window.width < dp(600) else 0
+                                    disabled: Window.width >= dp(600)
+
+                                    MDIconButton:
+                                        icon: "minus"
+                                        theme_text_color: "Custom"
+                                        text_color: BLUE_FG
+                                        on_release: root.step_field("adaptive_min_cpm_field", "on_adaptive_min_cpm_submit", -5)
+
+                                    MDIconButton:
+                                        icon: "plus"
+                                        theme_text_color: "Custom"
+                                        text_color: BLUE_FG
+                                        on_release: root.step_field("adaptive_min_cpm_field", "on_adaptive_min_cpm_submit", 5)
+
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                spacing: dp(4)
+                                size_hint_y: None
+                                height: adaptive_max_cpm_field.height
+
+                                MDTextField:
+                                    id: adaptive_max_cpm_field
+                                    text: str(int(root.adaptive_max_cpm))
+                                    hint_text: "Cadence maximale (cpm)"
+                                    icon_left: "arrow-collapse-up"
+                                    mode: "rectangle"
+                                    input_filter: "int"
+                                    text_color_focus: BLUE_FG
+                                    hint_text_color_focus: BLUE_FG
+                                    line_color_focus: BLUE_FG
+                                    icon_left_color_normal: BLUE_FG
+                                    icon_left_color_focus: BLUE_FG
+                                    on_text_validate: root.on_adaptive_max_cpm_submit(self.text)
+                                    on_focus: root.on_adaptive_max_cpm_submit(self.text) if not self.focus else None
+
+                                MDBoxLayout:
+                                    orientation: "horizontal"
+                                    size_hint_x: None
+                                    width: dp(96) if Window.width < dp(600) else 0
+                                    opacity: 1 if Window.width < dp(600) else 0
+                                    disabled: Window.width >= dp(600)
+
+                                    MDIconButton:
+                                        icon: "minus"
+                                        theme_text_color: "Custom"
+                                        text_color: BLUE_FG
+                                        on_release: root.step_field("adaptive_max_cpm_field", "on_adaptive_max_cpm_submit", -5)
+
+                                    MDIconButton:
+                                        icon: "plus"
+                                        theme_text_color: "Custom"
+                                        text_color: BLUE_FG
+                                        on_release: root.step_field("adaptive_max_cpm_field", "on_adaptive_max_cpm_submit", 5)
 
                 # ---- Options du mode fixe (cadence unique) ----
                 # Même principe d'enveloppe à hauteur 0 et de card groupée
@@ -386,20 +465,45 @@
                                 halign: "left"
                                 valign: "center"
 
-                        MDTextField:
-                            id: fixed_cpm_field
-                            text: str(int(root.fixed_cpm))
-                            hint_text: "Cadence fixe (cpm)"
-                            icon_left: "speedometer"
-                            mode: "rectangle"
-                            input_filter: "int"
-                            text_color_focus: BLUE_FG
-                            hint_text_color_focus: BLUE_FG
-                            line_color_focus: BLUE_FG
-                            icon_left_color_normal: BLUE_FG
-                            icon_left_color_focus: BLUE_FG
-                            on_text_validate: root.on_fixed_cpm_submit(self.text)
-                            on_focus: root.on_fixed_cpm_submit(self.text) if not self.focus else None
+                        MDBoxLayout:
+                            orientation: "horizontal"
+                            spacing: dp(4)
+                            size_hint_y: None
+                            height: fixed_cpm_field.height
+
+                            MDTextField:
+                                id: fixed_cpm_field
+                                text: str(int(root.fixed_cpm))
+                                hint_text: "Cadence fixe (cpm)"
+                                icon_left: "speedometer"
+                                mode: "rectangle"
+                                input_filter: "int"
+                                text_color_focus: BLUE_FG
+                                hint_text_color_focus: BLUE_FG
+                                line_color_focus: BLUE_FG
+                                icon_left_color_normal: BLUE_FG
+                                icon_left_color_focus: BLUE_FG
+                                on_text_validate: root.on_fixed_cpm_submit(self.text)
+                                on_focus: root.on_fixed_cpm_submit(self.text) if not self.focus else None
+
+                            MDBoxLayout:
+                                orientation: "horizontal"
+                                size_hint_x: None
+                                width: dp(96) if Window.width < dp(600) else 0
+                                opacity: 1 if Window.width < dp(600) else 0
+                                disabled: Window.width >= dp(600)
+
+                                MDIconButton:
+                                    icon: "minus"
+                                    theme_text_color: "Custom"
+                                    text_color: BLUE_FG
+                                    on_release: root.step_field("fixed_cpm_field", "on_fixed_cpm_submit", -5)
+
+                                MDIconButton:
+                                    icon: "plus"
+                                    theme_text_color: "Custom"
+                                    text_color: BLUE_FG
+                                    on_release: root.step_field("fixed_cpm_field", "on_fixed_cpm_submit", 5)
 
             # ==== Graphique de l'évolution de la séance (titre + actions + card) ====
             MDBoxLayout:
