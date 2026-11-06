@@ -254,14 +254,15 @@
                                 MDTextField:
                                     id: cube_frequency_field
                                     text: str(int(root.cube_per_min))
-                                    hint_text: "Cubes par minute"
+                                    hint_text: "Cadence fixe (cpm)"
                                     icon_left: "speedometer"
                                     mode: "rectangle"
                                     input_filter: "int"
-                                    text_color_focus: app.theme_cls.primary_color
-                                    hint_text_color_focus: app.theme_cls.primary_color
-                                    line_color_focus: app.theme_cls.primary_color
-                                    icon_left_color_focus: app.theme_cls.primary_color
+                                    text_color_focus: BLUE_FG
+                                    hint_text_color_focus: BLUE_FG
+                                    line_color_focus: BLUE_FG
+                                    icon_left_color_normal: PASTEL_BLUE_FG
+                                    icon_left_color_focus: PASTEL_BLUE_FG
                                     on_text_validate: root.on_cube_frequency_submit(self.text)
                                     on_focus: root.on_cube_frequency_submit(self.text) if not self.focus else None
 
@@ -277,14 +278,14 @@
                                     MDIconButton:
                                         icon: "minus"
                                         theme_text_color: "Custom"
-                                        text_color: app.theme_cls.primary_color
-                                        on_release: root.step_field("cube_frequency_field", "on_cube_frequency_submit", -5, app.theme_cls.primary_color)
+                                        text_color: BLUE_FG
+                                        on_release: root.step_field("cube_frequency_field", "on_cube_frequency_submit", -5, BLUE_FG)
 
                                     MDIconButton:
                                         icon: "plus"
                                         theme_text_color: "Custom"
-                                        text_color: app.theme_cls.primary_color
-                                        on_release: root.step_field("cube_frequency_field", "on_cube_frequency_submit", 5, app.theme_cls.primary_color)
+                                        text_color: BLUE_FG
+                                        on_release: root.step_field("cube_frequency_field", "on_cube_frequency_submit", 5, BLUE_FG)
 
                     # ---- Options du mode Incrémental ----
                     ScrollView:
@@ -316,10 +317,11 @@
                                     icon_left: "stairs"
                                     mode: "rectangle"
                                     input_filter: "int"
-                                    text_color_focus: app.theme_cls.primary_color
-                                    hint_text_color_focus: app.theme_cls.primary_color
-                                    line_color_focus: app.theme_cls.primary_color
-                                    icon_left_color_focus: app.theme_cls.primary_color
+                                    text_color_focus: BLUE_FG
+                                    hint_text_color_focus: BLUE_FG
+                                    line_color_focus: BLUE_FG
+                                    icon_left_color_normal: PASTEL_BLUE_FG
+                                    icon_left_color_focus: PASTEL_BLUE_FG
                                     on_text_validate: root.on_incremental_steps_submit(self.text)
                                     on_focus: root.on_incremental_steps_submit(self.text) if not self.focus else None
 
@@ -333,14 +335,14 @@
                                     MDIconButton:
                                         icon: "minus"
                                         theme_text_color: "Custom"
-                                        text_color: app.theme_cls.primary_color
-                                        on_release: root.step_field("incremental_steps_field", "on_incremental_steps_submit", -1, app.theme_cls.primary_color)
+                                        text_color: BLUE_FG
+                                        on_release: root.step_field("incremental_steps_field", "on_incremental_steps_submit", -1, BLUE_FG)
 
                                     MDIconButton:
                                         icon: "plus"
                                         theme_text_color: "Custom"
-                                        text_color: app.theme_cls.primary_color
-                                        on_release: root.step_field("incremental_steps_field", "on_incremental_steps_submit", 1, app.theme_cls.primary_color)
+                                        text_color: BLUE_FG
+                                        on_release: root.step_field("incremental_steps_field", "on_incremental_steps_submit", 1, BLUE_FG)
 
                             MDBoxLayout:
                                 orientation: "horizontal"
@@ -351,14 +353,15 @@
                                 MDTextField:
                                     id: incremental_min_cpm_field
                                     text: str(int(root.incremental_min_cpm))
-                                    hint_text: "Cpm minimum"
+                                    hint_text: "Cadence minimale (cpm)"
                                     icon_left: "arrow-collapse-down"
                                     mode: "rectangle"
                                     input_filter: "int"
-                                    text_color_focus: app.theme_cls.primary_color
-                                    hint_text_color_focus: app.theme_cls.primary_color
-                                    line_color_focus: app.theme_cls.primary_color
-                                    icon_left_color_focus: app.theme_cls.primary_color
+                                    text_color_focus: BLUE_FG
+                                    hint_text_color_focus: BLUE_FG
+                                    line_color_focus: BLUE_FG
+                                    icon_left_color_normal: PASTEL_BLUE_FG
+                                    icon_left_color_focus: PASTEL_BLUE_FG
                                     on_text_validate: root.on_incremental_min_cpm_submit(self.text)
                                     on_focus: root.on_incremental_min_cpm_submit(self.text) if not self.focus else None
 
@@ -372,14 +375,14 @@
                                     MDIconButton:
                                         icon: "minus"
                                         theme_text_color: "Custom"
-                                        text_color: app.theme_cls.primary_color
-                                        on_release: root.step_field("incremental_min_cpm_field", "on_incremental_min_cpm_submit", -5, app.theme_cls.primary_color)
+                                        text_color: BLUE_FG
+                                        on_release: root.step_field("incremental_min_cpm_field", "on_incremental_min_cpm_submit", -5, BLUE_FG)
 
                                     MDIconButton:
                                         icon: "plus"
                                         theme_text_color: "Custom"
-                                        text_color: app.theme_cls.primary_color
-                                        on_release: root.step_field("incremental_min_cpm_field", "on_incremental_min_cpm_submit", 5, app.theme_cls.primary_color)
+                                        text_color: BLUE_FG
+                                        on_release: root.step_field("incremental_min_cpm_field", "on_incremental_min_cpm_submit", 5, BLUE_FG)
 
                             MDBoxLayout:
                                 orientation: "horizontal"
@@ -390,14 +393,15 @@
                                 MDTextField:
                                     id: incremental_max_cpm_field
                                     text: str(int(root.incremental_max_cpm))
-                                    hint_text: "Cpm maximum"
+                                    hint_text: "Cadence maximale (cpm)"
                                     icon_left: "arrow-collapse-up"
                                     mode: "rectangle"
                                     input_filter: "int"
-                                    text_color_focus: app.theme_cls.primary_color
-                                    hint_text_color_focus: app.theme_cls.primary_color
-                                    line_color_focus: app.theme_cls.primary_color
-                                    icon_left_color_focus: app.theme_cls.primary_color
+                                    text_color_focus: BLUE_FG
+                                    hint_text_color_focus: BLUE_FG
+                                    line_color_focus: BLUE_FG
+                                    icon_left_color_normal: PASTEL_BLUE_FG
+                                    icon_left_color_focus: PASTEL_BLUE_FG
                                     on_text_validate: root.on_incremental_max_cpm_submit(self.text)
                                     on_focus: root.on_incremental_max_cpm_submit(self.text) if not self.focus else None
 
@@ -411,14 +415,14 @@
                                     MDIconButton:
                                         icon: "minus"
                                         theme_text_color: "Custom"
-                                        text_color: app.theme_cls.primary_color
-                                        on_release: root.step_field("incremental_max_cpm_field", "on_incremental_max_cpm_submit", -5, app.theme_cls.primary_color)
+                                        text_color: BLUE_FG
+                                        on_release: root.step_field("incremental_max_cpm_field", "on_incremental_max_cpm_submit", -5, BLUE_FG)
 
                                     MDIconButton:
                                         icon: "plus"
                                         theme_text_color: "Custom"
-                                        text_color: app.theme_cls.primary_color
-                                        on_release: root.step_field("incremental_max_cpm_field", "on_incremental_max_cpm_submit", 5, app.theme_cls.primary_color)
+                                        text_color: BLUE_FG
+                                        on_release: root.step_field("incremental_max_cpm_field", "on_incremental_max_cpm_submit", 5, BLUE_FG)
 
                     # ---- Options des modes PID / DRL ----
                     ScrollView:
@@ -452,14 +456,15 @@
                                     MDTextField:
                                         id: target_hr_field
                                         text: str(int(root.target_hr))
-                                        hint_text: "FC cible (% FCmax)"
+                                        hint_text: "%FCmax cible"
                                         icon_left: "target"
                                         mode: "rectangle"
                                         input_filter: "int"
-                                        text_color_focus: app.theme_cls.primary_color
-                                        hint_text_color_focus: app.theme_cls.primary_color
-                                        line_color_focus: app.theme_cls.primary_color
-                                        icon_left_color_focus: app.theme_cls.primary_color
+                                        text_color_focus: LIGHT_GREEN_FG
+                                        hint_text_color_focus: LIGHT_GREEN_FG
+                                        line_color_focus: LIGHT_GREEN_FG
+                                        icon_left_color_normal: PASTEL_GREEN_FG
+                                        icon_left_color_focus: PASTEL_GREEN_FG
                                         on_text_validate: root.on_target_hr_submit(self.text)
                                         on_focus: root.on_target_hr_submit(self.text) if not self.focus else None
 
@@ -473,14 +478,14 @@
                                         MDIconButton:
                                             icon: "minus"
                                             theme_text_color: "Custom"
-                                            text_color: app.theme_cls.primary_color
-                                            on_release: root.step_field("target_hr_field", "on_target_hr_submit", -1, app.theme_cls.primary_color)
+                                            text_color: LIGHT_GREEN_FG
+                                            on_release: root.step_field("target_hr_field", "on_target_hr_submit", -1, LIGHT_GREEN_FG)
 
                                         MDIconButton:
                                             icon: "plus"
                                             theme_text_color: "Custom"
-                                            text_color: app.theme_cls.primary_color
-                                            on_release: root.step_field("target_hr_field", "on_target_hr_submit", 1, app.theme_cls.primary_color)
+                                            text_color: LIGHT_GREEN_FG
+                                            on_release: root.step_field("target_hr_field", "on_target_hr_submit", 1, LIGHT_GREEN_FG)
 
                                 MDBoxLayout:
                                     orientation: "horizontal"
@@ -491,14 +496,15 @@
                                     MDTextField:
                                         id: adaptive_min_cpm_field
                                         text: str(int(root.adaptive_min_cpm))
-                                        hint_text: "Cpm minimum"
+                                        hint_text: "Cadence minimale (cpm)"
                                         icon_left: "arrow-collapse-down"
                                         mode: "rectangle"
                                         input_filter: "int"
-                                        text_color_focus: app.theme_cls.primary_color
-                                        hint_text_color_focus: app.theme_cls.primary_color
-                                        line_color_focus: app.theme_cls.primary_color
-                                        icon_left_color_focus: app.theme_cls.primary_color
+                                        text_color_focus: BLUE_FG
+                                        hint_text_color_focus: BLUE_FG
+                                        line_color_focus: BLUE_FG
+                                        icon_left_color_normal: PASTEL_BLUE_FG
+                                        icon_left_color_focus: PASTEL_BLUE_FG
                                         on_text_validate: root.on_adaptive_min_cpm_submit(self.text)
                                         on_focus: root.on_adaptive_min_cpm_submit(self.text) if not self.focus else None
 
@@ -512,14 +518,14 @@
                                         MDIconButton:
                                             icon: "minus"
                                             theme_text_color: "Custom"
-                                            text_color: app.theme_cls.primary_color
-                                            on_release: root.step_field("adaptive_min_cpm_field", "on_adaptive_min_cpm_submit", -5, app.theme_cls.primary_color)
+                                            text_color: BLUE_FG
+                                            on_release: root.step_field("adaptive_min_cpm_field", "on_adaptive_min_cpm_submit", -5, BLUE_FG)
 
                                         MDIconButton:
                                             icon: "plus"
                                             theme_text_color: "Custom"
-                                            text_color: app.theme_cls.primary_color
-                                            on_release: root.step_field("adaptive_min_cpm_field", "on_adaptive_min_cpm_submit", 5, app.theme_cls.primary_color)
+                                            text_color: BLUE_FG
+                                            on_release: root.step_field("adaptive_min_cpm_field", "on_adaptive_min_cpm_submit", 5, BLUE_FG)
 
                                 MDBoxLayout:
                                     orientation: "horizontal"
@@ -530,14 +536,15 @@
                                     MDTextField:
                                         id: adaptive_max_cpm_field
                                         text: str(int(root.adaptive_max_cpm))
-                                        hint_text: "Cpm maximum"
+                                        hint_text: "Cadence maximale (cpm)"
                                         icon_left: "arrow-collapse-up"
                                         mode: "rectangle"
                                         input_filter: "int"
-                                        text_color_focus: app.theme_cls.primary_color
-                                        hint_text_color_focus: app.theme_cls.primary_color
-                                        line_color_focus: app.theme_cls.primary_color
-                                        icon_left_color_focus: app.theme_cls.primary_color
+                                        text_color_focus: BLUE_FG
+                                        hint_text_color_focus: BLUE_FG
+                                        line_color_focus: BLUE_FG
+                                        icon_left_color_normal: PASTEL_BLUE_FG
+                                        icon_left_color_focus: PASTEL_BLUE_FG
                                         on_text_validate: root.on_adaptive_max_cpm_submit(self.text)
                                         on_focus: root.on_adaptive_max_cpm_submit(self.text) if not self.focus else None
 
@@ -551,14 +558,14 @@
                                         MDIconButton:
                                             icon: "minus"
                                             theme_text_color: "Custom"
-                                            text_color: app.theme_cls.primary_color
-                                            on_release: root.step_field("adaptive_max_cpm_field", "on_adaptive_max_cpm_submit", -5, app.theme_cls.primary_color)
+                                            text_color: BLUE_FG
+                                            on_release: root.step_field("adaptive_max_cpm_field", "on_adaptive_max_cpm_submit", -5, BLUE_FG)
 
                                         MDIconButton:
                                             icon: "plus"
                                             theme_text_color: "Custom"
-                                            text_color: app.theme_cls.primary_color
-                                            on_release: root.step_field("adaptive_max_cpm_field", "on_adaptive_max_cpm_submit", 5, app.theme_cls.primary_color)
+                                            text_color: BLUE_FG
+                                            on_release: root.step_field("adaptive_max_cpm_field", "on_adaptive_max_cpm_submit", 5, BLUE_FG)
     
                             # ---- PID de secours (modes DRL, prochaine partie) ----
                             ScrollView:
