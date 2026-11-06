@@ -532,6 +532,27 @@ class PilotageScreen(MDScreen):
 
     # ========== CUBE FREQUENCY ==========
 
+    def step_field(self, field_id, submit_method_name, delta, flash_color=None):
+        """Boutons +/- (smartphone) : ajuste le champ puis revalide via le même handler que la saisie clavier.
+        flash_color fait passer brièvement le texte dans la couleur du champ pour signaler le changement."""
+        field = self.ids[field_id]
+        try:
+            value = int(field.text)
+        except (TypeError, ValueError):
+            value = 0
+        field.text = str(value + delta)
+        getattr(self, submit_method_name)(field.text)
+
+        if flash_color is not None:
+            pending = getattr(field, "_flash_event", None)
+            if pending is not None:
+                pending.cancel()
+            field.text_color_normal = flash_color
+            field._flash_event = Clock.schedule_once(
+                lambda dt: setattr(field, "text_color_normal", self.theme_cls.disabled_hint_text_color),
+                0.8,
+            )
+
     def on_cube_frequency_submit(self, text):
         """Champ cubes par minute validé"""
         self._submit_int_field(text, "cube_frequency_field", "cube_per_min",
