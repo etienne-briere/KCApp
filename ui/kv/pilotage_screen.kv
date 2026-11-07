@@ -266,14 +266,15 @@
                                     on_text_validate: root.on_cube_frequency_submit(self.text)
                                     on_focus: root.on_cube_frequency_submit(self.text) if not self.focus else None
 
-                                # Boutons +/- : uniquement sur smartphone (disabled bloque
-                                # le clic quel que soit le rendu réel du MDIconButton).
+                                # Boutons +/- toujours à droite ici : ce champ est seul
+                                # dans sa rangée (pas de contrainte de largeur comme
+                                # dans les lignes à 3 colonnes), donc pas besoin de les
+                                # pousser sous le champ sur tablette.
                                 MDBoxLayout:
                                     orientation: "horizontal"
-                                    size_hint_x: None
-                                    width: dp(96) if Window.width < dp(600) else 0
-                                    opacity: 1 if Window.width < dp(600) else 0
-                                    disabled: Window.width >= dp(600)
+                                    size_hint: None, None
+                                    size: dp(96), dp(48)
+                                    pos_hint: {"center_x": 0.5, "center_y": 0.5}
 
                                     MDIconButton:
                                         icon: "minus"
@@ -305,10 +306,10 @@
                             height: self.minimum_height
 
                             MDBoxLayout:
-                                orientation: "horizontal"
+                                orientation: "vertical" if Window.width >= dp(600) else "horizontal"
                                 spacing: dp(4)
                                 size_hint_y: None
-                                height: incremental_steps_field.height
+                                height: (incremental_steps_field.height + dp(52)) if Window.width >= dp(600) else incremental_steps_field.height
 
                                 MDTextField:
                                     id: incremental_steps_field
@@ -327,10 +328,9 @@
 
                                 MDBoxLayout:
                                     orientation: "horizontal"
-                                    size_hint_x: None
-                                    width: dp(96) if Window.width < dp(600) else 0
-                                    opacity: 1 if Window.width < dp(600) else 0
-                                    disabled: Window.width >= dp(600)
+                                    size_hint: None, None
+                                    size: dp(96), dp(48)
+                                    pos_hint: {"center_x": 0.5, "center_y": 0.5}
 
                                     MDIconButton:
                                         icon: "minus"
@@ -345,10 +345,10 @@
                                         on_release: root.step_field("incremental_steps_field", "on_incremental_steps_submit", 1, BLUE_FG)
 
                             MDBoxLayout:
-                                orientation: "horizontal"
+                                orientation: "vertical" if Window.width >= dp(600) else "horizontal"
                                 spacing: dp(4)
                                 size_hint_y: None
-                                height: incremental_min_cpm_field.height
+                                height: (incremental_min_cpm_field.height + dp(52)) if Window.width >= dp(600) else incremental_min_cpm_field.height
 
                                 MDTextField:
                                     id: incremental_min_cpm_field
@@ -367,10 +367,9 @@
 
                                 MDBoxLayout:
                                     orientation: "horizontal"
-                                    size_hint_x: None
-                                    width: dp(96) if Window.width < dp(600) else 0
-                                    opacity: 1 if Window.width < dp(600) else 0
-                                    disabled: Window.width >= dp(600)
+                                    size_hint: None, None
+                                    size: dp(96), dp(48)
+                                    pos_hint: {"center_x": 0.5, "center_y": 0.5}
 
                                     MDIconButton:
                                         icon: "minus"
@@ -385,10 +384,10 @@
                                         on_release: root.step_field("incremental_min_cpm_field", "on_incremental_min_cpm_submit", 5, BLUE_FG)
 
                             MDBoxLayout:
-                                orientation: "horizontal"
+                                orientation: "vertical" if Window.width >= dp(600) else "horizontal"
                                 spacing: dp(4)
                                 size_hint_y: None
-                                height: incremental_max_cpm_field.height
+                                height: (incremental_max_cpm_field.height + dp(52)) if Window.width >= dp(600) else incremental_max_cpm_field.height
 
                                 MDTextField:
                                     id: incremental_max_cpm_field
@@ -407,10 +406,9 @@
 
                                 MDBoxLayout:
                                     orientation: "horizontal"
-                                    size_hint_x: None
-                                    width: dp(96) if Window.width < dp(600) else 0
-                                    opacity: 1 if Window.width < dp(600) else 0
-                                    disabled: Window.width >= dp(600)
+                                    size_hint: None, None
+                                    size: dp(96), dp(48)
+                                    pos_hint: {"center_x": 0.5, "center_y": 0.5}
 
                                     MDIconButton:
                                         icon: "minus"
@@ -448,10 +446,10 @@
                                 height: self.minimum_height
 
                                 MDBoxLayout:
-                                    orientation: "horizontal"
+                                    orientation: "vertical" if Window.width >= dp(600) else "horizontal"
                                     spacing: dp(4)
                                     size_hint_y: None
-                                    height: target_hr_field.height
+                                    height: (target_hr_field.height + dp(52)) if Window.width >= dp(600) else target_hr_field.height
 
                                     MDTextField:
                                         id: target_hr_field
@@ -470,10 +468,9 @@
 
                                     MDBoxLayout:
                                         orientation: "horizontal"
-                                        size_hint_x: None
-                                        width: dp(96) if Window.width < dp(600) else 0
-                                        opacity: 1 if Window.width < dp(600) else 0
-                                        disabled: Window.width >= dp(600)
+                                        size_hint: None, None
+                                        size: dp(96), dp(48)
+                                        pos_hint: {"center_x": 0.5, "center_y": 0.5}
 
                                         MDIconButton:
                                             icon: "minus"
@@ -488,10 +485,10 @@
                                             on_release: root.step_field("target_hr_field", "on_target_hr_submit", 1, LIGHT_GREEN_FG)
 
                                 MDBoxLayout:
-                                    orientation: "horizontal"
+                                    orientation: "vertical" if Window.width >= dp(600) else "horizontal"
                                     spacing: dp(4)
                                     size_hint_y: None
-                                    height: adaptive_min_cpm_field.height
+                                    height: (adaptive_min_cpm_field.height + dp(52)) if Window.width >= dp(600) else adaptive_min_cpm_field.height
 
                                     MDTextField:
                                         id: adaptive_min_cpm_field
@@ -510,10 +507,9 @@
 
                                     MDBoxLayout:
                                         orientation: "horizontal"
-                                        size_hint_x: None
-                                        width: dp(96) if Window.width < dp(600) else 0
-                                        opacity: 1 if Window.width < dp(600) else 0
-                                        disabled: Window.width >= dp(600)
+                                        size_hint: None, None
+                                        size: dp(96), dp(48)
+                                        pos_hint: {"center_x": 0.5, "center_y": 0.5}
 
                                         MDIconButton:
                                             icon: "minus"
@@ -528,10 +524,10 @@
                                             on_release: root.step_field("adaptive_min_cpm_field", "on_adaptive_min_cpm_submit", 5, BLUE_FG)
 
                                 MDBoxLayout:
-                                    orientation: "horizontal"
+                                    orientation: "vertical" if Window.width >= dp(600) else "horizontal"
                                     spacing: dp(4)
                                     size_hint_y: None
-                                    height: adaptive_max_cpm_field.height
+                                    height: (adaptive_max_cpm_field.height + dp(52)) if Window.width >= dp(600) else adaptive_max_cpm_field.height
 
                                     MDTextField:
                                         id: adaptive_max_cpm_field
@@ -550,10 +546,9 @@
 
                                     MDBoxLayout:
                                         orientation: "horizontal"
-                                        size_hint_x: None
-                                        width: dp(96) if Window.width < dp(600) else 0
-                                        opacity: 1 if Window.width < dp(600) else 0
-                                        disabled: Window.width >= dp(600)
+                                        size_hint: None, None
+                                        size: dp(96), dp(48)
+                                        pos_hint: {"center_x": 0.5, "center_y": 0.5}
 
                                         MDIconButton:
                                             icon: "minus"
