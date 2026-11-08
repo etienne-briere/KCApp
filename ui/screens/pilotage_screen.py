@@ -66,6 +66,7 @@ class PilotageScreen(MDScreen):
     player_name = StringProperty("") # nom du profil joueur actif
     player_language = StringProperty("fr") # langue des labels du jeu ("fr"/"en"), persistée dans le profil joueur actif
     environment = StringProperty("") # environnement du jeu (Cosmos/Forest/Sea/Mountain/Sky), vide si inconnu
+    player_position = StringProperty("debout") # position du joueur pendant la session ("assis" ou "debout")
     game_state = StringProperty("Menu") # état de partie reçu de Unity (Menu/Ready/Playing/Paused/Finished)
 
     def __init__(self, **kwargs):
@@ -91,6 +92,7 @@ class PilotageScreen(MDScreen):
         self.player_language = self._language_of_player(self.player_name)
         self.game_state = self.session.game_state.capitalize()
         self.environment = self.session.config.environment or ""
+        self.player_position = self.session.config.player_position or "debout"
 
         # Vérifier la connexion Unity (au cas où on arrive dans l'écran après la connexion)
         self.unity_connected = self.udp_discovery.is_unity_connected()
@@ -174,6 +176,8 @@ class PilotageScreen(MDScreen):
         self.game_state = session.game_state.capitalize()
         if session.config.environment is not None:
             self.environment = session.config.environment
+        if session.config.player_position is not None:
+            self.player_position = session.config.player_position
         if session.config.target_hr_percent is not None:
             self.target_hr = session.config.target_hr_percent
         if session.config.obs_enabled is not None:
@@ -497,6 +501,19 @@ class PilotageScreen(MDScreen):
             success = self.udp_controller.set_session_duration(duration_seconds)
             if success:
                 logger.info(f"📤 Durée de session envoyée: {duration_seconds}s")
+
+    # ========== POSITION DU JOUEUR ==========
+
+    def on_position_select(self, position):
+        """Choix de la position du joueur pendant la session ("assis" ou "debout")"""
+        self.player_position = position
+        self.session.config.player_position = position
+        logger.info(f"🧍 Position du joueur: {position}")
+
+        if self.udp_controller:
+            success = self.udp_controller.set_player_position(position)
+            if success:
+                logger.info(f"📤 Position envoyée: {position}")
 
     # ========== OBSTACLES ==========
 

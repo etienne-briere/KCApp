@@ -24,6 +24,7 @@ class SessionConfig:
         self.require_hr_signal = None
         self.brick_speed = None  # vitesse des briques (tous modes)
         self.environment = None  # environnement choisi par le joueur (Cosmos, Forest, Sea, Mountain, Sky)
+        self.player_position = None  # position du joueur pendant la session ("assis" ou "debout")
 
         # Contrôleur hybride (Unity) : réglages persistants, renvoyés par Unity
         self.controller_config = None   # off, legacy_drl, hybrid_short_term, drl_run3, drl_run3_no_warmup, pid_only, custom
@@ -108,6 +109,9 @@ class SessionConfig:
 
         elif key == "environment":
             self.environment = value.strip()
+
+        elif key == "seated":
+            self.player_position = "assis" if value.strip() in ("1", "true") else "debout"
 
         elif key == "controllerConfig":
             self.controller_config = value.strip().lower()

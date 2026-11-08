@@ -87,6 +87,10 @@ class UDPController:
     def set_player_name(self, name: str) -> bool:
         """Envoie le nom du joueur à Unity"""
         return self.send_command("playerName", name)
+
+    def set_player_position(self, position: str) -> bool:
+        """Position du joueur pendant la session : "assis" ou "debout\""""
+        return self.send_command("seated", "1" if position == "assis" else "0")
     
     def set_obstacle(self, command: str)-> bool:
         """Active/Désactive les obstacles"""
