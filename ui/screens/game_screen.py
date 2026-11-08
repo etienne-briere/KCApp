@@ -20,7 +20,6 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.image import Image as CoreImage
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty
-from kivy.utils import platform
 from kivymd.uix.screen import MDScreen
 
 from app.data.stream_settings import StreamSettings
@@ -45,7 +44,6 @@ class GameScreen(MDScreen):
     status_text = StringProperty("")
     fps_choice = NumericProperty(0)           # img/s demandées (bouton sélectionné)
     width_choice = NumericProperty(0)         # largeur demandée en px (bouton sélectionné)
-    is_fullscreen = BooleanProperty(False)    # vidéo en plein écran (voir toggle_fullscreen)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -86,12 +84,6 @@ class GameScreen(MDScreen):
 
     def on_leave(self):
         """Appelé à la sortie de l'écran : on coupe le flux côté Unity et on libère le port"""
-        # Filet de sécurité : si l'écran change pendant le plein écran (ne
-        # devrait pas arriver, la barre de nav est masquée pendant ce
-        # temps), on restaure quand même la top bar/nav et le portrait.
-        if self.is_fullscreen:
-            self.toggle_fullscreen()
-
         for event in (self._renew_event, self._update_event):
             if event is not None:
                 event.cancel()
@@ -133,46 +125,6 @@ class GameScreen(MDScreen):
         if self.is_streaming and self.udp_controller:
             # Unity applique stream_config à chaud (un changement de largeur recrée ses tampons).
             self.udp_controller.set_stream_config(self.fps_choice, self.width_choice, STREAM_QUALITY)
-
-    # ========== AFFICHAGE ==========
-
-    def toggle_fullscreen(self):
-        """Plein écran de la vidéo : masque top bar / barre de statut /
-        navigation du bas / réglages FLUIDITÉ-QUALITÉ D'IMAGE (voir
-        app.chrome_visible, lu par ui/kv/main.kv). S'affiche d'abord dans
-        l'orientation courante (portrait en pratique, puisqu'on ne force
-        rien) ; si l'utilisateur pivote physiquement le téléphone, l'écran
-        suit (voir _set_android_orientation : SENSOR, pas de bascule
-        programmatique). Seule sortie : retaper l'icône (la nav étant
-        masquée, il n'y a pas d'autre chemin de retour)."""
-        self.is_fullscreen = not self.is_fullscreen
-        App.get_running_app().chrome_visible = not self.is_fullscreen
-        self._set_android_orientation("free" if self.is_fullscreen else "portrait")
-
-    def _set_android_orientation(self, mode):
-        """Pilote l'orientation sur Android ; sans effet ailleurs (pas de
-        rotation d'écran sur desktop).
-
-        'free' : suit le capteur (portrait et paysage), sans forcer de
-        bascule immédiate — l'écran reste dans son orientation actuelle
-        tant que l'utilisateur ne tourne pas physiquement le téléphone.
-        'portrait' : verrouillé, pour que le reste de l'app (pas conçu
-        pour le paysage) retrouve un état stable à la sortie du plein
-        écran, quelle que soit la façon dont le téléphone est tenu.
-        """
-        if platform != "android":
-            return
-
-        from jnius import autoclass
-
-        activity = autoclass("org.kivy.android.PythonActivity").mActivity
-        ActivityInfo = autoclass("android.content.pm.ActivityInfo")
-        value = (
-            ActivityInfo.SCREEN_ORIENTATION_SENSOR
-            if mode == "free"
-            else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        )
-        activity.setRequestedOrientation(value)
 
     # ========== MISE À JOUR DES IMAGES ==========
 
