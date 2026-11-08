@@ -143,7 +143,7 @@
                         orientation: "horizontal"
                         spacing: dp(10)
                         size_hint_y: None
-                        height: dp(48)
+                        height: dp(40)
 
                         MDFillRoundFlatButton:
                             text: "Assis"
@@ -152,7 +152,7 @@
                             text_color: GREEN_FG if root.player_position == "assis" else GRAY_FG
                             size_hint_x: 1
                             size_hint_y: None
-                            height: dp(48)
+                            height: dp(40)
                             on_release: root.on_position_select("assis")
 
                         MDFillRoundFlatButton:
@@ -162,7 +162,7 @@
                             text_color: GREEN_FG if root.player_position == "debout" else GRAY_FG
                             size_hint_x: 1
                             size_hint_y: None
-                            height: dp(48)
+                            height: dp(40)
                             on_release: root.on_position_select("debout")
 
             # ==== ENVIRONNEMENT ====
@@ -811,7 +811,7 @@
                             orientation: "horizontal"
                             spacing: dp(10)
                             size_hint_y: None
-                            height: dp(48) if root.pending_model in root.DRL_MODES else 0
+                            height: dp(40) if root.pending_model in root.DRL_MODES else 0
                             opacity: 1 if root.pending_model in root.DRL_MODES else 0
                             disabled: not root.unity_connected or root.pending_model not in root.DRL_MODES
 
@@ -822,7 +822,7 @@
                                 text_color: RED_FG if not root.warmup_enabled else GRAY_FG
                                 size_hint_x: 1
                                 size_hint_y: None
-                                height: dp(48)
+                                height: dp(40)
                                 on_release: root.on_warmup_mode_select("none")
 
                             MDFillRoundFlatButton:
@@ -832,7 +832,7 @@
                                 text_color: GREEN_FG if root.warmup_enabled and root.pid_warmup else GRAY_FG
                                 size_hint_x: 1
                                 size_hint_y: None
-                                height: dp(48)
+                                height: dp(40)
                                 on_release: root.on_warmup_mode_select("pid")
 
                             MDFillRoundFlatButton:
@@ -842,7 +842,7 @@
                                 text_color: GREEN_FG if root.warmup_enabled and not root.pid_warmup else GRAY_FG
                                 size_hint_x: 1
                                 size_hint_y: None
-                                height: dp(48)
+                                height: dp(40)
                                 on_release: root.on_warmup_mode_select("drl")
 
                         # ---- Aucun / PID : mode PID pur, le DRL n'a pas de sens ----
@@ -850,7 +850,7 @@
                             orientation: "horizontal"
                             spacing: dp(10)
                             size_hint_y: None
-                            height: dp(48) if root.pending_model not in root.DRL_MODES else 0
+                            height: dp(40) if root.pending_model not in root.DRL_MODES else 0
                             opacity: 1 if root.pending_model not in root.DRL_MODES else 0
                             disabled: not root.unity_connected or root.pending_model in root.DRL_MODES
 
@@ -861,7 +861,7 @@
                                 text_color: RED_FG if not root.warmup_enabled else GRAY_FG
                                 size_hint_x: 1
                                 size_hint_y: None
-                                height: dp(48)
+                                height: dp(40)
                                 on_release: root.on_warmup_mode_select("none")
 
                             MDFillRoundFlatButton:
@@ -871,7 +871,7 @@
                                 text_color: GREEN_FG if root.warmup_enabled else GRAY_FG
                                 size_hint_x: 1
                                 size_hint_y: None
-                                height: dp(48)
+                                height: dp(40)
                                 on_release: root.on_warmup_mode_select("pid")
 
                     # ---- Durée du warmup : toujours visible, désactivée si "Aucun" ----
