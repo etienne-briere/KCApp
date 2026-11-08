@@ -23,6 +23,7 @@ from kivy.properties import BooleanProperty, NumericProperty, StringProperty
 from kivy.utils import platform
 from kivymd.uix.screen import MDScreen
 
+from app.data.stream_settings import StreamSettings
 from app.network.game_stream_receiver import GameStreamReceiver
 from config import (STREAM_FLIP_VERTICAL, STREAM_LEASE_RENEW_S, STREAM_NO_SIGNAL_S,
                     STREAM_QUALITY, UDP_PORT_STREAM)
@@ -50,10 +51,7 @@ class GameScreen(MDScreen):
         super().__init__(**kwargs)
         self.udp_discovery = None
         self.udp_controller = None
-        # Instance partagée avec l'écran Paramètres (app.stream_settings) :
-        # un changement de fluidité/qualité par défaut là-bas doit se
-        # répercuter ici sans attendre un redémarrage de l'app.
-        self.settings = App.get_running_app().stream_settings
+        self.settings = StreamSettings()
         self.fps_choice = self.settings.fps
         self.width_choice = self.settings.width
         self.receiver = None
@@ -70,10 +68,6 @@ class GameScreen(MDScreen):
         app = App.get_running_app()
         self.udp_discovery = app.udp_discovery
         self.udp_controller = app.udp_controller
-        # Reprend une éventuelle fluidité/qualité changée depuis Paramètres
-        # (menu Contrôle) pendant que cet écran n'était pas affiché.
-        self.fps_choice = self.settings.fps
-        self.width_choice = self.settings.width
 
         self._last_seq = 0
         self._last_frame_time = 0.0

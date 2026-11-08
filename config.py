@@ -25,8 +25,8 @@ UDP_PING_TIMEOUT = 3  # Secondes avant de considérer Unity déconnecté
 # Flux vidéo « vue du joueur » (Unity -> tablette, UDP, images JPEG fragmentées)
 # Voir app/network/game_stream_protocol.py et, côté Unity, GameStreamer.cs
 UDP_PORT_STREAM = 5007       # port local où la tablette reçoit les images (doit être le même côté Unity)
-STREAM_FPS = 2                # images par seconde demandées à Unity (1 à 15) ; baisser si le jeu saccade
-STREAM_WIDTH = 320            # largeur de l'image en pixels (240 à 960), hauteur en 16:9
+STREAM_FPS = 8               # images par seconde demandées à Unity (1 à 15) ; baisser si le jeu saccade
+STREAM_WIDTH = 480           # largeur de l'image en pixels (240 à 960), hauteur en 16:9
 STREAM_FPS_CHOICES = (2, 4, 8, 12)      # choix proposés dans l'écran Vue du joueur (img/s)
 STREAM_WIDTH_CHOICES = (320, 480, 640, 800, 960)  # choix proposés dans l'écran Vue du joueur (px)
 STREAM_QUALITY = 50          # qualité JPEG (20 à 90)
