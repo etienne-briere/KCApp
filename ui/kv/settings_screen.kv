@@ -1,0 +1,89 @@
+#:kivy 2.0
+#:import dp kivy.metrics.dp
+#:import Window kivy.core.window.Window
+
+<SettingsScreen>:
+
+    ScrollView:
+        do_scroll_x: False
+
+        MDBoxLayout:
+            orientation: "vertical"
+            spacing: dp(20)
+            padding: dp(20)
+            size_hint_y: None
+            height: self.minimum_height
+
+            # ==== BOUTONS +/- ====
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(8)
+                size_hint_y: None
+                height: self.minimum_height
+
+                MDLabel:
+                    text: "BOUTONS +/-"
+                    font_style: "Overline"
+                    theme_text_color: "Secondary"
+                    halign: "left"
+                    padding: dp(16), 0
+                    adaptive_size: True
+
+                MDCard:
+                    orientation: "vertical"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(12)
+                    size_hint_y: None
+                    height: self.minimum_height
+                    elevation: 0
+
+                    MDBoxLayout:
+                        orientation: "horizontal"
+                        spacing: dp(15)
+                        size_hint_y: None
+                        height: dp(30)
+
+                        MDIcon:
+                            icon: "plus-minus-variant"
+                            theme_text_color: "Custom"
+                            text_color: app.theme_cls.primary_color
+                            font_size: "30sp"
+                            size_hint_x: None
+                            width: dp(30)
+
+                        MDLabel:
+                            text: "Pas des boutons +/-"
+                            font_style: "Body1" if Window.width >= dp(600) else "Body2"
+                            halign: "left"
+                            valign: "center"
+
+                    MDTextField:
+                        id: hr_step_field
+                        text: str(app.settings_store.hr_step)
+                        hint_text: "Pas %FCmax cible"
+                        icon_left: "plus-minus-variant"
+                        mode: "rectangle"
+                        input_filter: "int"
+                        text_color_focus: LIGHT_GREEN_FG
+                        hint_text_color_focus: LIGHT_GREEN_FG
+                        line_color_focus: LIGHT_GREEN_FG
+                        icon_left_color_normal: PASTEL_GREEN_FG
+                        icon_left_color_focus: PASTEL_GREEN_FG
+                        on_text_validate: root.on_hr_step_submit(self.text)
+                        on_focus: root.on_hr_step_submit(self.text) if not self.focus else None
+
+                    MDTextField:
+                        id: cpm_step_field
+                        text: str(app.settings_store.cpm_step)
+                        hint_text: "Pas cadence (cpm)"
+                        icon_left: "plus-minus-variant"
+                        mode: "rectangle"
+                        input_filter: "int"
+                        text_color_focus: BLUE_FG
+                        hint_text_color_focus: BLUE_FG
+                        line_color_focus: BLUE_FG
+                        icon_left_color_normal: PASTEL_BLUE_FG
+                        icon_left_color_focus: PASTEL_BLUE_FG
+                        on_text_validate: root.on_cpm_step_submit(self.text)
+                        on_focus: root.on_cpm_step_submit(self.text) if not self.focus else None

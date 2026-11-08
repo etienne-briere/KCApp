@@ -20,6 +20,7 @@ from app.network.udp_discovery import UDPDiscovery
 from app.network.udp_controller import UDPController
 from app.network.quest_client import QuestClient
 from app.data.player_store import PlayerStore
+from app.data.settings_store import SettingsStore
 from app.data.hr_session import HRSession
 from app.controllers.adaptive_controller import AdaptiveController
 from app.data.game_session import GameSession
@@ -67,6 +68,7 @@ class KCApp(MDApp):
         # Initialiser les gestionnaires
         self.ble_manager = BLEManager()
         self.player_store = PlayerStore()
+        self.settings_store = SettingsStore()
         self.ws_server = WebSocketServer()
         self.udp_discovery = UDPDiscovery()
         self.udp_controller = UDPController(self.udp_discovery)
@@ -97,6 +99,7 @@ class KCApp(MDApp):
         Builder.load_file(resource_path("ui/kv/headset_screen.kv"))
         Builder.load_file(resource_path("ui/kv/pilotage_screen.kv"))
         Builder.load_file(resource_path("ui/kv/player_profile_screen.kv"))
+        Builder.load_file(resource_path("ui/kv/settings_screen.kv"))
         Builder.load_file(resource_path("ui/kv/profil_screen.kv"))
         Builder.load_file(resource_path("ui/kv/tracking_screen.kv"))
         Builder.load_file(resource_path("ui/kv/game_screen.kv"))
