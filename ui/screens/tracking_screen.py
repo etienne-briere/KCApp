@@ -883,6 +883,13 @@ class TrackingScreen(MDScreen):
         self.graph_touch_mode = "pan" if self.graph_touch_mode == "cursor" else "cursor"
         if self.graph_touch_mode != "cursor":
             self._hide_cursor()
+        # La légende se superposerait à la bulle de suivi (toutes deux en
+        # haut à gauche) — masquée tant que le mode curseur est actif (voir
+        # aussi update_legend, qui respecte ce même mode à chaque tracé).
+        legend = getattr(self, "legend", None)
+        if legend:
+            legend.set_visible(self.graph_touch_mode != "cursor")
+            self.fig.canvas.draw_idle()
 
     def _hide_cursor(self):
         """Masque la bulle de suivi et sa ligne verticale (voir
@@ -1101,6 +1108,9 @@ class TrackingScreen(MDScreen):
                 edgecolor='#bdbdbd',
                 labelcolor='#424242'
             )
+            # Masquée en mode curseur : elle se superposerait à la bulle de
+            # suivi, toutes deux en haut à gauche (voir toggle_cursor_mode).
+            self.legend.set_visible(self.graph_touch_mode != "cursor")
 
     def center_graph(self):
         '''Recentrer le graphique à partir du début de la partie'''
