@@ -17,8 +17,12 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 import time
 import numpy as np
-from kivy.lang import Builder
-from kivy_matplotlib_widget.uix.hover_widget import add_hover, GeneralCompareHover, CompareHoverBox
+from kivy.uix.floatlayout import FloatLayout
+from kivymd.uix.card import MDCard
+# Déclenche l'enregistrement Factory de MatplotFigureTwinx (voir
+# kivy_matplotlib_widget/__init__.py) utilisé tel quel comme balise kv
+# (tracking_screen.kv) sans plus aucun autre import de ce module ici.
+import kivy_matplotlib_widget  # noqa: F401
 
 # Standard library
 import asyncio
@@ -50,141 +54,32 @@ _DEFAULT_INACTIVE_STYLE = {"color": (0.459, 0.459, 0.459, 1), "label": "Inactif"
 # Ordre d'affichage dans la légende, pour un ordre stable d'un tracé à l'autre.
 _INACTIVE_STATE_ORDER = ["disconnected", "menu", "ready", "paused", "finished"]
 
-# Labels des courbes (voir init_graph) — partagés avec _TimelessCompareHover
-# (_LINE_ICONS) pour savoir quelle icône afficher dans la bulle du curseur
-# pour chaque courbe, reprises des icônes utilisées ailleurs dans l'écran :
-# "heart" (carte FC), "cube-outline" (carte Cubes/min), "target" (champ/icône
-# %FC cible).
+# Labels des courbes (voir init_graph), repris dans la légende et dans le
+# nom affiché par chaque ligne de TrackingCursorTooltip.
 _HR_LINE_LABEL = "FCmax (%)"
 _CPM_LINE_LABEL = "Cubes/min"
 _TARGET_LINE_LABEL = "FCmax cible (%)"
-_LINE_ICONS = {
-    _HR_LINE_LABEL: "heart",
-    _CPM_LINE_LABEL: "cube-outline",
-    _TARGET_LINE_LABEL: "target",
-}
 
 
-class IconCompareHoverBox(CompareHoverBox):
-    '''Entrée de la bulle du curseur de suivi avec une icône (teintée de la
-    couleur de la courbe) à la place du carré de couleur par défaut — voir
-    _LINE_ICONS. Pas de préfixe "_" : instanciée directement comme balise
-    kv (ci-dessous), ce que kv n'autorise qu'avec un nom de classe qui
-    commence par une majuscule.'''
-    icon = StringProperty("circle")
-
-
-class _TimelessCompareHover(GeneralCompareHover):
+class TrackingCursorTooltip(MDCard):
     '''
-    Bulle du curseur de suivi (voir TrackingScreen.init_graph) sans la ligne
-    de temps de GeneralCompareHover — ne garde que la valeur de chaque
-    courbe (FC, cubes/min, %FC cible), avec l'icône de chaque courbe (voir
-    IconCompareHoverBox/_LINE_ICONS).
+    Bulle du curseur de suivi (voir TrackingScreen._on_graph_hover) : une
+    ligne par valeur (FC, cubes/min, %FC cible), chacune avec la même icône
+    qu'ailleurs dans l'écran (cœur, cube, cible). Les valeurs sont relues
+    directement depuis les données de session plutôt que depuis les
+    artistes matplotlib — le hover "compare" fourni par
+    kivy_matplotlib_widget ne fait correspondre qu'une seule courbe à la
+    fois (celle dont la distance en pixels est minimale), ce qui produisait
+    un affichage incohérent puisque FC et cubes/min ne sont presque jamais
+    échantillonnés aux mêmes instants.
     '''
-
-    def create_child(self, lines):
-        if len(self.ids.main_box.children) > 2:
-            for i in range(len(self.ids.main_box.children) - 2):
-                self.ids.main_box.remove_widget(self.ids.main_box.children[0])
-
-        self.children_names = []
-        self.children_list = []
-        for i, line in enumerate(lines):
-            label = line.get_label()
-            icon = _LINE_ICONS.get(label)
-            if i == 0:
-                self.ids.comparehoverbox.label_y = label
-                self.ids.comparehoverbox.icon = icon or "circle"
-                mywidget = self.ids.comparehoverbox
-            else:
-                mywidget = IconCompareHoverBox()
-                if icon:
-                    mywidget.icon = icon
-                mywidget.label_y = label
-                self.ids.main_box.add_widget(mywidget)
-            self.children_names.append(label)
-            self.children_list.append(mywidget)
-
-
-Builder.load_string('''
-<_TimelessCompareHover>
-    custom_color: [0,0,0,1]
-
-    BoxLayout:
-        id:main_box
-        x:
-            root.x_hover_pos + dp(4) if root.x_hover_pos + dp(4) < root.figwidth - self.width - self.padding[0] * 2 \\
-            else root.x_hover_pos - dp(4) - self.width - self.padding[0] * 2
-        y:
-            root.ymin_line + dp(4) if abs(root.y_touch_pos -root.ymin_line) > abs(root.y_touch_pos -root.ymax_line) else root.ymax_line - dp(4) - self.height
-        size_hint: None, None
-        height: self.minimum_height
-        width:
-            self.minimum_width + dp(12) if root.show_cursor \\
-            else dp(0.0001)
-        orientation:'vertical'
-        padding: 0,dp(4),0,dp(4)
-
-        canvas:
-            Color:
-                rgba: root.background_color
-            RoundedRectangle:
-                pos: self.pos
-                size: self.size
-                radius: [dp(4)]
-            Color:
-                rgba: 0,0,0,1
-            Line:
-                width: 1
-                rounded_rectangle:
-                    (self.x, self.y, self.width, self.height,\\
-                    dp(4), dp(4), dp(4), dp(4),\\
-                    self.height)
-
-        canvas.after:
-            Color:
-                rgba: 0,0,1,1
-            Line:
-                width: dp(1)
-                points:
-                    root.x_hover_pos, \\
-                    root.ymin_line, \\
-                    root.x_hover_pos, \\
-                    root.ymax_line
-
-        IconCompareHoverBox:
-            id:comparehoverbox
-
-<IconCompareHoverBox>
-    size_hint:None,None
-    width:label.texture_size[0] + dp(12) + dp(24) if self.show_widget else dp(12)
-    height:label.texture_size[1] + dp(12) if self.show_widget else dp(0.01)
-    opacity:1 if self.show_widget else 0
-    padding: dp(12),0,0,0
-    MDIcon:
-        icon: root.icon
-        theme_text_color: "Custom"
-        text_color: root.custom_color if root.custom_color else [0,0,0,1]
-        font_size: "16sp"
-        size_hint_x: None
-        width: dp(16)
-        pos_hint: {"center_y": 0.5}
-    Label:
-        id:label
-        text: root.label_y + ': ' + root.label_y_value
-        color: root.text_color
-        font_size:root.text_size
-        font_name : root.text_font
-''')
-
-
-class _RoundedPercentFormatter:
-    '''Arrondit la %FCmax (axe gauche) du curseur de suivi à l'entier — voir
-    TrackingScreen.init_graph.'''
-
-    @staticmethod
-    def format_data(value):
-        return str(int(round(value)))
+    show_cursor = BooleanProperty(False)
+    hr_visible = BooleanProperty(False)
+    hr_text = StringProperty("")
+    cpm_visible = BooleanProperty(False)
+    cpm_text = StringProperty("")
+    target_visible = BooleanProperty(False)
+    target_text = StringProperty("")
 
 
 class GraphAwareScrollView(ScrollView):
@@ -885,14 +780,12 @@ class TrackingScreen(MDScreen):
         # sur la taille par défaut de matplotlib, pas celle de la Card).
         self.ids.hr_graph_widget.bind(size=self._on_graph_widget_resize)
 
-        # Curseur de suivi (mode "cursor", voir toggle_cursor_mode) : une
-        # bulle unique affichant la valeur de chaque courbe visible (FC,
-        # cubes/min, %FC cible) au point touché, sans le temps (voir
-        # _TimelessCompareHover). auto_cursor (kv) a déjà enregistré les
-        # courbes des deux axes au moment de l'assignation de figure ci-dessus.
-        self.ids.hr_graph_widget.cursor_yaxis_formatter = _RoundedPercentFormatter()
-        add_hover(self.ids.hr_graph_widget, mode="touch", hover_type="compare",
-                  hover_widget=_TimelessCompareHover())
+        # Curseur de suivi (mode "cursor", voir toggle_cursor_mode) : on
+        # remplace le hover() natif du widget (qui ne ferait correspondre
+        # qu'une seule courbe à la fois) par le nôtre — voir _on_graph_hover.
+        # touch_mode == "cursor" continue de déclencher l'appel à .hover(),
+        # seule son implémentation change.
+        self.ids.hr_graph_widget.hover = self._on_graph_hover
 
     def _apply_graph_responsive_sizing(self):
         """Police des graduations/labels et visibilité de l'axe Cubes/min
@@ -983,6 +876,72 @@ class TrackingScreen(MDScreen):
         continue de zoomer dans les deux modes.
         """
         self.graph_touch_mode = "pan" if self.graph_touch_mode == "cursor" else "cursor"
+        if self.graph_touch_mode != "cursor":
+            self.ids.cursor_tooltip.show_cursor = False
+
+    @staticmethod
+    def _nearest_rounded(xdata, times, values):
+        """Valeur (arrondie à l'entier) la plus proche de xdata dans une série
+        (temps, valeur) — None si la série est vide. Voir _on_graph_hover."""
+        if not times:
+            return None
+        index = int(np.argmin(np.abs(np.asarray(times) - xdata)))
+        return int(round(values[index]))
+
+    def _on_graph_hover(self, event):
+        """
+        Remplace le hover() natif de hr_graph_widget tant que
+        graph_touch_mode == "cursor" (voir init_graph) : affiche, une ligne
+        par valeur, la FC, les cubes/min et la %FC cible à l'instant glissé,
+        recalculées directement depuis les données de session (pas depuis
+        les artistes matplotlib, voir TrackingCursorTooltip).
+        """
+        graph = self.ids.hr_graph_widget
+        container = self.ids.graph_container
+        tooltip = self.ids.cursor_tooltip
+
+        trans = self.ax1.transData.inverted()
+        xdata, _ = trans.transform_point((event.x - graph.x, event.y - graph.y))
+        xmin, xmax = self.ax1.get_xlim()
+        if xdata < xmin or xdata > xmax:
+            tooltip.show_cursor = False
+            return
+
+        hr_times, hr_values = self.session.hr_session.get_graph_percent()
+        hr_value = self._nearest_rounded(xdata, hr_times, hr_values)
+        tooltip.hr_visible = hr_value is not None
+        if hr_value is not None:
+            tooltip.hr_text = f"{_HR_LINE_LABEL}: {hr_value}"
+
+        cpm_value = self._nearest_rounded(
+            xdata, self.session.metrics.cpm_time, self.session.metrics.cpm_history)
+        tooltip.cpm_visible = cpm_value is not None
+        if cpm_value is not None:
+            tooltip.cpm_text = f"{_CPM_LINE_LABEL}: {cpm_value}"
+
+        target_value = None
+        if self.target_available:
+            target_value = self._nearest_rounded(
+                xdata, self.session.config.target_time or [], self.session.config.target_history or [])
+        tooltip.target_visible = target_value is not None
+        if target_value is not None:
+            tooltip.target_text = f"{_TARGET_LINE_LABEL}: {target_value}"
+
+        if not (tooltip.hr_visible or tooltip.cpm_visible or tooltip.target_visible):
+            tooltip.show_cursor = False
+            return
+
+        # graph_container (FloatLayout) ne repositionne pas ses enfants sans
+        # pos_hint (voir kv) : les coordonnées posées ici doivent donc être
+        # absolues, comme celles de event.x/y — d'où le + container.x/y.
+        local_x = event.x - container.x
+        local_y = event.y - container.y
+        tip_w, tip_h = tooltip.size
+        x = (local_x + dp(8) if local_x + dp(8) + tip_w < container.width
+             else local_x - dp(8) - tip_w)
+        y = min(local_y + dp(8), container.height - tip_h)
+        tooltip.pos = (container.x + max(0, x), container.y + max(0, y))
+        tooltip.show_cursor = True
 
     #==== GRAPHIQUE =====#
 
