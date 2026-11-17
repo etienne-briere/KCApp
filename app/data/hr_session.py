@@ -36,6 +36,12 @@ class HRSession:
     # ============== CALLBACKS ==============
 
     def on_hr_received(self, bpm: int):
+        # Le capteur peut envoyer des BPM avant même le début d'une session
+        # (ex. connexion sur l'écran Capteur sans jeu lancé) : start_time
+        # n'est posé qu'au premier target reçu de Unity (start_recording) —
+        # rien à enregistrer dans l'historique tant qu'il n'existe pas.
+        if self.session.start_time is None:
+            return
 
         # Calcul du %FCmax
         hrmax_percent = self._compute_percent(bpm)
