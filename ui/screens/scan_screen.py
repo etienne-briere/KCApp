@@ -1,6 +1,6 @@
 # Class KivyMD
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.list import TwoLineAvatarListItem, IconLeftWidget
+from kivymd.uix.list import TwoLineIconListItem, IconLeftWidget
 
 # Class Kivy
 from kivy.app import App
@@ -145,13 +145,19 @@ class ScanScreen(MDScreen):
         )
 
         for device in devices:
-            item = TwoLineAvatarListItem(
+            item = TwoLineIconListItem(
                 text=device.name or device.address,
                 secondary_text="Appareil détecté",
             )
             item.secondary_theme_text_color = "Custom"
             item.secondary_text_color = GREY
             item.secondary_font_style = "Caption" if Window.width >= dp(600) else "Overline"
+            # KivyMD centre l'icône sur toute la hauteur de la card, mais son
+            # padding haut/bas par défaut pour 2 lignes (20dp/15dp) n'est pas
+            # symétrique : le bloc titre+sous-titre se retrouve décalé vers
+            # le bas par rapport à l'icône. Égaliser les deux recentre le texte.
+            item._txt_top_pad = dp(17.5)
+            item._txt_bot_pad = dp(17.5)
             item.add_widget(IconLeftWidget(icon="bluetooth"))
             item.bind(on_release=lambda *_, d=device: self.on_device_selected(d))
             self.device_status_items[device.address] = (item, "Appareil détecté")
@@ -286,13 +292,16 @@ class ScanScreen(MDScreen):
             except ValueError:
                 pass
 
-            item = TwoLineAvatarListItem(
+            item = TwoLineIconListItem(
                 text=device["name"],
                 secondary_text=default_text,
             )
             item.secondary_theme_text_color = "Custom"
             item.secondary_text_color = GREY
             item.secondary_font_style = "Caption" if Window.width >= dp(600) else "Overline"
+            # Voir le commentaire équivalent dans on_scan_complete
+            item._txt_top_pad = dp(17.5)
+            item._txt_bot_pad = dp(17.5)
             item.add_widget(IconLeftWidget(icon="bluetooth"))
             item.bind(on_release=lambda *_, a=address: self.on_known_device_selected(a))
             self.known_status_items[address] = (item, default_text)
