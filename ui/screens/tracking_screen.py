@@ -50,23 +50,36 @@ _DEFAULT_INACTIVE_STYLE = {"color": (0.459, 0.459, 0.459, 1), "label": "Inactif"
 # Ordre d'affichage dans la légende, pour un ordre stable d'un tracé à l'autre.
 _INACTIVE_STATE_ORDER = ["disconnected", "menu", "ready", "paused", "finished"]
 
-# Label de la courbe FC (voir init_graph) — partagé avec _TimelessCompareHover
-# pour savoir quelle entrée de la bulle du curseur doit afficher l'icône
-# cœur plutôt que le carré de couleur par défaut.
+# Labels des courbes (voir init_graph) — partagés avec _TimelessCompareHover
+# (_LINE_ICONS) pour savoir quelle icône afficher dans la bulle du curseur
+# pour chaque courbe, reprises des icônes utilisées ailleurs dans l'écran :
+# "heart" (carte FC), "cube-outline" (carte Cubes/min), "target" (champ/icône
+# %FC cible).
 _HR_LINE_LABEL = "FCmax (%)"
+_CPM_LINE_LABEL = "Cubes/min"
+_TARGET_LINE_LABEL = "FCmax cible (%)"
+_LINE_ICONS = {
+    _HR_LINE_LABEL: "heart",
+    _CPM_LINE_LABEL: "cube-outline",
+    _TARGET_LINE_LABEL: "target",
+}
 
 
-class _HeartCompareHoverBox(CompareHoverBox):
-    '''Entrée FC de la bulle du curseur de suivi : icône cœur (teintée de la
-    couleur de la courbe) à la place du carré de couleur par défaut.'''
+class IconCompareHoverBox(CompareHoverBox):
+    '''Entrée de la bulle du curseur de suivi avec une icône (teintée de la
+    couleur de la courbe) à la place du carré de couleur par défaut — voir
+    _LINE_ICONS. Pas de préfixe "_" : instanciée directement comme balise
+    kv (ci-dessous), ce que kv n'autorise qu'avec un nom de classe qui
+    commence par une majuscule.'''
+    icon = StringProperty("circle")
 
 
 class _TimelessCompareHover(GeneralCompareHover):
     '''
     Bulle du curseur de suivi (voir TrackingScreen.init_graph) sans la ligne
     de temps de GeneralCompareHover — ne garde que la valeur de chaque
-    courbe (FC, cubes/min, %FC cible), avec une icône cœur pour la FC (voir
-    _HeartCompareHoverBox).
+    courbe (FC, cubes/min, %FC cible), avec l'icône de chaque courbe (voir
+    IconCompareHoverBox/_LINE_ICONS).
     '''
 
     def create_child(self, lines):
@@ -78,12 +91,15 @@ class _TimelessCompareHover(GeneralCompareHover):
         self.children_list = []
         for i, line in enumerate(lines):
             label = line.get_label()
+            icon = _LINE_ICONS.get(label)
             if i == 0:
                 self.ids.comparehoverbox.label_y = label
+                self.ids.comparehoverbox.icon = icon or "circle"
                 mywidget = self.ids.comparehoverbox
             else:
-                box_cls = _HeartCompareHoverBox if label == _HR_LINE_LABEL else CompareHoverBox
-                mywidget = box_cls()
+                mywidget = IconCompareHoverBox()
+                if icon:
+                    mywidget.icon = icon
                 mywidget.label_y = label
                 self.ids.main_box.add_widget(mywidget)
             self.children_names.append(label)
@@ -136,17 +152,17 @@ Builder.load_string('''
                     root.x_hover_pos, \\
                     root.ymax_line
 
-        CompareHoverBox:
+        IconCompareHoverBox:
             id:comparehoverbox
 
-<_HeartCompareHoverBox>
+<IconCompareHoverBox>
     size_hint:None,None
     width:label.texture_size[0] + dp(12) + dp(24) if self.show_widget else dp(12)
     height:label.texture_size[1] + dp(12) if self.show_widget else dp(0.01)
     opacity:1 if self.show_widget else 0
     padding: dp(12),0,0,0
     MDIcon:
-        icon: "heart"
+        icon: root.icon
         theme_text_color: "Custom"
         text_color: root.custom_color if root.custom_color else [0,0,0,1]
         font_size: "16sp"
@@ -835,18 +851,18 @@ class TrackingScreen(MDScreen):
             spine.set_color('#bdbdbd')
 
         # ligne %FCmax cible
-        self.line_target, = self.ax1.plot([], [], color='#2D7D32', linestyle='--', linewidth=2, drawstyle='steps-post', label='FCmax cible (%)')
+        self.line_target, = self.ax1.plot([], [], color='#2D7D32', linestyle='--', linewidth=2, drawstyle='steps-post', label=_TARGET_LINE_LABEL)
 
         # ligne %FCmax (vide au départ)
         self.line_hr, = self.ax1.plot([], [], color='#C62828', linewidth=2, label=_HR_LINE_LABEL)
 
         # ligne CPM (vide au départ) — couleur primaire de l'app (Teal)
-        self.line_cpm, = self.ax2.plot([], [], color='#009688', linewidth=2, label='Cubes/min')
+        self.line_cpm, = self.ax2.plot([], [], color='#009688', linewidth=2, label=_CPM_LINE_LABEL)
 
         self.plots = {
             "hr": {"line": self.line_hr, "label": _HR_LINE_LABEL},
-            "cpm": {"line": self.line_cpm, "label": "Cubes/min"},
-            "target": {"line": self.line_target, "label": "FCmax cible (%)"},
+            "cpm": {"line": self.line_cpm, "label": _CPM_LINE_LABEL},
+            "target": {"line": self.line_target, "label": _TARGET_LINE_LABEL},
         }
 
         # Limites des axes
