@@ -288,6 +288,12 @@ class TrackingScreen(MDScreen):
         # UDP Controller
         self.udp_controller = None
 
+        # Curseur de suivi (voir _on_graph_hover/_refresh_live_cursor) :
+        # True tant qu'il suit la dernière FC reçue, False dès qu'on l'a
+        # glissé sur un point antérieur — repasse à True en glissant jusqu'à
+        # (ou au-delà de) la dernière FC connue.
+        self._cursor_live = True
+
         # Dernier modèle DRL choisi manuellement via les boutons DRL/DRL Run 3
         # ("deployed"/"run3", voir switch_controller) — Unity ne renvoie que
         # l'état générique "DRL" (pas lequel des deux modèles), donc
@@ -841,6 +847,7 @@ class TrackingScreen(MDScreen):
         self.session.config.refresh_target_now()
 
         self.update_graph()
+        self._refresh_live_cursor()
 
     def on_hr_sensor_status_changed(self, data):
         """Callback de la status bar : FC reçue récemment ou non"""
@@ -867,6 +874,7 @@ class TrackingScreen(MDScreen):
         self.cpm_label = str(int(value))
 
         self.update_graph()
+        self._refresh_live_cursor()
 
     def on_toggle_game_state(self, active):
         """Afficher/masquer les bandes idle/paused sur le graphique"""
@@ -881,7 +889,10 @@ class TrackingScreen(MDScreen):
         continue de zoomer dans les deux modes.
         """
         self.graph_touch_mode = "pan" if self.graph_touch_mode == "cursor" else "cursor"
-        if self.graph_touch_mode != "cursor":
+        if self.graph_touch_mode == "cursor":
+            self._cursor_live = True
+            self._refresh_live_cursor()
+        else:
             self._hide_cursor()
         # La légende se superposerait à la bulle de suivi (toutes deux en
         # haut à gauche) — masquée tant que le mode curseur est actif (voir
@@ -911,16 +922,58 @@ class TrackingScreen(MDScreen):
         """
         Remplace le hover() natif de hr_graph_widget tant que
         graph_touch_mode == "cursor" (voir init_graph) : affiche, une ligne
-        par valeur, la FC, les cubes/min et la %FC cible à l'instant glissé,
-        recalculées directement depuis les données de session (pas depuis
-        les artistes matplotlib, voir TrackingCursorTooltip).
+        par valeur, la FC, les cubes/min et la %FC cible à l'instant glissé.
+
+        Glisser sur un point antérieur à la dernière FC connue fige le
+        curseur là (_cursor_live = False) : il ne bougera plus tout seul
+        tant que de nouvelles valeurs arrivent (voir _refresh_live_cursor).
+        Glisser jusqu'à, ou au-delà, cette dernière FC — hors du "champ" de
+        données FC — redonne la main au suivi en direct.
         """
         graph = self.ids.hr_graph_widget
+        trans = self.ax1.transData.inverted()
+        xdata, _ = trans.transform_point((event.x - graph.x, event.y - graph.y))
+
+        hr_times, _ = self.session.hr_session.get_graph_percent()
+        if hr_times and xdata < hr_times[-1]:
+            self._cursor_live = False
+            self._update_cursor(xdata, event.x, event.y)
+        else:
+            self._cursor_live = True
+            self._refresh_live_cursor()
+
+    def _refresh_live_cursor(self):
+        """
+        Replace le curseur de suivi sur la dernière FC reçue et le fait
+        suivre à chaque nouvelle valeur (voir on_hr_received/on_cpm_received)
+        tant que le mode curseur est actif ET que le curseur n'a pas été
+        figé sur un point antérieur par un glisser (voir _on_graph_hover).
+        """
+        if self.graph_touch_mode != "cursor" or not self._cursor_live:
+            return
+        hr_times, hr_values = self.session.hr_session.get_graph_percent()
+        if not hr_times:
+            return
+        xdata, y = hr_times[-1], hr_values[-1]
+        graph = self.ids.hr_graph_widget
+        pixel_x, pixel_y = self.ax1.transData.transform((xdata, y))
+        # float() : transData.transform renvoie des np.float64, que les
+        # NumericProperty de TrackingCursorTooltip (voir _update_cursor)
+        # refusent.
+        self._update_cursor(xdata, float(pixel_x) + graph.x, float(pixel_y) + graph.y)
+
+    def _update_cursor(self, xdata, anchor_x, anchor_y):
+        """
+        Affiche la bulle de suivi (une ligne par valeur : FC, cubes/min,
+        %FC cible) et la ligne verticale à l'instant xdata, ancrées près du
+        point écran (anchor_x, anchor_y) — voir _on_graph_hover (glisser) et
+        _refresh_live_cursor (suivi en direct). Les valeurs sont relues
+        directement depuis les données de session, pas depuis les artistes
+        matplotlib (voir TrackingCursorTooltip).
+        """
         container = self.ids.graph_container
         tooltip = self.ids.cursor_tooltip
 
-        trans = self.ax1.transData.inverted()
-        xdata, _ = trans.transform_point((event.x - graph.x, event.y - graph.y))
         xmin, xmax = self.ax1.get_xlim()
         if xdata < xmin or xdata > xmax:
             self._hide_cursor()
@@ -952,9 +1005,9 @@ class TrackingScreen(MDScreen):
 
         # graph_container (FloatLayout) ne repositionne pas ses enfants sans
         # pos_hint (voir kv) : les coordonnées posées ici doivent donc être
-        # absolues, comme celles de event.x/y — d'où le + container.x/y.
-        local_x = event.x - container.x
-        local_y = event.y - container.y
+        # absolues, comme anchor_x/y — d'où le + container.x/y.
+        local_x = anchor_x - container.x
+        local_y = anchor_y - container.y
         tip_w, tip_h = tooltip.size
         x = (local_x + dp(8) if local_x + dp(8) + tip_w < container.width
              else local_x - dp(8) - tip_w)
