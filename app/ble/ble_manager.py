@@ -58,6 +58,30 @@ class BLEManager:
     
     # ========== Connexion BLE ========== #
 
+    async def connect_by_address(self, address: str, timeout: float = BLE_SCAN_TIMEOUT) -> bool:
+        """
+        Se reconnecte directement à un appareil déjà connu (card "MES
+        APPAREILS"), sans passer par l'écran de résultats de scan. Un
+        scan ciblé reste nécessaire : bleak a besoin d'un objet BLEDevice
+        (retrouvé via son adresse) pour ouvrir la connexion, pas juste
+        de l'adresse brute.
+
+        Args:
+            address: Adresse BLE de l'appareil à reconnecter
+
+        Returns:
+            bool: True si connexion réussie, False si l'appareil n'a pas
+                été retrouvé (hors de portée/éteint) ou si la connexion a échoué
+        """
+        logger.info(f"🔍 Recherche de l'appareil connu {address}...")
+        device = await bleak.BleakScanner.find_device_by_address(address, timeout=timeout)
+
+        if device is None:
+            logger.warning(f"⚠️ Appareil connu {address} introuvable")
+            return False
+
+        return await self.connect_to_device(device)
+
     async def connect_to_device(self, device) -> bool:
         """
         Se connecte à un appareil BLE

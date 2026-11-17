@@ -15,6 +15,8 @@ from utils.event_bus import event_bus
 from utils.logger import get_logger
 logger = get_logger(__name__)
 
+from datetime import datetime
+
 # BLE library
 import asyncio
 
@@ -48,13 +50,17 @@ class ScanScreen(MDScreen):
     # Propriété réactive (et non un simple attribut) pour que le kv puisse
     # afficher/masquer la card des résultats selon qu'elle est vide ou non.
     devices_found = ListProperty([])
+    # Historique des appareils déjà connectés (card "MES APPAREILS")
+    known_devices = ListProperty([])
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Ligne de la liste de chaque appareil, par adresse (pour mettre à
-        # jour son texte de statut en 2e ligne)
+        # Ligne de chaque appareil, par adresse, avec son texte par défaut
+        # (pour mettre à jour son texte de statut en 2e ligne) — une entrée
+        # par liste (appareils détectés par un scan / appareils connus)
         self.device_status_items = {}
+        self.known_status_items = {}
 
         # Indique qu'une déconnexion est déclenchée par un nouveau scan (et
         # non par un échec/une perte de connexion) : on évite alors d'afficher
@@ -70,7 +76,10 @@ class ScanScreen(MDScreen):
         app = App.get_running_app()
         self.ble_manager = app.ble_manager
         self.session = app.session
+        self.known_devices_store = app.known_devices_store
         # self.hr_session = app.hr_session
+
+        self._refresh_known_devices_card()
 
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC et batterie
         event_bus.subscribe("heart_rate_received", self.on_heart_rate_received) 
@@ -143,7 +152,7 @@ class ScanScreen(MDScreen):
             item.secondary_text_color = GREY
             item.add_widget(IconLeftWidget(icon="bluetooth"))
             item.bind(on_release=lambda *_, d=device: self.on_device_selected(d))
-            self.device_status_items[device.address] = item
+            self.device_status_items[device.address] = (item, "Appareil détecté")
             self.ids.devices_list.add_widget(item)
 
         self._refresh_device_status_labels()
@@ -157,6 +166,12 @@ class ScanScreen(MDScreen):
             return
         asyncio.create_task(self._connect(device))
 
+    def on_known_device_selected(self, address):
+        """Appareil sélectionné dans la card "MES APPAREILS" : reconnexion directe"""
+        if self.connecting_address:
+            return
+        asyncio.create_task(self._connect_known(address))
+
     # ========== CONNEXION ==========
 
     async def _connect(self, device):
@@ -166,6 +181,20 @@ class ScanScreen(MDScreen):
         self._refresh_device_status_labels()
         self.is_busy = True
         await self.ble_manager.connect_to_device(device)
+
+    async def _connect_known(self, address):
+        """Se reconnecte directement à un appareil connu, sans repasser par l'écran de scan"""
+        self.connecting_address = address
+        self.connected_address = ""
+        self._refresh_device_status_labels()
+        self.is_busy = True
+        found = await self.ble_manager.connect_by_address(address)
+
+        if not found:
+            self.connecting_address = ""
+            self.is_busy = False
+            self._set_scan_status("Appareil introuvable — relancez un scan", RED_FG)
+            self._refresh_device_status_labels()
 
     def on_connection_changed(self, data):
         """Callback de changement de connexion"""
@@ -182,6 +211,9 @@ class ScanScreen(MDScreen):
             self.hr_signal_lost = False
             # Démarrer l'enregistrement des données FC
             self.session.start_recording()
+            # Mémoriser l'appareil (card "MES APPAREILS")
+            self.known_devices_store.add(device.name, device.address)
+            self._refresh_known_devices_card()
             # Déjà visible sur la ligne de l'appareil (vert, ou rouge si
             # pas de capteur FC), inutile de le répéter ici.
         else:
@@ -236,7 +268,33 @@ class ScanScreen(MDScreen):
         self._refresh_device_status_labels()
     
     # ========== UI HELPERS ==========
-    
+
+    def _refresh_known_devices_card(self):
+        """Reconstruit la card "MES APPAREILS" à partir de l'historique enregistré"""
+        self.ids.known_devices_list.clear_widgets()
+        self.known_devices = self.known_devices_store.devices
+        self.known_status_items = {}
+
+        for device in self.known_devices:
+            address = device["address"]
+            default_text = "Déjà connecté"
+            try:
+                dt = datetime.fromisoformat(device.get("last_connected", ""))
+                default_text = f"Dernière connexion : {dt.strftime('%d/%m %H:%M')}"
+            except ValueError:
+                pass
+
+            item = TwoLineAvatarIconListItem(
+                text=device["name"],
+                secondary_text=default_text,
+            )
+            item.secondary_theme_text_color = "Custom"
+            item.secondary_text_color = GREY
+            item.add_widget(IconLeftWidget(icon="bluetooth"))
+            item.bind(on_release=lambda *_, a=address: self.on_known_device_selected(a))
+            self.known_status_items[address] = (item, default_text)
+            self.ids.known_devices_list.add_widget(item)
+
     def _set_scan_status(self, text, color, busy=False):
         """Met à jour le libellé de statut du scan/de la connexion"""
         self.scan_status_text = text
@@ -244,24 +302,30 @@ class ScanScreen(MDScreen):
         self.is_busy = busy
 
     def _refresh_device_status_labels(self):
-        """Met à jour le texte de statut (2e ligne) de chaque appareil de la liste"""
-        for address, item in self.device_status_items.items():
-            if address == self.connected_address:
-                if self.hr_signal_lost:
-                    item.secondary_text = "Déconnecté — FC non reçue"
-                    item.secondary_text_color = RED_FG
-                elif self.connected_has_heart_rate:
-                    if self.connected_has_battery:
-                        item.secondary_text = f"Connecté — {self.battery_text}"
-                    else:
-                        item.secondary_text = "Connecté"
-                    item.secondary_text_color = GREEN_FG
+        """Met à jour le texte de statut (2e ligne) de chaque appareil des deux listes
+        (appareils détectés par un scan et appareils connus)"""
+        for items in (self.device_status_items, self.known_status_items):
+            for address, (item, default_text) in items.items():
+                self._apply_device_status(item, address, default_text)
+
+    def _apply_device_status(self, item, address, default_text):
+        """Applique le texte/la couleur de statut à une ligne d'appareil donnée"""
+        if address == self.connected_address:
+            if self.hr_signal_lost:
+                item.secondary_text = "Déconnecté — FC non reçue"
+                item.secondary_text_color = RED_FG
+            elif self.connected_has_heart_rate:
+                if self.connected_has_battery:
+                    item.secondary_text = f"Connecté — {self.battery_text}"
                 else:
-                    item.secondary_text = "Connecté — pas de service FC"
-                    item.secondary_text_color = RED_FG
-            elif address == self.connecting_address:
-                item.secondary_text = "Connexion en cours…"
-                item.secondary_text_color = AMBER_FG
+                    item.secondary_text = "Connecté"
+                item.secondary_text_color = GREEN_FG
             else:
-                item.secondary_text = "Appareil détecté"
-                item.secondary_text_color = GREY
+                item.secondary_text = "Connecté — pas de service FC"
+                item.secondary_text_color = RED_FG
+        elif address == self.connecting_address:
+            item.secondary_text = "Connexion en cours…"
+            item.secondary_text_color = AMBER_FG
+        else:
+            item.secondary_text = default_text
+            item.secondary_text_color = GREY

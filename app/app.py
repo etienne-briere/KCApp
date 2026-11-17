@@ -20,6 +20,7 @@ from app.network.udp_controller import UDPController
 from app.network.quest_client import QuestClient
 from app.data.player_store import PlayerStore
 from app.data.settings_store import SettingsStore
+from app.data.known_devices_store import KnownDevicesStore
 from app.data.hr_session import HRSession
 from app.controllers.adaptive_controller import AdaptiveController
 from app.data.game_session import GameSession
@@ -63,6 +64,7 @@ class KCApp(MDApp):
         self.ble_manager = BLEManager()
         self.player_store = PlayerStore()
         self.settings_store = SettingsStore()
+        self.known_devices_store = KnownDevicesStore()
         self.ws_server = WebSocketServer()
         self.udp_discovery = UDPDiscovery()
         self.udp_controller = UDPController(self.udp_discovery)
