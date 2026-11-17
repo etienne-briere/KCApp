@@ -754,6 +754,11 @@ class TrackingScreen(MDScreen):
         # ligne CPM (vide au départ) — couleur primaire de l'app (Teal)
         self.line_cpm, = self.ax2.plot([], [], color='#009688', linewidth=2, label=_CPM_LINE_LABEL)
 
+        # Ligne verticale du curseur de suivi (voir _on_graph_hover) : repère
+        # l'instant exact affiché dans la bulle, masquée hors mode curseur.
+        self.cursor_line = self.ax1.axvline(x=0, color='#424242', linewidth=1,
+                                             linestyle='--', visible=False)
+
         self.plots = {
             "hr": {"line": self.line_hr, "label": _HR_LINE_LABEL},
             "cpm": {"line": self.line_cpm, "label": _CPM_LINE_LABEL},
@@ -877,7 +882,14 @@ class TrackingScreen(MDScreen):
         """
         self.graph_touch_mode = "pan" if self.graph_touch_mode == "cursor" else "cursor"
         if self.graph_touch_mode != "cursor":
-            self.ids.cursor_tooltip.show_cursor = False
+            self._hide_cursor()
+
+    def _hide_cursor(self):
+        """Masque la bulle de suivi et sa ligne verticale (voir
+        _on_graph_hover) et redessine le graphique."""
+        self.ids.cursor_tooltip.show_cursor = False
+        self.cursor_line.set_visible(False)
+        self.fig.canvas.draw_idle()
 
     @staticmethod
     def _nearest_rounded(xdata, times, values):
@@ -904,7 +916,7 @@ class TrackingScreen(MDScreen):
         xdata, _ = trans.transform_point((event.x - graph.x, event.y - graph.y))
         xmin, xmax = self.ax1.get_xlim()
         if xdata < xmin or xdata > xmax:
-            tooltip.show_cursor = False
+            self._hide_cursor()
             return
 
         hr_times, hr_values = self.session.hr_session.get_graph_percent()
@@ -928,7 +940,7 @@ class TrackingScreen(MDScreen):
             tooltip.target_text = f"{_TARGET_LINE_LABEL}: {target_value}"
 
         if not (tooltip.hr_visible or tooltip.cpm_visible or tooltip.target_visible):
-            tooltip.show_cursor = False
+            self._hide_cursor()
             return
 
         # graph_container (FloatLayout) ne repositionne pas ses enfants sans
@@ -942,6 +954,10 @@ class TrackingScreen(MDScreen):
         y = min(local_y + dp(8), container.height - tip_h)
         tooltip.pos = (container.x + max(0, x), container.y + max(0, y))
         tooltip.show_cursor = True
+
+        self.cursor_line.set_xdata([xdata, xdata])
+        self.cursor_line.set_visible(True)
+        self.fig.canvas.draw_idle()
 
     #==== GRAPHIQUE =====#
 
