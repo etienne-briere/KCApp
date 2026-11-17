@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 import time
 import numpy as np
+from kivy_matplotlib_widget.uix.hover_widget import add_hover
 
 # Standard library
 import asyncio
@@ -47,6 +48,25 @@ _INACTIVE_STATE_STYLES = {
 _DEFAULT_INACTIVE_STYLE = {"color": (0.459, 0.459, 0.459, 1), "label": "Inactif"}
 # Ordre d'affichage dans la légende, pour un ordre stable d'un tracé à l'autre.
 _INACTIVE_STATE_ORDER = ["disconnected", "menu", "ready", "paused", "finished"]
+
+
+class _MinutesSecondsFormatter:
+    '''Affiche le temps (en secondes) du curseur de suivi au format MM:SS,
+    plus lisible que les secondes brutes — voir TrackingScreen.init_graph.'''
+
+    @staticmethod
+    def format_data(value):
+        minutes, seconds = divmod(int(value), 60)
+        return f"{minutes:02d}:{seconds:02d}"
+
+
+class _RoundedPercentFormatter:
+    '''Arrondit la %FCmax (axe gauche) du curseur de suivi à l'entier — voir
+    TrackingScreen.init_graph.'''
+
+    @staticmethod
+    def format_data(value):
+        return str(int(round(value)))
 
 
 class GraphAwareScrollView(ScrollView):
@@ -184,6 +204,12 @@ class TrackingScreen(MDScreen):
     # défaut). La %FC cible suit target_available, les cubes/min s'affichent
     # dès que des cpm ont été reçus de Unity (voir update_graph).
     show_game_state = BooleanProperty(False)
+
+    # Mode tactile du graphique : "pan" (déplacer/zoomer, comportement par
+    # défaut) ou "cursor" (glisser affiche la FC et les cubes/min au point
+    # touché — voir toggle_cursor_mode). Le pincement à deux doigts zoome
+    # toujours, quel que soit le mode.
+    graph_touch_mode = StringProperty("pan")
 
     # Mode de jeu courant — mirroir de session.config.model (pas une
     # propriété Kivy) pour permettre au kv de réagir à son changement.
@@ -741,6 +767,16 @@ class TrackingScreen(MDScreen):
         # sur la taille par défaut de matplotlib, pas celle de la Card).
         self.ids.hr_graph_widget.bind(size=self._on_graph_widget_resize)
 
+        # Curseur de suivi (mode "cursor", voir toggle_cursor_mode) : une
+        # bulle unique affichant la valeur de chaque courbe visible (FC,
+        # cubes/min, %FC cible) au point touché. auto_cursor (kv) a déjà
+        # enregistré les courbes des deux axes au moment de l'assignation
+        # de figure ci-dessus.
+        self.ids.hr_graph_widget.cursor_xaxis_formatter = _MinutesSecondsFormatter()
+        self.ids.hr_graph_widget.cursor_yaxis_formatter = _RoundedPercentFormatter()
+        add_hover(self.ids.hr_graph_widget, mode="touch", hover_type="compare",
+                  label_x="Temps")
+
     def _apply_graph_responsive_sizing(self):
         """Police des graduations/labels et visibilité de l'axe Cubes/min
         (à droite) selon la largeur d'écran — même seuil dp(600) que le
@@ -821,6 +857,15 @@ class TrackingScreen(MDScreen):
         """Afficher/masquer les bandes idle/paused sur le graphique"""
         self.show_game_state = active
         self.update_graph()
+
+    def toggle_cursor_mode(self):
+        """
+        Bouton curseur sous le graphique : bascule entre pan/zoom au doigt
+        (par défaut) et curseur de suivi (glisser affiche la FC/cubes-min au
+        point touché) — voir graph_touch_mode. Le pincement à deux doigts
+        continue de zoomer dans les deux modes.
+        """
+        self.graph_touch_mode = "pan" if self.graph_touch_mode == "cursor" else "cursor"
 
     #==== GRAPHIQUE =====#
 

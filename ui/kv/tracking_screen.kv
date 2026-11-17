@@ -1,6 +1,5 @@
 #:import dp kivy.metrics.dp
 #:import Window kivy.core.window.Window
-#:import MatplotFigure kivy_matplotlib_widget.uix.graph_widget
 #:import GraphAwareScrollView ui.screens.tracking_screen.GraphAwareScrollView
 
 <SessionRow>:
@@ -545,6 +544,21 @@
                         pos_hint: {"center_y": 0.5}
                         on_release: root.center_graph()
 
+                    # ---- Curseur de suivi : glisser sur le graphique affiche
+                    # la FC et les cubes/min au point touché (voir
+                    # toggle_cursor_mode / graph_touch_mode). Désactive le pan
+                    # au doigt tant qu'il est actif — le pincement à deux
+                    # doigts reste disponible pour zoomer. ----
+                    MDIconButton:
+                        icon: "crosshairs-gps"
+                        theme_text_color: "Custom"
+                        text_color: app.theme_cls.primary_color if root.graph_touch_mode == "cursor" else "grey"
+                        size_hint: None, None
+                        size: dp(32), dp(32)
+                        icon_size: "20sp"
+                        pos_hint: {"center_y": 0.5}
+                        on_release: root.toggle_cursor_mode()
+
                     MDIconButton:
                         icon: "restart"
                         theme_text_color: "Custom"
@@ -574,8 +588,10 @@
                     height: dp(320) + dp(44)
                     elevation: 0
 
-                    MatplotFigure:
+                    MatplotFigureTwinx:
                         id: hr_graph_widget
+                        touch_mode: root.graph_touch_mode
+                        auto_cursor: True
 
                     # ==== Options d'affichage du graphique ====
                     AnchorLayout:
