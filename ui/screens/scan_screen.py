@@ -1,12 +1,13 @@
 # Class KivyMD
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.list import TwoLineAvatarIconListItem, IconLeftWidget
+from kivymd.uix.list import TwoLineAvatarListItem, IconLeftWidget
 
 # Class Kivy
 from kivy.app import App
 from kivy.properties import StringProperty, ListProperty, BooleanProperty
 from kivy.animation import Animation
-from kivy.metrics import sp
+from kivy.core.window import Window
+from kivy.metrics import dp, sp
 from kivy.clock import Clock
 
 # Custom modules
@@ -144,12 +145,13 @@ class ScanScreen(MDScreen):
         )
 
         for device in devices:
-            item = TwoLineAvatarIconListItem(
+            item = TwoLineAvatarListItem(
                 text=device.name or device.address,
                 secondary_text="Appareil détecté",
             )
             item.secondary_theme_text_color = "Custom"
             item.secondary_text_color = GREY
+            item.secondary_font_style = "Caption" if Window.width >= dp(600) else "Overline"
             item.add_widget(IconLeftWidget(icon="bluetooth"))
             item.bind(on_release=lambda *_, d=device: self.on_device_selected(d))
             self.device_status_items[device.address] = (item, "Appareil détecté")
@@ -284,12 +286,13 @@ class ScanScreen(MDScreen):
             except ValueError:
                 pass
 
-            item = TwoLineAvatarIconListItem(
+            item = TwoLineAvatarListItem(
                 text=device["name"],
                 secondary_text=default_text,
             )
             item.secondary_theme_text_color = "Custom"
             item.secondary_text_color = GREY
+            item.secondary_font_style = "Caption" if Window.width >= dp(600) else "Overline"
             item.add_widget(IconLeftWidget(icon="bluetooth"))
             item.bind(on_release=lambda *_, a=address: self.on_known_device_selected(a))
             self.known_status_items[address] = (item, default_text)
