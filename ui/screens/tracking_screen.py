@@ -17,7 +17,8 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 import time
 import numpy as np
-from kivy_matplotlib_widget.uix.hover_widget import add_hover
+from kivy.lang import Builder
+from kivy_matplotlib_widget.uix.hover_widget import add_hover, GeneralCompareHover, CompareHoverBox
 
 # Standard library
 import asyncio
@@ -49,15 +50,116 @@ _DEFAULT_INACTIVE_STYLE = {"color": (0.459, 0.459, 0.459, 1), "label": "Inactif"
 # Ordre d'affichage dans la légende, pour un ordre stable d'un tracé à l'autre.
 _INACTIVE_STATE_ORDER = ["disconnected", "menu", "ready", "paused", "finished"]
 
+# Label de la courbe FC (voir init_graph) — partagé avec _TimelessCompareHover
+# pour savoir quelle entrée de la bulle du curseur doit afficher l'icône
+# cœur plutôt que le carré de couleur par défaut.
+_HR_LINE_LABEL = "FCmax (%)"
 
-class _MinutesSecondsFormatter:
-    '''Affiche le temps (en secondes) du curseur de suivi au format MM:SS,
-    plus lisible que les secondes brutes — voir TrackingScreen.init_graph.'''
 
-    @staticmethod
-    def format_data(value):
-        minutes, seconds = divmod(int(value), 60)
-        return f"{minutes:02d}:{seconds:02d}"
+class _HeartCompareHoverBox(CompareHoverBox):
+    '''Entrée FC de la bulle du curseur de suivi : icône cœur (teintée de la
+    couleur de la courbe) à la place du carré de couleur par défaut.'''
+
+
+class _TimelessCompareHover(GeneralCompareHover):
+    '''
+    Bulle du curseur de suivi (voir TrackingScreen.init_graph) sans la ligne
+    de temps de GeneralCompareHover — ne garde que la valeur de chaque
+    courbe (FC, cubes/min, %FC cible), avec une icône cœur pour la FC (voir
+    _HeartCompareHoverBox).
+    '''
+
+    def create_child(self, lines):
+        if len(self.ids.main_box.children) > 2:
+            for i in range(len(self.ids.main_box.children) - 2):
+                self.ids.main_box.remove_widget(self.ids.main_box.children[0])
+
+        self.children_names = []
+        self.children_list = []
+        for i, line in enumerate(lines):
+            label = line.get_label()
+            if i == 0:
+                self.ids.comparehoverbox.label_y = label
+                mywidget = self.ids.comparehoverbox
+            else:
+                box_cls = _HeartCompareHoverBox if label == _HR_LINE_LABEL else CompareHoverBox
+                mywidget = box_cls()
+                mywidget.label_y = label
+                self.ids.main_box.add_widget(mywidget)
+            self.children_names.append(label)
+            self.children_list.append(mywidget)
+
+
+Builder.load_string('''
+<_TimelessCompareHover>
+    custom_color: [0,0,0,1]
+
+    BoxLayout:
+        id:main_box
+        x:
+            root.x_hover_pos + dp(4) if root.x_hover_pos + dp(4) < root.figwidth - self.width - self.padding[0] * 2 \\
+            else root.x_hover_pos - dp(4) - self.width - self.padding[0] * 2
+        y:
+            root.ymin_line + dp(4) if abs(root.y_touch_pos -root.ymin_line) > abs(root.y_touch_pos -root.ymax_line) else root.ymax_line - dp(4) - self.height
+        size_hint: None, None
+        height: self.minimum_height
+        width:
+            self.minimum_width + dp(12) if root.show_cursor \\
+            else dp(0.0001)
+        orientation:'vertical'
+        padding: 0,dp(4),0,dp(4)
+
+        canvas:
+            Color:
+                rgba: root.background_color
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+                radius: [dp(4)]
+            Color:
+                rgba: 0,0,0,1
+            Line:
+                width: 1
+                rounded_rectangle:
+                    (self.x, self.y, self.width, self.height,\\
+                    dp(4), dp(4), dp(4), dp(4),\\
+                    self.height)
+
+        canvas.after:
+            Color:
+                rgba: 0,0,1,1
+            Line:
+                width: dp(1)
+                points:
+                    root.x_hover_pos, \\
+                    root.ymin_line, \\
+                    root.x_hover_pos, \\
+                    root.ymax_line
+
+        CompareHoverBox:
+            id:comparehoverbox
+
+<_HeartCompareHoverBox>
+    size_hint:None,None
+    width:label.texture_size[0] + dp(12) + dp(24) if self.show_widget else dp(12)
+    height:label.texture_size[1] + dp(12) if self.show_widget else dp(0.01)
+    opacity:1 if self.show_widget else 0
+    padding: dp(12),0,0,0
+    MDIcon:
+        icon: "heart"
+        theme_text_color: "Custom"
+        text_color: root.custom_color if root.custom_color else [0,0,0,1]
+        font_size: "16sp"
+        size_hint_x: None
+        width: dp(16)
+        pos_hint: {"center_y": 0.5}
+    Label:
+        id:label
+        text: root.label_y + ': ' + root.label_y_value
+        color: root.text_color
+        font_size:root.text_size
+        font_name : root.text_font
+''')
 
 
 class _RoundedPercentFormatter:
@@ -736,13 +838,13 @@ class TrackingScreen(MDScreen):
         self.line_target, = self.ax1.plot([], [], color='#2D7D32', linestyle='--', linewidth=2, drawstyle='steps-post', label='FCmax cible (%)')
 
         # ligne %FCmax (vide au départ)
-        self.line_hr, = self.ax1.plot([], [], color='#C62828', linewidth=2, label='FCmax (%)')
+        self.line_hr, = self.ax1.plot([], [], color='#C62828', linewidth=2, label=_HR_LINE_LABEL)
 
         # ligne CPM (vide au départ) — couleur primaire de l'app (Teal)
         self.line_cpm, = self.ax2.plot([], [], color='#009688', linewidth=2, label='Cubes/min')
 
         self.plots = {
-            "hr": {"line": self.line_hr, "label": "FCmax (%)"},
+            "hr": {"line": self.line_hr, "label": _HR_LINE_LABEL},
             "cpm": {"line": self.line_cpm, "label": "Cubes/min"},
             "target": {"line": self.line_target, "label": "FCmax cible (%)"},
         }
@@ -769,13 +871,12 @@ class TrackingScreen(MDScreen):
 
         # Curseur de suivi (mode "cursor", voir toggle_cursor_mode) : une
         # bulle unique affichant la valeur de chaque courbe visible (FC,
-        # cubes/min, %FC cible) au point touché. auto_cursor (kv) a déjà
-        # enregistré les courbes des deux axes au moment de l'assignation
-        # de figure ci-dessus.
-        self.ids.hr_graph_widget.cursor_xaxis_formatter = _MinutesSecondsFormatter()
+        # cubes/min, %FC cible) au point touché, sans le temps (voir
+        # _TimelessCompareHover). auto_cursor (kv) a déjà enregistré les
+        # courbes des deux axes au moment de l'assignation de figure ci-dessus.
         self.ids.hr_graph_widget.cursor_yaxis_formatter = _RoundedPercentFormatter()
         add_hover(self.ids.hr_graph_widget, mode="touch", hover_type="compare",
-                  label_x="Temps")
+                  hover_widget=_TimelessCompareHover())
 
     def _apply_graph_responsive_sizing(self):
         """Police des graduations/labels et visibilité de l'axe Cubes/min
