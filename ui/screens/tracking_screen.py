@@ -987,16 +987,16 @@ class TrackingScreen(MDScreen):
             self._hide_cursor()
             return
 
-        # Ligne FC : BPM brut, puis %FCmax entre parenthèses si calculable
-        # (âge du profil connu — voir HRSession._compute_percent), au même
-        # index que le BPM puisque hr_time est partagé entre les deux séries.
+        # Ligne FC : %FCmax devant (si calculable — âge du profil connu, voir
+        # HRSession._compute_percent), puis le BPM brut entre parenthèses, au
+        # même index puisque hr_time est partagé entre les deux séries.
         hr_times, hr_bpm_values = self.session.hr_session.get_graph_data()
         hr_index = self._nearest_index(xdata, hr_times)
         tooltip.hr_visible = hr_index is not None
         if hr_index is not None:
             bpm = int(round(hr_bpm_values[hr_index]))
             percent = self.session.hr_session.hrmax_percent_history[hr_index]
-            tooltip.hr_text = (f"{bpm} bpm ({int(round(percent))}%)" if percent is not None
+            tooltip.hr_text = (f"{int(round(percent))}% ({bpm} bpm)" if percent is not None
                                 else f"{bpm} bpm")
 
         cpm_value = self._nearest_rounded(
