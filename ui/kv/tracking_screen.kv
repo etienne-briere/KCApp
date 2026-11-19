@@ -559,15 +559,16 @@
 
                     Widget:  # pousse les boutons à droite
 
+                    # ---- Bandes d'état du jeu (idle/paused...) sur le graphique ----
                     MDIconButton:
-                        icon: "image-filter-center-focus-weak"
+                        icon: "flag-variant" if root.show_game_state else "flag-variant-off"
                         theme_text_color: "Custom"
-                        text_color: "grey"
+                        text_color: app.theme_cls.primary_color if root.show_game_state else "grey"
                         size_hint: None, None
                         size: dp(32), dp(32)
                         icon_size: "20sp"
                         pos_hint: {"center_y": 0.5}
-                        on_release: root.center_graph()
+                        on_release: root.on_toggle_game_state(not root.show_game_state)
 
                     # ---- Curseur de suivi : glisser sur le graphique affiche
                     # la FC et les cubes/min au point touché (voir
@@ -584,16 +585,15 @@
                         pos_hint: {"center_y": 0.5}
                         on_release: root.toggle_cursor_mode()
 
-                    # ---- Bandes d'état du jeu (idle/paused...) sur le graphique ----
                     MDIconButton:
-                        icon: "flag-variant" if root.show_game_state else "flag-variant-off"
+                        icon: "image-filter-center-focus-weak"
                         theme_text_color: "Custom"
-                        text_color: app.theme_cls.primary_color if root.show_game_state else "grey"
+                        text_color: "grey"
                         size_hint: None, None
                         size: dp(32), dp(32)
                         icon_size: "20sp"
                         pos_hint: {"center_y": 0.5}
-                        on_release: root.on_toggle_game_state(not root.show_game_state)
+                        on_release: root.center_graph()
 
                     MDIconButton:
                         icon: "restart"
