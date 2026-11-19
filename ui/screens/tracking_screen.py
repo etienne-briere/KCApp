@@ -210,7 +210,10 @@ class TrackingScreen(MDScreen):
     cpm_label = StringProperty("--")
     # Capteur toujours connecté côté BLE mais plus aucune FC reçue (même
     # critère que l'icône cœur barré de la status bar) — voir scan_screen.py.
-    hr_signal_lost = BooleanProperty(False)
+    # Défaut à True : au lancement de l'app, aucun capteur n'est encore
+    # connecté, donc l'icône doit déjà être en heart-off dès l'arrivée
+    # sur l'écran plutôt qu'attendre un premier événement de connexion.
+    hr_signal_lost = BooleanProperty(True)
     # %FCmax/âge n'ont pas de sens sans profil actif — voir tracking_screen.kv
     player_selected = BooleanProperty(False)
 

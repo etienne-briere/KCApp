@@ -82,7 +82,10 @@ class ScanScreen(MDScreen):
     # Appareil toujours « connecté » côté BLE mais plus aucune FC reçue
     # (même critère que l'icône cœur barré de la status bar, qui émet
     # hr_sensor_status_changed) : le capteur s'est déconnecté tout seul.
-    hr_signal_lost = BooleanProperty(False)
+    # Défaut à True : au lancement de l'app, aucun capteur n'est encore
+    # connecté, donc l'icône doit déjà être en heart-off dès l'arrivée
+    # sur l'écran plutôt qu'attendre un premier événement de connexion.
+    hr_signal_lost = BooleanProperty(True)
     # Propriété réactive (et non un simple attribut) pour que le kv puisse
     # afficher/masquer la card des résultats selon qu'elle est vide ou non.
     devices_found = ListProperty([])

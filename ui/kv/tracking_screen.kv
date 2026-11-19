@@ -179,16 +179,19 @@
                                 text: "Fréquence cardiaque"
                                 font_style: "Body1" if Window.width >= dp(600) else "Body2"
                                 halign: "left"
-                                valign: "bottom"
+                                valign: "middle" if root.hr_signal_lost else "bottom"
 
-                            # Signal perdu : le capteur s'est déconnecté tout seul
+                            # Masqué si signal perdu : déjà visible via l'icône heart-off,
+                            # inutile de le répéter ici.
                             MDLabel:
-                                text: "Signal perdu — reconnectez le capteur" if root.hr_signal_lost else f"{root.hrmax_percent_label} % FCmax · {root.patient_age} ans"
+                                text: f"{root.hrmax_percent_label} % FCmax · {root.patient_age} ans"
                                 font_style: "Caption" if Window.width >= dp(600) else "Overline"
-                                theme_text_color: "Custom" if root.hr_signal_lost else "Secondary"
-                                text_color: 0.776, 0.157, 0.157, 1
+                                theme_text_color: "Secondary"
                                 halign: "left"
                                 valign: "top"
+                                size_hint_y: None
+                                height: 0 if root.hr_signal_lost else self.texture_size[1]
+                                opacity: 0 if root.hr_signal_lost else 1
 
                         MDBoxLayout:
                             orientation: "horizontal"
