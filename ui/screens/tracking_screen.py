@@ -122,11 +122,11 @@ ADAPTIVE_MODELS = ("PID", "DRL")
 
 class SessionRow(MDBoxLayout):
     '''
-    Carte de la liste "Sessions à exporter" : nom de fichier, cases à
-    cocher propres à CETTE session (indépendantes des cases d'affichage du
-    graphique) pour choisir quelles données inclure, et actions
+    Carte de la liste "Sessions à exporter" : nom de fichier et actions
     supprimer/exporter. Le kv correspondant est défini dans
-    tracking_screen.kv (<SessionRow>:).
+    tracking_screen.kv (<SessionRow>:). L'état du jeu est désormais
+    toujours inclus à l'export (export_csv par défaut, voir
+    TrackingScreen._export_pending_session) — plus de case à cocher.
     '''
     record = ObjectProperty(None)
     # Nommage volontairement sans préfixe "on_" : Kivy réserve ce préfixe
@@ -136,13 +136,12 @@ class SessionRow(MDBoxLayout):
     export_callback = ObjectProperty(None)
 
     # Ce que CETTE session inclura à son prochain export — indépendant des
-    # cases d'affichage du graphique (show_game_state sur
-    # TrackingScreen, qui ne contrôle que l'affichage du graphique).
-    # FC n'a pas de case : toujours incluse. La %FC cible et les cubes/min
-    # non plus : ils suivent le contenu de la session (voir on_record).
+    # cases d'affichage du graphique (show_game_state sur TrackingScreen,
+    # qui ne contrôle que l'affichage du graphique). FC n'a pas de case :
+    # toujours incluse. La %FC cible et les cubes/min non plus : ils
+    # suivent le contenu de la session (voir on_record).
     include_target = BooleanProperty(False)
     include_cpm = BooleanProperty(False)
-    include_state = BooleanProperty(True)
 
     def on_record(self, instance, record):
         """
@@ -1276,10 +1275,12 @@ class TrackingScreen(MDScreen):
 
     def _export_pending_session(self, row):
         """
-        Exporte une session en attente en CSV, selon les cases à cocher
-        propres à CETTE ligne (row.include_*) — indépendantes des cases
-        d'affichage du graphique. La ligne reste dans la liste ; suppression
-        toujours manuelle via le bouton "Supprimer".
+        Exporte une session en attente en CSV. L'état du jeu est toujours
+        inclus (export_csv par défaut) ; %FC cible et cubes/min suivent le
+        contenu de la session (row.include_target/include_cpm, voir
+        SessionRow.on_record) — indépendants des cases d'affichage du
+        graphique. La ligne reste dans la liste ; suppression toujours
+        manuelle via le bouton "Supprimer".
         """
         if row.record and not row.record.filename.lower().endswith(".csv"):
             row.record.filename += ".csv"
@@ -1290,6 +1291,5 @@ class TrackingScreen(MDScreen):
             folder=self.export_folder,
             include_target=row.include_target,
             include_cpm=row.include_cpm,
-            include_state=row.include_state,
         )
         self._finish_export(path)

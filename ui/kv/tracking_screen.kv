@@ -100,63 +100,6 @@
         font_size: "14sp"
         on_text: root.record.rename(self.text) if root.record else None
 
-    # ---- Données incluses, centrées horizontalement dans la Card : ce que
-    # CETTE session inclura à son prochain export. L'écart entre éléments
-    # est porté par leur padding (et non par spacing) pour que l'icône
-    # cible, masquée hors mode adaptatif, ne laisse pas de trou. ----
-    AnchorLayout:
-        anchor_x: "center"
-        anchor_y: "center"
-
-        MDBoxLayout:
-            orientation: "horizontal"
-            size_hint: None, None
-            size: self.minimum_size
-
-            # %FC cible : pas de case, incluse d'office si la session était
-            # en mode adaptatif (voir SessionRow.on_record)
-            MDBoxLayout:
-                orientation: "horizontal"
-                padding: (dp(5), 0) if root.include_target else (0, 0)
-                size_hint_x: None
-                width: self.minimum_width if root.include_target else 0
-                opacity: 1 if root.include_target else 0
-
-                MDIcon:
-                    icon: "target"
-                    theme_text_color: "Custom"
-                    text_color: GREEN_FG
-                    font_size: "16sp"
-                    size_hint: None, None
-                    size: (dp(20), dp(20)) if root.include_target else (0, 0)
-                    pos_hint: {"center_y": 0.5}
-
-            # Cubes/min : ni case ni icône, inclus d'office si la session en
-            # contient (voir SessionRow.on_record)
-
-            MDBoxLayout:
-                orientation: "horizontal"
-                spacing: dp(2)
-                padding: dp(5), 0
-                size_hint_x: None
-                width: self.minimum_width
-
-                MDCheckbox:
-                    active: root.include_state
-                    on_active: root.include_state = self.active
-                    size_hint: None, None
-                    size: dp(24), dp(24)
-                    pos_hint: {"center_y": 0.5}
-
-                MDIcon:
-                    icon: "flag-variant-outline"
-                    theme_text_color: "Custom"
-                    text_color: PURPLE_FG
-                    font_size: "16sp"
-                    size_hint: None, None
-                    size: dp(20), dp(20)
-                    pos_hint: {"center_y": 0.5}
-
     MDIconButton:
         icon: "file-download-outline"
         theme_text_color: "Custom"
@@ -166,7 +109,7 @@
         on_release: root.export_callback(root)
 
     MDIconButton:
-        icon: "trash-can-outline"
+        icon: "close"
         theme_text_color: "Custom"
         text_color: 0.776, 0.157, 0.157, 1
         icon_size: "22sp"
