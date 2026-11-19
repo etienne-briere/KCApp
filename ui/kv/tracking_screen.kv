@@ -733,107 +733,6 @@
                                     adaptive_size: True
                                     pos_hint: {"center_y": 0.5}
 
-            # ==== Export des données de FC (téléchargement + dossier), sous le graphique ====
-            MDBoxLayout:
-                orientation: "vertical"
-                spacing: dp(12)
-                size_hint_y: None
-                height: self.minimum_height
-
-                MDCard:
-                    orientation: "horizontal"
-                    padding: dp(16)
-                    radius: [12]
-                    spacing: dp(15)
-                    size_hint_y: None
-                    height: dp(70)
-                    elevation: 0
-                    ripple_behavior: True
-                    on_release: root.queue_session_for_export()
-
-                    canvas.after:
-                        Color:
-                            rgba: app.theme_cls.primary_color
-                        RoundedRectangle:
-                            pos: self.x, self.y
-                            size: dp(4), self.height
-                            radius: [dp(2)]
-
-                    MDBoxLayout:
-                        orientation: "vertical"
-                        spacing: dp(2)
-
-                        MDLabel:
-                            text: "Téléchargement des données"
-                            font_style: "Body1" if Window.width >= dp(600) else "Body2"
-                            halign: "left"
-                            valign: "bottom"
-
-                        MDLabel:
-                            text: "Appuyez pour exporter les données de FC"
-                            theme_text_color: "Secondary"
-                            font_style: "Caption" if Window.width >= dp(600) else "Overline"
-                            halign: "left"
-                            valign: "top"
-
-                    MDIcon:
-                        icon: "download"
-                        theme_text_color: "Custom"
-                        text_color: app.theme_cls.primary_color
-                        font_size: "30sp"
-                        size_hint_x: None
-                        width: dp(30)
-                        pos_hint: {"center_y": 0.5}
-
-                # Sans effet sur Android (toujours le stockage applicatif, voir
-                # can_choose_export_folder) — la card s'efface alors entièrement.
-                MDCard:
-                    orientation: "horizontal"
-                    padding: dp(16)
-                    radius: [12]
-                    spacing: dp(15)
-                    size_hint_y: None
-                    height: dp(70) if root.can_choose_export_folder else 0
-                    opacity: 1 if root.can_choose_export_folder else 0
-                    disabled: not root.can_choose_export_folder
-                    elevation: 0
-                    ripple_behavior: True
-                    on_release: root.choose_export_folder()
-
-                    canvas.after:
-                        Color:
-                            rgba: app.theme_cls.primary_color
-                        RoundedRectangle:
-                            pos: self.x, self.y
-                            size: dp(4), self.height
-                            radius: [dp(2)]
-
-                    MDBoxLayout:
-                        orientation: "vertical"
-                        spacing: dp(2)
-
-                        MDLabel:
-                            text: "Dossier de téléchargement"
-                            font_style: "Body1" if Window.width >= dp(600) else "Body2"
-                            halign: "left"
-                            valign: "bottom"
-
-                        MDLabel:
-                            text: "Appuyer pour modifier le dossier d'export"
-                            theme_text_color: "Secondary"
-                            font_style: "Caption" if Window.width >= dp(600) else "Overline"
-                            halign: "left"
-                            valign: "top"
-
-                    MDIcon:
-                        icon: "folder-edit-outline"
-                        theme_text_color: "Custom"
-                        text_color: app.theme_cls.primary_color
-                        font_size: "30sp"
-                        size_hint_x: None
-                        width: dp(30)
-                        pos_hint: {"center_y": 0.5}
-
             # ==== CONTRÔLEUR EN COURS DE PARTIE (contrôleur hybride Unity) — uniquement en mode adaptatif (PID/DRL), pendant une partie en cours ====
             MDBoxLayout:
                 orientation: "vertical"
@@ -986,6 +885,115 @@
                         on_text_validate: root.on_manual_cpm_submit(self.text)
                         on_focus: root.on_manual_cpm_submit(self.text) if not self.focus else None
 
+            # ==== Export des données de FC (téléchargement + dossier), sous la card Contrôleur ====
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(12)
+                size_hint_y: None
+                height: self.minimum_height
+
+                MDLabel:
+                    text: "TÉLÉCHARGEMENT"
+                    font_style: "Overline"
+                    theme_text_color: "Secondary"
+                    halign: "left"
+                    padding: dp(16), 0
+                    adaptive_size: True
+
+                MDCard:
+                    orientation: "horizontal"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(15)
+                    size_hint_y: None
+                    height: dp(70)
+                    elevation: 0
+                    ripple_behavior: True
+                    on_release: root.queue_session_for_export()
+
+                    canvas.after:
+                        Color:
+                            rgba: app.theme_cls.primary_color
+                        RoundedRectangle:
+                            pos: self.x, self.y
+                            size: dp(4), self.height
+                            radius: [dp(2)]
+
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        spacing: dp(2)
+
+                        MDLabel:
+                            text: "Téléchargement des données"
+                            font_style: "Body1" if Window.width >= dp(600) else "Body2"
+                            halign: "left"
+                            valign: "bottom"
+
+                        MDLabel:
+                            text: "Appuyez pour exporter les données de FC"
+                            theme_text_color: "Secondary"
+                            font_style: "Caption" if Window.width >= dp(600) else "Overline"
+                            halign: "left"
+                            valign: "top"
+
+                    MDIcon:
+                        icon: "download"
+                        theme_text_color: "Custom"
+                        text_color: app.theme_cls.primary_color
+                        font_size: "30sp"
+                        size_hint_x: None
+                        width: dp(30)
+                        pos_hint: {"center_y": 0.5}
+
+                # Sans effet sur Android (toujours le stockage applicatif, voir
+                # can_choose_export_folder) — la card s'efface alors entièrement.
+                MDCard:
+                    orientation: "horizontal"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(15)
+                    size_hint_y: None
+                    height: dp(70) if root.can_choose_export_folder else 0
+                    opacity: 1 if root.can_choose_export_folder else 0
+                    disabled: not root.can_choose_export_folder
+                    elevation: 0
+                    ripple_behavior: True
+                    on_release: root.choose_export_folder()
+
+                    canvas.after:
+                        Color:
+                            rgba: app.theme_cls.primary_color
+                        RoundedRectangle:
+                            pos: self.x, self.y
+                            size: dp(4), self.height
+                            radius: [dp(2)]
+
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        spacing: dp(2)
+
+                        MDLabel:
+                            text: "Dossier de téléchargement"
+                            font_style: "Body1" if Window.width >= dp(600) else "Body2"
+                            halign: "left"
+                            valign: "bottom"
+
+                        MDLabel:
+                            text: "Appuyer pour modifier le dossier d'export"
+                            theme_text_color: "Secondary"
+                            font_style: "Caption" if Window.width >= dp(600) else "Overline"
+                            halign: "left"
+                            valign: "top"
+
+                    MDIcon:
+                        icon: "folder-edit-outline"
+                        theme_text_color: "Custom"
+                        text_color: app.theme_cls.primary_color
+                        font_size: "30sp"
+                        size_hint_x: None
+                        width: dp(30)
+                        pos_hint: {"center_y": 0.5}
+
             # ==== Sessions passées en attente d'export ou de suppression ====
             MDBoxLayout:
                 orientation: "vertical"
@@ -996,7 +1004,7 @@
                 disabled: not root.has_pending_sessions
 
                 MDLabel:
-                    text: "SESSIONS À EXPORTER"
+                    text: "LISTE DES SESSIONS À EXPORTER"
                     font_style: "Overline"
                     theme_text_color: "Secondary"
                     halign: "left"
