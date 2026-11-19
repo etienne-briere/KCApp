@@ -601,18 +601,6 @@
                     Widget:  # pousse les boutons à droite
 
                     MDIconButton:
-                        icon: "folder-edit-outline"
-                        theme_text_color: "Custom"
-                        text_color: "grey"
-                        size_hint: None, None
-                        size: dp(32), dp(32)
-                        icon_size: "20sp"
-                        pos_hint: {"center_y": 0.5}
-                        opacity: 1 if root.can_choose_export_folder else 0
-                        disabled: not root.can_choose_export_folder
-                        on_release: root.choose_export_folder()
-
-                    MDIconButton:
                         icon: "image-filter-center-focus-weak"
                         theme_text_color: "Custom"
                         text_color: "grey"
@@ -646,16 +634,6 @@
                         icon_size: "20sp"
                         pos_hint: {"center_y": 0.5}
                         on_release: root.reset_graph()
-
-                    MDIconButton:
-                        icon: "download-box-outline"
-                        theme_text_color: "Custom"
-                        text_color: "grey"
-                        size_hint: None, None
-                        size: dp(32), dp(32)
-                        icon_size: "20sp"
-                        pos_hint: {"center_y": 0.5}
-                        on_release: root.queue_session_for_export()
 
                 MDCard:
                     orientation: "vertical"
@@ -754,6 +732,107 @@
                                     font_style: "Caption" if Window.width >= dp(600) else "Overline"
                                     adaptive_size: True
                                     pos_hint: {"center_y": 0.5}
+
+            # ==== Export des données de FC (téléchargement + dossier), sous le graphique ====
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(12)
+                size_hint_y: None
+                height: self.minimum_height
+
+                MDCard:
+                    orientation: "horizontal"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(15)
+                    size_hint_y: None
+                    height: dp(70)
+                    elevation: 0
+                    ripple_behavior: True
+                    on_release: root.queue_session_for_export()
+
+                    canvas.after:
+                        Color:
+                            rgba: app.theme_cls.primary_color
+                        RoundedRectangle:
+                            pos: self.x, self.y
+                            size: dp(4), self.height
+                            radius: [dp(2)]
+
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        spacing: dp(2)
+
+                        MDLabel:
+                            text: "Téléchargement des données"
+                            font_style: "Body1" if Window.width >= dp(600) else "Body2"
+                            halign: "left"
+                            valign: "bottom"
+
+                        MDLabel:
+                            text: "Appuyez pour exporter les données de FC"
+                            theme_text_color: "Secondary"
+                            font_style: "Caption" if Window.width >= dp(600) else "Overline"
+                            halign: "left"
+                            valign: "top"
+
+                    MDIcon:
+                        icon: "download"
+                        theme_text_color: "Custom"
+                        text_color: app.theme_cls.primary_color
+                        font_size: "30sp"
+                        size_hint_x: None
+                        width: dp(30)
+                        pos_hint: {"center_y": 0.5}
+
+                # Sans effet sur Android (toujours le stockage applicatif, voir
+                # can_choose_export_folder) — la card s'efface alors entièrement.
+                MDCard:
+                    orientation: "horizontal"
+                    padding: dp(16)
+                    radius: [12]
+                    spacing: dp(15)
+                    size_hint_y: None
+                    height: dp(70) if root.can_choose_export_folder else 0
+                    opacity: 1 if root.can_choose_export_folder else 0
+                    disabled: not root.can_choose_export_folder
+                    elevation: 0
+                    ripple_behavior: True
+                    on_release: root.choose_export_folder()
+
+                    canvas.after:
+                        Color:
+                            rgba: app.theme_cls.primary_color
+                        RoundedRectangle:
+                            pos: self.x, self.y
+                            size: dp(4), self.height
+                            radius: [dp(2)]
+
+                    MDBoxLayout:
+                        orientation: "vertical"
+                        spacing: dp(2)
+
+                        MDLabel:
+                            text: "Dossier de téléchargement"
+                            font_style: "Body1" if Window.width >= dp(600) else "Body2"
+                            halign: "left"
+                            valign: "bottom"
+
+                        MDLabel:
+                            text: "Appuyer pour modifier le dossier d'export"
+                            theme_text_color: "Secondary"
+                            font_style: "Caption" if Window.width >= dp(600) else "Overline"
+                            halign: "left"
+                            valign: "top"
+
+                    MDIcon:
+                        icon: "folder-edit-outline"
+                        theme_text_color: "Custom"
+                        text_color: app.theme_cls.primary_color
+                        font_size: "30sp"
+                        size_hint_x: None
+                        width: dp(30)
+                        pos_hint: {"center_y": 0.5}
 
             # ==== CONTRÔLEUR EN COURS DE PARTIE (contrôleur hybride Unity) — uniquement en mode adaptatif (PID/DRL), pendant une partie en cours ====
             MDBoxLayout:
