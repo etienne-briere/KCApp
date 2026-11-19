@@ -260,9 +260,6 @@ class TrackingScreen(MDScreen):
     # "" si aucun ne correspond à l'état courant (ex: Manuel) — voir
     # _controller_button_for_state.
     active_controller_button = StringProperty("")
-    # Toggle "PID de secours" sous le graphique (mode DRL) : bascule
-    # automatique si le DRL entre en cycle limite, modifiable en cours de partie.
-    pid_backup = BooleanProperty(False)
 
     # Sessions passées en attente d'export ou de suppression
     has_pending_sessions = BooleanProperty(False)
@@ -348,7 +345,6 @@ class TrackingScreen(MDScreen):
         self.unity_connected = self.udp_discovery.is_unity_connected()
         self.game_state = self.session.game_state.capitalize()
         self._sync_controller_state(self.session)
-        self._sync_pid_backup(self.session.config)
 
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC et de CPM
         event_bus.subscribe("heart_rate_received", self.on_hr_received)
@@ -384,7 +380,6 @@ class TrackingScreen(MDScreen):
         self._sync_cpm_fields(session.config)
         self.game_state = session.game_state.capitalize()
         self._sync_controller_state(session)
-        self._sync_pid_backup(session.config)
 
     def _sync_controller_state(self, session):
         """État du contrôleur en cours de partie — uniquement pendant une partie en cours"""
@@ -475,11 +470,6 @@ class TrackingScreen(MDScreen):
         if state == "MANUAL":
             return "MANUAL"
         return ""
-
-    def _sync_pid_backup(self, config):
-        """Toggle PID de secours : reflète le réglage courant du contrôleur hybride"""
-        if config.controller_config is not None:
-            self.pid_backup = config.effective_pid_backup
 
     def handle_unity_connection(self, data):
         self.unity_connected = data["connected"]
@@ -604,35 +594,6 @@ class TrackingScreen(MDScreen):
                 self._manual_drl_variant = "run3" if state == "DRL_RUN3" else "deployed"
         else:
             toast("❌ Échec de l'envoi")
-
-    def on_pid_backup_toggle(self, is_active):
-        """
-        Toggle PID de secours sous le graphique (mode DRL) : cette carte
-        n'est visible que pendant une partie en cours (game_state ==
-        "Playing"), donc toujours envoyé en direct via backupPid — jamais
-        besoin de controllerSetup (prochain lancement) ici.
-        """
-        if is_active == self.pid_backup:
-            return
-        self.pid_backup = is_active
-
-        cfg = self.session.config
-        drl_model = "run3" if cfg.is_drl_run3 else "deployed"
-        pid_warmup = bool(cfg.pid_warmup)
-        if self.udp_controller and self.udp_controller.set_pid_backup(is_active):
-            logger.info(f"📤 PID de secours (direct) : {'ON' if is_active else 'OFF'}")
-        else:
-            toast("❌ Échec de l'envoi")
-        # Miroir local de la traduction faite par Unity (HybridControllerPrefs.ApplyMenuChoice),
-        # comme _mirror_controller_config dans pilotage_screen.py.
-        if drl_model == "deployed" and not pid_warmup and not is_active:
-            cfg.controller_config = "off"
-        elif drl_model == "run3" and not is_active:
-            cfg.controller_config = "drl_run3" if pid_warmup else "drl_run3_no_warmup"
-        else:
-            cfg.controller_config = "custom"
-        cfg.drl_model = drl_model
-        cfg.pid_backup = is_active
 
     def _parse_manual_cpm(self, text):
         """Valide/clampe la cadence manuelle saisie et met à jour la propriété + le champ. None si invalide."""

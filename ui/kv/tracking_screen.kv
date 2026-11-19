@@ -584,6 +584,17 @@
                         pos_hint: {"center_y": 0.5}
                         on_release: root.toggle_cursor_mode()
 
+                    # ---- Bandes d'état du jeu (idle/paused...) sur le graphique ----
+                    MDIconButton:
+                        icon: "flag-variant" if root.show_game_state else "flag-variant-off"
+                        theme_text_color: "Custom"
+                        text_color: app.theme_cls.primary_color if root.show_game_state else "grey"
+                        size_hint: None, None
+                        size: dp(32), dp(32)
+                        icon_size: "20sp"
+                        pos_hint: {"center_y": 0.5}
+                        on_release: root.on_toggle_game_state(not root.show_game_state)
+
                     MDIconButton:
                         icon: "restart"
                         theme_text_color: "Custom"
@@ -597,10 +608,9 @@
                 MDCard:
                     orientation: "vertical"
                     padding: dp(10)
-                    spacing: dp(8)
                     radius: [12]
                     size_hint_y: None
-                    height: dp(320) + dp(44)
+                    height: dp(320) + dp(20)
                     elevation: 0
 
                     FloatLayout:
@@ -616,81 +626,6 @@
 
                         TrackingCursorTooltip:
                             id: cursor_tooltip
-
-                    # ==== Options d'affichage du graphique ====
-                    AnchorLayout:
-                        anchor_x: "center"
-                        anchor_y: "center"
-                        size_hint_y: None
-                        height: dp(36)
-
-                        # Seule option restante : la %FC cible et les cubes/min
-                        # s'affichent d'eux-mêmes (mode adaptatif / cpm reçus)
-                        MDBoxLayout:
-                            orientation: "horizontal"
-                            size_hint: None, None
-                            size: self.minimum_size
-
-                            MDBoxLayout:
-                                orientation: "horizontal"
-                                spacing: dp(8)
-                                size_hint_x: None
-                                width: self.minimum_width
-
-                                MDCheckbox:
-                                    active: root.show_game_state
-                                    on_active: root.on_toggle_game_state(self.active)
-                                    size_hint: None, None
-                                    size: dp(30), dp(30)
-                                    pos_hint: {"center_y": 0.5}
-
-                                MDIcon:
-                                    icon: "flag-variant-outline"
-                                    theme_text_color: "Custom"
-                                    text_color: PURPLE_FG
-                                    font_size: "16sp"
-                                    size_hint: None, None
-                                    size: dp(20), dp(20)
-                                    pos_hint: {"center_y": 0.5}
-
-                                MDLabel:
-                                    text: "État du jeu"
-                                    font_style: "Caption" if Window.width >= dp(600) else "Overline"
-                                    adaptive_size: True
-                                    pos_hint: {"center_y": 0.5}
-
-                            # ---- PID de secours : visible seulement en mode DRL ----
-                            MDBoxLayout:
-                                orientation: "horizontal"
-                                spacing: dp(8)
-                                padding: (dp(20), 0, 0, 0) if root.current_model == "DRL" else (0, 0, 0, 0)
-                                size_hint_x: None
-                                width: self.minimum_width if root.current_model == "DRL" else 0
-                                opacity: 1 if root.current_model == "DRL" else 0
-                                disabled: root.current_model != "DRL"
-
-                                MDCheckbox:
-                                    active: root.pid_backup
-                                    on_active: root.on_pid_backup_toggle(self.active)
-                                    size_hint: None, None
-                                    size: dp(30), dp(30)
-                                    pos_hint: {"center_y": 0.5}
-                                    disabled: not root.unity_connected
-
-                                MDIcon:
-                                    icon: "shield-refresh-outline"
-                                    theme_text_color: "Custom"
-                                    text_color: app.theme_cls.primary_color
-                                    font_size: "16sp"
-                                    size_hint: None, None
-                                    size: dp(20), dp(20)
-                                    pos_hint: {"center_y": 0.5}
-
-                                MDLabel:
-                                    text: "PID de secours"
-                                    font_style: "Caption" if Window.width >= dp(600) else "Overline"
-                                    adaptive_size: True
-                                    pos_hint: {"center_y": 0.5}
 
             # ==== CONTRÔLEUR EN COURS DE PARTIE (contrôleur hybride Unity) — uniquement en mode adaptatif (PID/DRL), pendant une partie en cours ====
             MDBoxLayout:
