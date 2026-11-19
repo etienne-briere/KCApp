@@ -70,8 +70,11 @@ class ScanScreen(MDScreen):
 
     # État du scan/de la connexion BLE
     is_busy = BooleanProperty(False)
-    scan_status_text = StringProperty("Appuyez sur le bouton pour démarrer le scan")
-    scan_status_color = ListProperty(GREY)
+    # Sous-titre de la card "Détection Bluetooth" : 3 états fixes pilotés
+    # par ces deux booléens (voir le binding dans scan_screen.kv), plutôt
+    # qu'un texte libre stocké en state.
+    is_scanning = BooleanProperty(False)
+    scan_found_nothing = BooleanProperty(False)
     connecting_address = StringProperty("")
     connected_address = StringProperty("")
     connected_has_heart_rate = BooleanProperty(True)
@@ -165,7 +168,9 @@ class ScanScreen(MDScreen):
     
     def start_ble_scan(self):
         """Démarrer le scan BLE"""
-        self._set_scan_status("Recherche d'appareils…", GREY, busy=True)
+        self.is_scanning = True
+        self.is_busy = True
+        self.scan_found_nothing = False
         self.ids.devices_list.clear_widgets()
         self.device_status_items = {}
         self.devices_found = []
@@ -187,19 +192,17 @@ class ScanScreen(MDScreen):
     def on_scan_complete(self, devices):
         """Callback de fin de scan"""
         self.devices_found = devices
+        self.is_scanning = False
+        self.is_busy = False
 
         if not devices:
-            self._set_scan_status("Aucun appareil trouvé", RED_FG)
+            self.scan_found_nothing = True
             return
 
         # Des appareils sont trouvés : la liste ci-dessous prend le relais
-        # pour l'état de connexion (donc pas de redite ici), mais le
-        # nombre trouvé reste une info utile à afficher à côté du bouton.
-        count = len(devices)
-        self._set_scan_status(
-            f"{count} appareil{'s' if count > 1 else ''} trouvé{'s' if count > 1 else ''}",
-            GREEN_FG,
-        )
+        # pour l'état de connexion (donc pas de redite dans le sous-titre,
+        # qui revient à son état "au repos").
+        self.scan_found_nothing = False
 
         for device in devices:
             item = TwoLineIconListItem(
@@ -258,7 +261,7 @@ class ScanScreen(MDScreen):
         if not found:
             self.connecting_address = ""
             self.is_busy = False
-            self._set_scan_status("Appareil introuvable — relancez un scan", RED_FG)
+            self.scan_found_nothing = True
             self._refresh_device_status_labels()
 
     def on_connection_changed(self, data):
@@ -305,9 +308,6 @@ class ScanScreen(MDScreen):
             if not is_switch_intermediate and not is_rescan_disconnect:
                 self.connecting_address = ""
                 self.is_busy = False
-                # Pas d'état "échec"/"déconnecté" dédié sur la ligne : on
-                # garde ce libellé pour ce cas précis.
-                self._set_scan_status("Déconnecté", RED_FG)
 
         self._refresh_device_status_labels()
     
@@ -423,12 +423,6 @@ class ScanScreen(MDScreen):
         self.known_devices_store.forget(address)
         dialog.dismiss()
         self._refresh_known_devices_card()
-
-    def _set_scan_status(self, text, color, busy=False):
-        """Met à jour le libellé de statut du scan/de la connexion"""
-        self.scan_status_text = text
-        self.scan_status_color = color
-        self.is_busy = busy
 
     def _refresh_device_status_labels(self):
         """Met à jour le texte de statut (2e ligne) de chaque appareil des deux listes

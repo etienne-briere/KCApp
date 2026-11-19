@@ -116,9 +116,8 @@
                         valign: "bottom"
 
                     MDLabel:
-                        text: root.scan_status_text
-                        theme_text_color: "Custom"
-                        text_color: root.scan_status_color
+                        text: "Recherche d'appareil en cours..." if root.is_scanning else ("Aucun appareil trouvé - Relancez le scan" if root.scan_found_nothing else "Appuyer pour lancer le scan")
+                        theme_text_color: "Secondary"
                         font_style: "Caption" if Window.width >= dp(600) else "Overline"
                         halign: "left"
                         valign: "top"
