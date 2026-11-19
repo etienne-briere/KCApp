@@ -1003,7 +1003,7 @@ class TrackingScreen(MDScreen):
             xdata, self.session.metrics.cpm_time, self.session.metrics.cpm_history)
         tooltip.cpm_visible = cpm_value is not None
         if cpm_value is not None:
-            tooltip.cpm_text = f"{_CPM_LINE_LABEL}: {cpm_value}"
+            tooltip.cpm_text = f"{cpm_value} cpm"
 
         target_value = None
         if self.target_available:
@@ -1011,7 +1011,7 @@ class TrackingScreen(MDScreen):
                 xdata, self.session.config.target_time or [], self.session.config.target_history or [])
         tooltip.target_visible = target_value is not None
         if target_value is not None:
-            tooltip.target_text = f"{_TARGET_LINE_LABEL}: {target_value}"
+            tooltip.target_text = f"{target_value}%"
 
         if not (tooltip.hr_visible or tooltip.cpm_visible or tooltip.target_visible):
             self._hide_cursor()
