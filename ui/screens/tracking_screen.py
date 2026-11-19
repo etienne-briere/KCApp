@@ -867,10 +867,14 @@ class TrackingScreen(MDScreen):
         self._set_hr_signal_lost(not data["connected"])
 
     def _set_hr_signal_lost(self, lost):
-        # Signal "perdu" seulement si un capteur FC est censé émettre : pas
-        # de capteur connecté (ou sans service FC) n'est pas une perte.
         ble = self.ble_manager
-        lost = bool(lost and ble.is_connected and ble._has_heart_rate_service())
+        if not ble.is_connected:
+            # Aucun capteur connecté : toujours "perdu" (pas de FC possible).
+            lost = True
+        else:
+            # Connecté : sans service FC, aucune trame n'est attendue —
+            # rien à signaler de plus (pas une vraie "perte").
+            lost = bool(lost and ble._has_heart_rate_service())
         self.hr_signal_lost = lost
         if lost:
             self.heart_rate_label = "--"

@@ -137,6 +137,13 @@ class ScanScreen(MDScreen):
             self.connected_address = ""
             self.connecting_address = ""
             self.is_busy = False
+            # Même effet que la branche "else" de on_connection_changed pour
+            # une vraie déconnexion : sans ça, hr_signal_lost/heart_rate_text
+            # resteraient sur leur dernière valeur connue (le bloc de
+            # resynchronisation juste en dessous ne se déclenche QUE si
+            # connected_address est renseigné, donc jamais ici).
+            self.hr_signal_lost = True
+            self.heart_rate_text = "--"
         self._refresh_device_status_labels()
 
         # L'évènement n'est reçu que sur cet écran : resynchroniser avec la
@@ -276,7 +283,12 @@ class ScanScreen(MDScreen):
             # pas de capteur FC), inutile de le répéter ici.
         else:
             self.connected_address = ""
-            self.hr_signal_lost = False
+            # Plus aucun appareil connecté : pas de FC possible par
+            # définition, donc toujours "signal perdu" ici (contrairement à
+            # _set_hr_signal_lost, pas de garde sur connected_has_heart_rate
+            # puisqu'il n'y a justement plus d'appareil connecté du tout).
+            self.hr_signal_lost = True
+            self.heart_rate_text = "--"
 
             # BLEManager déconnecte l'appareil précédent avant de se
             # connecter au nouveau (device=None ici) : si on est déjà en
@@ -311,8 +323,13 @@ class ScanScreen(MDScreen):
         self._set_hr_signal_lost(not data["connected"])
 
     def _set_hr_signal_lost(self, lost):
-        # Sans service FC, aucune trame n'est attendue : rien à signaler de plus.
-        lost = bool(lost and self.connected_address and self.connected_has_heart_rate)
+        if not self.connected_address:
+            # Aucun appareil connecté : toujours "perdu" (pas de FC possible).
+            lost = True
+        else:
+            # Connecté : sans service FC, aucune trame n'est attendue —
+            # rien à signaler de plus (pas une vraie "perte").
+            lost = bool(lost and self.connected_has_heart_rate)
         if lost == self.hr_signal_lost:
             return
         self.hr_signal_lost = lost
