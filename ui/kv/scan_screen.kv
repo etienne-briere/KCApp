@@ -1,5 +1,75 @@
 #:set BLE_BLUE (0.161, 0.502, 0.725, 1)
 #:import Window kivy.core.window.Window
+#:import KnownDeviceRowBody ui.screens.scan_screen.KnownDeviceRowBody
+
+# ===== Ligne "Appareil connu" faite main (pas TwoLineAvatarIconListItem) =====
+# Nécessaire pour avoir un bouton "⋮" (renommer/oublier) à droite sans la
+# marge réservée en trop qui tronquerait le sous-titre (voir patterns déjà
+# rencontrés sur cet écran). KnownDeviceRowBody porte le ripple + le tap
+# pour reconnexion ; le bouton menu est une zone cliquable séparée.
+<KnownDeviceRow@MDBoxLayout>:
+    orientation: "horizontal"
+    size_hint_y: None
+    height: dp(72)
+    spacing: dp(4)
+    padding: 0, 0, dp(8), 0
+
+    KnownDeviceRowBody:
+        id: body
+        orientation: "horizontal"
+        spacing: dp(15)
+        padding: dp(16), 0, 0, 0
+        size_hint_x: 1
+
+        MDIcon:
+            icon: "bluetooth"
+            theme_text_color: "Custom"
+            text_color: BLE_BLUE
+            font_size: "24sp"
+            size_hint_x: None
+            width: dp(40)
+            pos_hint: {"center_y": 0.5}
+
+        MDBoxLayout:
+            orientation: "vertical"
+            size_hint_x: 1
+            size_hint_y: None
+            # Hauteur = somme des 2 textes, pas une fraction fixe de la
+            # ligne (sinon valign colle les textes aux bords de leur
+            # moitié de case respective, avec un grand vide entre eux).
+            height: name_label.texture_size[1] + subtitle_label.texture_size[1] + dp(4)
+            spacing: dp(4)
+            pos_hint: {"center_y": 0.5}
+
+            MDLabel:
+                id: name_label
+                font_style: "Body1" if Window.width >= dp(600) else "Body2"
+                halign: "left"
+                valign: "middle"
+                text_size: self.width, None
+                size_hint_y: None
+                height: self.texture_size[1]
+                shorten: True
+                shorten_from: "right"
+
+            MDLabel:
+                id: subtitle_label
+                theme_text_color: "Custom"
+                font_style: "Caption" if Window.width >= dp(600) else "Overline"
+                halign: "left"
+                valign: "middle"
+                text_size: self.width, None
+                size_hint_y: None
+                height: self.texture_size[1]
+                shorten: True
+                shorten_from: "right"
+
+    MDIconButton:
+        id: menu_button
+        icon: "dots-vertical"
+        theme_text_color: "Custom"
+        text_color: BLE_BLUE
+        pos_hint: {"center_y": 0.5}
 
 <ScanScreen>:
 

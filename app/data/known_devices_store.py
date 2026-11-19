@@ -44,13 +44,41 @@ class KnownDevicesStore:
         """
         Enregistre un appareil comme connu (ou met à jour sa date de
         dernière connexion s'il l'est déjà), en tête de liste (les plus
-        récents affichés en premier dans la card).
+        récents affichés en premier dans la card). N'écrase JAMAIS un nom
+        déjà personnalisé via rename() : `name` ici est le nom brut diffusé
+        par le capteur, qui ne sert qu'à initialiser une toute nouvelle
+        entrée — sinon une reconnexion (qui renvoie ce nom brut) effacerait
+        silencieusement un renommage utilisateur. `original_name` (vu la
+        première fois) est conservé tel quel pour identifier l'appareil
+        même après un rename().
         """
-        self.devices = [d for d in self.devices if d["address"] != address]
-        self.devices.insert(0, {
-            "name": name or address,
+        name = name or address
+        existing = next((d for d in self.devices if d["address"] == address), None)
+        entry = {
+            "name": existing["name"] if existing else name,
+            "original_name": existing.get("original_name", name) if existing else name,
             "address": address,
             "last_connected": datetime.now().isoformat(timespec="seconds"),
-        })
+        }
+        self.devices = [d for d in self.devices if d["address"] != address]
+        self.devices.insert(0, entry)
         del self.devices[MAX_DEVICES:]
         self._save()
+
+    def rename(self, address, new_name):
+        """Renomme un appareil connu (ne touche pas original_name)"""
+        new_name = (new_name or "").strip()
+        if not new_name:
+            return
+        for d in self.devices:
+            if d["address"] == address:
+                d["name"] = new_name
+                self._save()
+                return
+
+    def forget(self, address):
+        """Retire un appareil de l'historique"""
+        before = len(self.devices)
+        self.devices = [d for d in self.devices if d["address"] != address]
+        if len(self.devices) != before:
+            self._save()

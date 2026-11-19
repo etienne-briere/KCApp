@@ -1,6 +1,12 @@
 # Class KivyMD
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.list import TwoLineIconListItem, IconLeftWidget
+from kivymd.uix.boxlayout import MDBoxLayout
+from kivymd.uix.label import MDLabel
+from kivymd.uix.textfield import MDTextField
+from kivymd.uix.button import MDFlatButton, MDRaisedButton
+from kivymd.uix.dialog import MDDialog
+from kivymd.uix.behaviors import RectangularRippleBehavior
 
 # Class Kivy
 from kivy.app import App
@@ -9,6 +15,8 @@ from kivy.animation import Animation
 from kivy.core.window import Window
 from kivy.metrics import dp, sp
 from kivy.clock import Clock
+from kivy.factory import Factory
+from kivy.uix.behaviors import ButtonBehavior
 
 # Custom modules
 from app import data
@@ -26,6 +34,30 @@ GREY = (0.5, 0.5, 0.5, 1)
 GREEN_FG = (0.176, 0.490, 0.196, 1)
 RED_FG = (0.776, 0.157, 0.157, 1)
 AMBER_FG = (0.780, 0.518, 0.047, 1)
+
+
+class KnownDeviceRowBody(RectangularRippleBehavior, ButtonBehavior, MDBoxLayout):
+    """
+    Zone cliquable (icône + nom/sous-titre) d'une ligne "Appareil connu" —
+    classe Python, pas une classe kv dynamique (@) : RectangularRippleBehavior
+    n'est pas pré-enregistrée dans le Factory de Kivy (seules les classes
+    héritant de Widget s'auto-enregistrent via sa métaclasse ; un mixin pur
+    comme celui-ci n'en hérite pas), donc une classe kv combinant les deux
+    échouerait à la résolution des bases.
+
+    Ordre des classes de base important : le ripple EN PREMIER.
+    CommonRipple.on_touch_down (dont hérite RectangularRippleBehavior)
+    renvoie toujours True par conception dès qu'il y a collision (pour
+    afficher le ripple), mais sans en tenir compte pour le retour de son
+    propre super().on_touch_down() ("FIXME" dans le code source de KivyMD) —
+    ce qui fait quand même tourner ButtonBehavior.on_press/on_release au
+    passage. Avec l'ordre inverse (ButtonBehavior en premier), son propre
+    `if super().on_touch_down(touch): return True` tomberait sur le `True`
+    de CommonRipple et abandonnerait avant d'exécuter sa propre logique —
+    le ripple s'afficherait mais on_release ne se déclencherait plus.
+    """
+    pass
+
 
 class ScanScreen(MDScreen):
     '''
@@ -83,11 +115,29 @@ class ScanScreen(MDScreen):
         self._refresh_known_devices_card()
 
         # S'abonner aux événements globaux (EventBus) pour recevoir les données de FC et batterie
-        event_bus.subscribe("heart_rate_received", self.on_heart_rate_received) 
+        event_bus.subscribe("heart_rate_received", self.on_heart_rate_received)
         event_bus.subscribe("battery_received", self.on_battery_received)
         event_bus.subscribe("connection_changed", self.on_connection_changed)
         event_bus.subscribe("scan_completed", self.on_scan_complete)
         event_bus.subscribe("hr_sensor_status_changed", self.on_hr_sensor_status_changed)
+
+        # Resynchronise sur la vérité actuelle du BLEManager : désabonné
+        # pendant on_leave, cet écran manque tout connection_changed émis
+        # pendant qu'il n'est pas affiché (ex. connexion qui aboutit/échoue
+        # pendant qu'on est sur un autre onglet) — sans ça, connecting_address/
+        # is_busy resteraient figés (spinner/"Connexion en cours…" bloqués)
+        # au retour sur cet onglet.
+        device = self.ble_manager.connected_device
+        if self.ble_manager.is_connected and device:
+            if self.connected_address != device.address:
+                self.connected_address = device.address
+                self.connecting_address = ""
+                self.is_busy = False
+        elif self.connected_address or self.connecting_address or self.is_busy:
+            self.connected_address = ""
+            self.connecting_address = ""
+            self.is_busy = False
+        self._refresh_device_status_labels()
 
         # L'évènement n'est reçu que sur cet écran : resynchroniser avec la
         # status bar au cas où le capteur aurait décroché entre-temps.
@@ -285,6 +335,8 @@ class ScanScreen(MDScreen):
 
         for device in self.known_devices:
             address = device["address"]
+            name = device["name"]
+            original_name = device.get("original_name", name)
             default_text = "Déjà connecté"
             try:
                 dt = datetime.fromisoformat(device.get("last_connected", ""))
@@ -292,20 +344,68 @@ class ScanScreen(MDScreen):
             except ValueError:
                 pass
 
-            item = TwoLineIconListItem(
-                text=device["name"],
-                secondary_text=default_text,
+            row = Factory.KnownDeviceRow()
+            row.ids.name_label.text = name
+            row.ids.subtitle_label.text = default_text
+            row.ids.subtitle_label.text_color = GREY
+            row.ids.body.bind(on_release=lambda *_, a=address: self.on_known_device_selected(a))
+            row.ids.menu_button.bind(
+                on_release=lambda *_, a=address, n=name, o=original_name:
+                    self._open_known_device_menu(a, n, o)
             )
-            item.secondary_theme_text_color = "Custom"
-            item.secondary_text_color = GREY
-            item.secondary_font_style = "Caption" if Window.width >= dp(600) else "Overline"
-            # Voir le commentaire équivalent dans on_scan_complete
-            item._txt_top_pad = dp(17.5)
-            item._txt_bot_pad = dp(17.5)
-            item.add_widget(IconLeftWidget(icon="bluetooth"))
-            item.bind(on_release=lambda *_, a=address: self.on_known_device_selected(a))
-            self.known_status_items[address] = (item, default_text)
-            self.ids.known_devices_list.add_widget(item)
+            self.known_status_items[address] = (row, default_text)
+            self.ids.known_devices_list.add_widget(row)
+
+    def _open_known_device_menu(self, address, current_name, original_name):
+        """Menu "⋮" d'un appareil connu : renommer ou oublier.
+
+        Titre = nom D'ORIGINE (non modifiable), pas le nom déjà renommé :
+        sinon on perd le moyen d'identifier physiquement l'appareil une
+        fois renommé. L'adresse MAC est ajoutée en complément pour lever
+        toute ambiguïté.
+        """
+        name_field = MDTextField(text=current_name, hint_text="Nom de l'appareil")
+
+        content = MDBoxLayout(
+            orientation="vertical", spacing=dp(8), size_hint_y=None, height=dp(88)
+        )
+        content.add_widget(MDLabel(
+            text=f"Adresse : {address}",
+            font_style="Caption",
+            theme_text_color="Secondary",
+            adaptive_height=True,
+        ))
+        content.add_widget(name_field)
+
+        dialog = MDDialog(
+            title=original_name or current_name,
+            type="custom",
+            content_cls=content,
+            buttons=[
+                MDFlatButton(text="ANNULER", on_release=lambda *_: dialog.dismiss()),
+                MDFlatButton(
+                    text="OUBLIER", theme_text_color="Custom", text_color=RED_FG,
+                    on_release=lambda *_: self._forget_known_device(address, dialog),
+                ),
+                MDRaisedButton(
+                    text="RENOMMER",
+                    on_release=lambda *_: self._rename_known_device(address, name_field.text, dialog),
+                ),
+            ],
+        )
+        dialog.open()
+
+    def _rename_known_device(self, address, new_name, dialog):
+        """Bouton RENOMMER du menu appareil connu"""
+        self.known_devices_store.rename(address, new_name)
+        dialog.dismiss()
+        self._refresh_known_devices_card()
+
+    def _forget_known_device(self, address, dialog):
+        """Bouton OUBLIER du menu appareil connu"""
+        self.known_devices_store.forget(address)
+        dialog.dismiss()
+        self._refresh_known_devices_card()
 
     def _set_scan_status(self, text, color, busy=False):
         """Met à jour le libellé de statut du scan/de la connexion"""
@@ -321,23 +421,30 @@ class ScanScreen(MDScreen):
                 self._apply_device_status(item, address, default_text)
 
     def _apply_device_status(self, item, address, default_text):
-        """Applique le texte/la couleur de statut à une ligne d'appareil donnée"""
+        """Applique le texte/la couleur de statut à une ligne d'appareil donnée.
+
+        `item` est soit un TwoLineIconListItem (liste "Appareils détectés",
+        propriétés secondary_text/secondary_text_color), soit une
+        KnownDeviceRow faite main (card "Mes appareils", label accessible
+        via item.ids.subtitle_label) — on détecte la forme et on applique
+        en conséquence plutôt que de dupliquer la logique de statut.
+        """
         if address == self.connected_address:
             if self.hr_signal_lost:
-                item.secondary_text = "Déconnecté — FC non reçue"
-                item.secondary_text_color = RED_FG
+                text, color = "Déconnecté — FC non reçue", RED_FG
             elif self.connected_has_heart_rate:
-                if self.connected_has_battery:
-                    item.secondary_text = f"Connecté — {self.battery_text}"
-                else:
-                    item.secondary_text = "Connecté"
-                item.secondary_text_color = GREEN_FG
+                text = f"Connecté — {self.battery_text}" if self.connected_has_battery else "Connecté"
+                color = GREEN_FG
             else:
-                item.secondary_text = "Connecté — pas de service FC"
-                item.secondary_text_color = RED_FG
+                text, color = "Connecté — pas de service FC", RED_FG
         elif address == self.connecting_address:
-            item.secondary_text = "Connexion en cours…"
-            item.secondary_text_color = AMBER_FG
+            text, color = "Connexion en cours…", AMBER_FG
         else:
-            item.secondary_text = default_text
-            item.secondary_text_color = GREY
+            text, color = default_text, GREY
+
+        if hasattr(item, "secondary_text"):
+            item.secondary_text = text
+            item.secondary_text_color = color
+        else:
+            item.ids.subtitle_label.text = text
+            item.ids.subtitle_label.text_color = color

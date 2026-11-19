@@ -20,6 +20,11 @@ class BLEManager:
         self.client: Optional[bleak.BleakClient] = None
         self.connected_device = None
         self.is_connected = False
+        # True pendant un disconnect() volontaire : évite que
+        # _on_disconnected (callback bleak de coupure radio) émette un
+        # second connection_changed redondant, bleak l'appelant aussi
+        # pour une déconnexion propre, pas seulement une coupure inattendue.
+        self._expected_disconnect = False
     
     # ========== Scan BLE ========== #
 
@@ -98,11 +103,11 @@ class BLEManager:
         
         try:
             logger.info(f"🔗 Connexion à {device.name}...")
-            
+
             # Créer le client et se connecter
-            self.client = bleak.BleakClient(device)
+            self.client = bleak.BleakClient(device, disconnected_callback=self._on_disconnected)
             await self.client.connect()
-            
+
             self.connected_device = device
             self.is_connected = True
 
@@ -111,8 +116,21 @@ class BLEManager:
             # Lire le niveau de batterie initial
             await self._read_initial_battery()
 
-            # Démarrer les notifications de fréquence cardiaque
             has_heart_rate = self._has_heart_rate_service()
+
+            # Émettre AVANT de démarrer les notifications : connection_changed
+            # déclenche session.start_recording() (qui initialise start_time)
+            # côté UI. Certains capteurs renvoient leur dernière valeur en
+            # cache dès l'abonnement aux notifications — la toute première
+            # trame pourrait sinon arriver avant que start_time n'existe.
+            event_bus.emit("connection_changed", {
+                "is_connected": True,
+                "device": device,
+                "has_heart_rate": has_heart_rate,
+                "has_battery": self._has_battery_service(),
+            })
+
+            # Démarrer les notifications de fréquence cardiaque
             if has_heart_rate:
                 await self._start_heart_rate_notifications()
 
@@ -120,14 +138,6 @@ class BLEManager:
                 asyncio.create_task(self._keep_alive())
             else:
                 logger.warning("⚠️ Service de fréquence cardiaque non disponible")
-
-            # Émettre un événement global pour que les autres composants puissent réagir à la nouvelle connexion
-            event_bus.emit("connection_changed", {
-                "is_connected": True,
-                "device": device,
-                "has_heart_rate": has_heart_rate,
-                "has_battery": self._has_battery_service(),
-            })
 
             return True
             
@@ -146,23 +156,45 @@ class BLEManager:
     async def disconnect(self):
         """Déconnecte l'appareil actuel"""
         if self.client and self.is_connected:
+            self._expected_disconnect = True
             try:
                 logger.info(f"🔌 Déconnexion de {self.connected_device.name}...")
                 await self.client.disconnect()
                 logger.info("✅ Déconnecté")
-                
+
             except Exception as e:
                 logger.error(f"Erreur lors de la déconnexion : {e}")
-            
+
             finally:
                 self.is_connected = False
                 self.client = None
-                
+                self._expected_disconnect = False
+
                 # Émettre un événement global pour que les autres composants puissent réagir à la déconnexion
                 event_bus.emit("connection_changed", {
                     "is_connected": False,
                     "device": None
                 })
+
+    def _on_disconnected(self, client):
+        """
+        Callback bleak appelé sur TOUTE déconnexion, y compris une coupure
+        radio inattendue (capteur hors de portée, éteint...) — sans ça,
+        is_connected restait bloqué à True indéfiniment dans ce cas, rien
+        ne la détectait. Ignoré si la déconnexion est volontaire (déjà
+        gérée par disconnect() ci-dessus, qui a sa propre émission).
+        """
+        if self._expected_disconnect:
+            return
+
+        logger.warning("⚠️ Déconnexion inattendue du capteur (coupure radio)")
+        self.is_connected = False
+        self.client = None
+
+        event_bus.emit("connection_changed", {
+            "is_connected": False,
+            "device": None
+        })
     
     # ========== Services BLE ========== #
 
