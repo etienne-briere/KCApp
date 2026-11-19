@@ -294,6 +294,18 @@ class TrackingScreen(MDScreen):
         # glissé sur un point antérieur — repasse à True en glissant jusqu'à
         # (ou au-delà de) la dernière FC connue.
         self._cursor_live = True
+        # Limite la fréquence de rafraîchissement du suivi en direct (voir
+        # on_hr_received/on_cpm_received) à 5/s max : chaque rafraîchissement
+        # redessine toute la figure matplotlib (coûteux, AGG + upload
+        # texture), et un flux de données continu en rythmait beaucoup plus —
+        # au point de perturber le clipping du ScrollView pendant un
+        # défilement (des widgets sous la card graphique restaient affichés
+        # par-dessus la barre de statut). Pas de limite sur un glisser ou
+        # une activation manuelle du mode curseur (_refresh_live_cursor
+        # appelée directement), seulement sur les mises à jour déclenchées
+        # par le flux de données.
+        self._live_cursor_trigger = Clock.create_trigger(
+            lambda dt: self._refresh_live_cursor(), 0.2)
 
         # Dernier modèle DRL choisi manuellement via les boutons DRL/DRL Run 3
         # ("deployed"/"run3", voir switch_controller) — Unity ne renvoie que
@@ -848,7 +860,7 @@ class TrackingScreen(MDScreen):
         self.session.config.refresh_target_now()
 
         self.update_graph()
-        self._refresh_live_cursor()
+        self._live_cursor_trigger()
 
     def on_hr_sensor_status_changed(self, data):
         """Callback de la status bar : FC reçue récemment ou non"""
@@ -875,7 +887,7 @@ class TrackingScreen(MDScreen):
         self.cpm_label = str(int(value))
 
         self.update_graph()
-        self._refresh_live_cursor()
+        self._live_cursor_trigger()
 
     def on_toggle_game_state(self, active):
         """Afficher/masquer les bandes idle/paused sur le graphique"""
