@@ -100,21 +100,34 @@
         font_size: "14sp"
         on_text: root.record.rename(self.text) if root.record else None
 
-    MDIconButton:
-        icon: "file-download-outline"
-        theme_text_color: "Custom"
-        text_color: app.theme_cls.primary_color
-        icon_size: "22sp"
+    # Icônes resserrées (taille fixe, espacement réduit) pour laisser le
+    # plus de place possible au champ du nom de fichier.
+    MDBoxLayout:
+        orientation: "horizontal"
+        spacing: dp(2)
+        size_hint_x: None
+        width: self.minimum_width
         pos_hint: {"center_y": 0.5}
-        on_release: root.export_callback(root)
 
-    MDIconButton:
-        icon: "close"
-        theme_text_color: "Custom"
-        text_color: 0.776, 0.157, 0.157, 1
-        icon_size: "22sp"
-        pos_hint: {"center_y": 0.5}
-        on_release: root.delete_callback(root)
+        MDIconButton:
+            icon: "file-download-outline"
+            theme_text_color: "Custom"
+            text_color: app.theme_cls.primary_color
+            icon_size: "22sp"
+            size_hint: None, None
+            size: dp(32), dp(32)
+            pos_hint: {"center_y": 0.5}
+            on_release: root.export_callback(root)
+
+        MDIconButton:
+            icon: "close"
+            theme_text_color: "Custom"
+            text_color: 0.776, 0.157, 0.157, 1
+            icon_size: "22sp"
+            size_hint: None, None
+            size: dp(32), dp(32)
+            pos_hint: {"center_y": 0.5}
+            on_release: root.delete_callback(root)
 
 <TrackingScreen>:
 
@@ -956,7 +969,9 @@
 
                 MDCard:
                     orientation: "vertical"
-                    padding: dp(16), dp(1)
+                    # Padding droit réduit : rapproche les icônes d'action
+                    # des lignes de session du bord de la card.
+                    padding: dp(16), dp(1), dp(4), dp(1)
                     radius: [12]
                     size_hint_y: None
                     height: self.minimum_height

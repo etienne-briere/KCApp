@@ -2,6 +2,8 @@
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.toast import toast
+from kivymd.uix.button import MDFlatButton
+from kivymd.uix.dialog import MDDialog
 
 # Class Kivy
 from kivy.properties import StringProperty, NumericProperty, BooleanProperty, ListProperty, ObjectProperty
@@ -1256,7 +1258,7 @@ class TrackingScreen(MDScreen):
     def _add_session_row(self, record):
         row = SessionRow(
             record=record,
-            delete_callback=self._delete_pending_session,
+            delete_callback=self._confirm_delete_session,
             export_callback=self._export_pending_session,
         )
         self.ids.pending_sessions_list.add_widget(row)
@@ -1268,8 +1270,34 @@ class TrackingScreen(MDScreen):
         self.ids.pending_sessions_list.remove_widget(row)
         self.has_pending_sessions = bool(self.session.pending_sessions)
 
+    def _confirm_delete_session(self, row):
+        """Bouton "close" d'une session en attente : demande confirmation
+        avant suppression (même schéma que PlayerProfileScreen pour la
+        suppression d'un profil)."""
+        self._row_pending_delete = row
+        if not hasattr(self, "_dialog_confirm_delete_session") or self._dialog_confirm_delete_session is None:
+            self._dialog_confirm_delete_session = MDDialog(
+                title="Supprimer cette session ?",
+                buttons=[
+                    MDFlatButton(
+                        text="ANNULER",
+                        on_release=lambda *_: self._dialog_confirm_delete_session.dismiss(),
+                    ),
+                    MDFlatButton(
+                        text="SUPPRIMER",
+                        on_release=lambda *_: self._delete_pending_session(self._row_pending_delete),
+                    ),
+                ],
+            )
+        filename = row.record.filename if row.record else ""
+        self._dialog_confirm_delete_session.text = (
+            f"« {filename} » sera retirée de la liste d'attente, sans jamais avoir été exportée."
+        )
+        self._dialog_confirm_delete_session.open()
+
     def _delete_pending_session(self, row):
         """Supprime une session en attente sans jamais l'écrire sur disque"""
+        self._dialog_confirm_delete_session.dismiss()
         self._remove_session_row(row)
         toast("Session supprimée")
 
