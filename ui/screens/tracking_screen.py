@@ -918,6 +918,14 @@ class TrackingScreen(MDScreen):
         index = int(np.argmin(np.abs(np.asarray(times) - xdata)))
         return int(round(values[index]))
 
+    @staticmethod
+    def _nearest_index(xdata, times):
+        """Index le plus proche de xdata dans times — None si vide. Voir
+        _update_cursor (ligne FC : BPM brut + %FCmax au même index)."""
+        if not times:
+            return None
+        return int(np.argmin(np.abs(np.asarray(times) - xdata)))
+
     def _on_graph_hover(self, event):
         """
         Remplace le hover() natif de hr_graph_widget tant que
@@ -979,11 +987,17 @@ class TrackingScreen(MDScreen):
             self._hide_cursor()
             return
 
-        hr_times, hr_values = self.session.hr_session.get_graph_percent()
-        hr_value = self._nearest_rounded(xdata, hr_times, hr_values)
-        tooltip.hr_visible = hr_value is not None
-        if hr_value is not None:
-            tooltip.hr_text = f"{_HR_LINE_LABEL}: {hr_value}"
+        # Ligne FC : BPM brut, puis %FCmax entre parenthèses si calculable
+        # (âge du profil connu — voir HRSession._compute_percent), au même
+        # index que le BPM puisque hr_time est partagé entre les deux séries.
+        hr_times, hr_bpm_values = self.session.hr_session.get_graph_data()
+        hr_index = self._nearest_index(xdata, hr_times)
+        tooltip.hr_visible = hr_index is not None
+        if hr_index is not None:
+            bpm = int(round(hr_bpm_values[hr_index]))
+            percent = self.session.hr_session.hrmax_percent_history[hr_index]
+            tooltip.hr_text = (f"{bpm} bpm ({int(round(percent))}%)" if percent is not None
+                                else f"{bpm} bpm")
 
         cpm_value = self._nearest_rounded(
             xdata, self.session.metrics.cpm_time, self.session.metrics.cpm_history)
